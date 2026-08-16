@@ -359,29 +359,33 @@ export async function getFilteredAndSortedIds(
   const season = getCurrentSeason();
 
   items.sort((a, b) => {
-    // Apply seasonal boost ONLY in the global catalog (when no specific category is selected)
-    if (categoryId == null) {
-      const aChris = hasCategory(a, 20); // Коледа
-      const bChris = hasCategory(b, 20);
-      const aHal = hasCategory(a, 10);   // Хелоуин
-      const bHal = hasCategory(b, 10);
+    const aChris = hasCategory(a, 20); // Коледа
+    const bChris = hasCategory(b, 20);
+    const aHal = hasCategory(a, 10);   // Хелоуин
+    const bHal = hasCategory(b, 10);
 
+    const getWeight = (isChris: boolean, isHal: boolean) => {
       if (season === 'christmas') {
-        if (aChris && !bChris) return -1;
-        if (!aChris && bChris) return 1;
-      } else if (season === 'halloween') {
-        if (aHal && !bHal) return -1;
-        if (!aHal && bHal) return 1;
-      } else {
-        // Normal season: push Halloween and Christmas items backwards
-        const aSeasonal = aChris || aHal;
-        const bSeasonal = bChris || bHal;
-        if (aSeasonal && !bSeasonal) return 1;
-        if (!aSeasonal && bSeasonal) return -1;
+        if (isChris) return 10;
+        if (isHal) return -10;
+        return 0;
       }
+      if (season === 'halloween') {
+        if (isHal) return 10;
+        if (isChris) return -10;
+        return 0;
+      }
+      if (isChris || isHal) return -10;
+      return 0;
+    };
+
+    const wA = getWeight(aChris, aHal);
+    const wB = getWeight(bChris, bHal);
+
+    if (wA !== wB) {
+      return wB - wA;
     }
 
-    // Default Fallback: Priority -> ID
     const pA = a.priority ?? 0;
     const pB = b.priority ?? 0;
     if (pA !== pB) return pB - pA;
@@ -415,7 +419,7 @@ export async function fetchProducts(
   const from = safePage * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  // Sclice only the IDs meant for the current page
+  // Slice only the IDs meant for the current page
   const pageIds = allIds.slice(from, to + 1);
 
   if (pageIds.length === 0) {
