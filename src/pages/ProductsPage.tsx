@@ -37,6 +37,17 @@ export default function ProductsPage() {
 
   const resultsRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const needsScrollRef = useRef(false);
+
+  // Скролване при зареждане на нови данни (когато loading спре)
+  useEffect(() => {
+    if (!loading && needsScrollRef.current) {
+      needsScrollRef.current = false;
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+  }, [loading]);
 
   useEffect(() => {
     const urlCat = queryParams.category;
@@ -104,9 +115,7 @@ export default function ProductsPage() {
   }, [categoryFilter, sizeFilter, debouncedSearch]);
 
   const scrollToResults = () => {
-    setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 120);
+    needsScrollRef.current = true;
   };
 
   const handleCategoryCardClick = (catId: number) => {
