@@ -42,6 +42,7 @@ export default function ProductsPage() {
     const urlCat = queryParams.category;
     if (urlCat != null && urlCat !== categoryFilter) {
       setCategoryFilter(urlCat);
+      scrollToResults();
     }
   }, [queryParams.category]);
 

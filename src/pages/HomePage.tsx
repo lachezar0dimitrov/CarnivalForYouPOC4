@@ -41,7 +41,7 @@ export default function HomePage() {
         <div className="mt-10">
           <CategoryGrid
             categories={categories}
-            onSelect={(categoryId) => navigate('products', undefined, { category: String(categoryId) })}
+            onSelect={(categoryId) => navigate('products', { category: String(categoryId) })}
           />
         </div>
       </section>
