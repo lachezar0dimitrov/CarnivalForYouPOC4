@@ -508,14 +508,17 @@ function mapAdminRow(r: any): AdminProduct {
     categoryIds = rawCatIds.map(Number).filter(Boolean);
   } else if (typeof rawCatIds === 'string') {
     try {
+      const parsed = JSON.parse(rawCatIds);
+      if (Array.isArray(parsed)) {
+        categoryIds = parsed.map(Number).filter(Boolean);
+      }
+    } catch {
+      // Ако е във формат {2,12} или друг текстов вариант
       if (rawCatIds.startsWith('{') && rawCatIds.endsWith('}')) {
         categoryIds = rawCatIds.slice(1, -1).split(',').map(Number).filter(Boolean);
       } else {
-        const parsed = JSON.parse(rawCatIds);
-        if (Array.isArray(parsed)) categoryIds = parsed.map(Number).filter(Boolean);
+        categoryIds = [Number(rawCatIds)].filter(Boolean);
       }
-    } catch {
-      categoryIds = [];
     }
   } else if (rawCatIds != null) {
     categoryIds = [Number(rawCatIds)].filter(Boolean);
