@@ -6,8 +6,6 @@ import { supabase } from '@/lib/supabase';
 import type { Lang } from '@/lib/i18n';
 
 // --- Currency conversion ---
-// Database prices are in BGN. We add 20% markup, then convert to EUR
-// using the fixed BGN/EUR rate (1 EUR = 1.95583 BGN).
 const BGN_TO_EUR_RATE = 1.95583;
 const MARKUP = 1.2;
 
@@ -25,10 +23,10 @@ export type Product = {
   descriptionBg: string | null;
   descriptionEn: string | null;
   sizes: string | null;
-  price: number; // EUR (converted)
-  rawPrice: number; // BGN (original from DB)
-  oldPrice: number | null; // EUR
-  rawOldPrice: number | null; // BGN
+  price: number;
+  rawPrice: number;
+  oldPrice: number | null;
+  rawOldPrice: number | null;
   imageUrl: string | null;
   priority: number;
   tags: string[];
@@ -114,83 +112,17 @@ export type CategoryMeta = {
 };
 
 const FALLBACK_CATEGORIES: CategoryMeta[] = [
-  {
-    id: 2,
-    nameBg: 'Дамски',
-    nameEn: "Women's",
-    image: '/images/categories/women-carnival-costumes.png',
-    group: 'main',
-  },
-  {
-    id: 3,
-    nameBg: 'Мъжки',
-    nameEn: "Men's",
-    image: '/images/categories/men-carnival-costumes.png',
-    group: 'main',
-  },
-  {
-    id: 17,
-    nameBg: 'Момчета',
-    nameEn: "Boys'",
-    image: '/images/categories/boys-carnival-costumes.png',
-    group: 'main',
-  },
-  {
-    id: 4,
-    nameBg: 'Момичета',
-    nameEn: "Girls'",
-    image: '/images/categories/girls-carnival-costumes.png',
-    group: 'main',
-  },
-  {
-    id: 19,
-    nameBg: 'Деца 0-3 г.',
-    nameEn: 'Toddlers 0-3',
-    image: '/images/categories/baby-costumes-0-3-years.png',
-    group: 'main',
-  },
-  {
-    id: 5,
-    nameBg: 'Маски',
-    nameEn: 'Masks',
-    image: '/images/categories/venetian-masks.png',
-    group: 'other',
-  },
-  {
-    id: 6,
-    nameBg: 'Шапки',
-    nameEn: 'Hats',
-    image: '/images/categories/carnival-hats.png',
-    group: 'other',
-  },
-  {
-    id: 7,
-    nameBg: 'Перуки',
-    nameEn: 'Wigs',
-    image: '/images/categories/carnival-wigs.png',
-    group: 'other',
-  },
-  {
-    id: 8,
-    nameBg: 'Аксесоари',
-    nameEn: 'Accessories',
-    image: '/images/categories/carnival-accessories.png',
-    group: 'other',
-  },
-  {
-    id: 10,
-    nameBg: 'Хелоуин',
-    nameEn: 'Halloween',
-    image: '/images/categories/halloween-scary-costumes.png',
-    group: 'other',
-  },
-  {
-    id: 20,
-    nameBg: 'Коледа',
-    nameEn: 'Christmas',
-    image: '/images/categories/christmas-carnival-costumes.png',
-    group: 'other',
-  },
+  { id: 2, nameBg: 'Дамски', nameEn: "Women's", image: '/images/categories/women-carnival-costumes.png', group: 'main' },
+  { id: 3, nameBg: 'Мъжки', nameEn: "Men's", image: '/images/categories/men-carnival-costumes.png', group: 'main' },
+  { id: 17, nameBg: 'Момчета', nameEn: "Boys'", image: '/images/categories/boys-carnival-costumes.png', group: 'main' },
+  { id: 4, nameBg: 'Момичета', nameEn: "Girls'", image: '/images/categories/girls-carnival-costumes.png', group: 'main' },
+  { id: 19, nameBg: 'Деца 0-3 г.', nameEn: 'Toddlers 0-3', image: '/images/categories/baby-costumes-0-3-years.png', group: 'main' },
+  { id: 5, nameBg: 'Маски', nameEn: 'Masks', image: '/images/categories/venetian-masks.png', group: 'other' },
+  { id: 6, nameBg: 'Шапки', nameEn: 'Hats', image: '/images/categories/carnival-hats.png', group: 'other' },
+  { id: 7, nameBg: 'Перуки', nameEn: 'Wigs', image: '/images/categories/carnival-wigs.png', group: 'other' },
+  { id: 8, nameBg: 'Аксесоари', nameEn: 'Accessories', image: '/images/categories/carnival-accessories.png', group: 'other' },
+  { id: 10, nameBg: 'Хелоуин', nameEn: 'Halloween', image: '/images/categories/halloween-scary-costumes.png', group: 'other' },
+  { id: 20, nameBg: 'Коледа', nameEn: 'Christmas', image: '/images/categories/christmas-carnival-costumes.png', group: 'other' },
 ];
 
 let _dbCategories: CategoryMeta[] | null = null;
@@ -227,7 +159,6 @@ export function setCategories(cats: CategoryMeta[]) {
 }
 
 export const categoryMeta: CategoryMeta[] = FALLBACK_CATEGORIES;
-
 const PRIMARY_CATEGORY_IDS = new Set([2, 3, 4, 17, 19]);
 
 export function getFeaturedCategories(categories: CategoryMeta[]): CategoryMeta[] {
@@ -306,6 +237,51 @@ export function getAvailableSizes(): string[] {
   return ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'STD', 'Kids'];
 }
 
+// --- Seasonal & Sorting Logic ---
+type Season = 'christmas' | 'halloween' | 'normal';
+
+function getCurrentSeason(): Season {
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1 - 12
+  const day = now.getDate();
+
+  // Коледа: 1 ноември – 10 януари
+  if (month === 11 || month === 12 || (month === 1 && day <= 10)) {
+    return 'christmas';
+  }
+
+  // Хелоуин: 15 август – 1 ноември
+  if ((month === 8 && day >= 15) || month === 9 || month === 10 || (month === 11 && day === 1)) {
+    return 'halloween';
+  }
+
+  return 'normal';
+}
+
+// Helper to check category presence efficiently
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function hasCategory(row: any, targetId: number): boolean {
+  if (row.category_id === targetId) return true;
+  const rawCatIds = row.category_ids;
+
+  if (Array.isArray(rawCatIds)) {
+    return rawCatIds.map(Number).includes(targetId);
+  } else if (typeof rawCatIds === 'string') {
+    try {
+      const parsed = JSON.parse(rawCatIds);
+      if (Array.isArray(parsed)) return parsed.map(Number).includes(targetId);
+    } catch {
+      if (rawCatIds.startsWith('{') && rawCatIds.endsWith('}')) {
+        return rawCatIds.slice(1, -1).split(',').map(Number).includes(targetId);
+      }
+      return Number(rawCatIds) === targetId;
+    }
+  } else if (rawCatIds != null) {
+    return Number(rawCatIds) === targetId;
+  }
+  return false;
+}
+
 const PAGE_SIZE = 24;
 
 export type FetchResult = {
@@ -334,14 +310,18 @@ function searchFilter(search: string): string {
   return `name_bg.ilike.%${term}%,name_en.ilike.%${term}%`;
 }
 
-export async function countProducts(
+/**
+ * Fetches all matching IDs, applies sizes filtering, and sorts them globally
+ * taking into account the current season.
+ */
+export async function getFilteredAndSortedIds(
   categoryId: number | null,
   sizeFilter: string | null,
   search: string | null = null
-): Promise<number> {
+): Promise<number[]> {
   let query = supabase
     .from('products')
-    .select('id, category_id, category_ids')
+    .select('id, category_id, category_ids, priority, sizes')
     .eq('is_active', true)
     .gt('price', 0)
     .not('image_url', 'is', null)
@@ -357,45 +337,66 @@ export async function countProducts(
   }
 
   const { data, error } = await query;
-
   if (error) throw error;
 
-  let ids = (data ?? []).map((r) => r.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let items: any[] = data ?? [];
 
-  if (sizeFilter && sizeFilter !== 'Kids') {
-    let sizeQuery = supabase
-      .from('products')
-      .select('id, sizes')
-      .in('id', ids);
-    const { data: sizeData, error: sizeError } = await sizeQuery;
-    if (sizeError) throw sizeError;
-    ids = (sizeData ?? [])
-      .filter((r) => {
-        const sizes = (r.sizes ?? '').toUpperCase();
-        return sizes
-          .split(/[,;/]/)
-          .some((s: string) => s.trim() === sizeFilter);
-      })
-      .map((r) => r.id);
-  } else if (sizeFilter === 'Kids') {
-    let sizeQuery = supabase
-      .from('products')
-      .select('id, sizes, category_id, category_ids')
-      .in('id', ids);
-    const { data: sizeData, error: sizeError } = await sizeQuery;
-    if (sizeError) throw sizeError;
-    ids = (sizeData ?? [])
-      .filter((r) => {
-        const sizes = (r.sizes ?? '').toUpperCase();
+  // 1. Apply Size Filter
+  if (sizeFilter) {
+    items = items.filter((r) => {
+      const sizes = (r.sizes ?? '').toUpperCase();
+      if (sizeFilter === 'Kids') {
         const isKidsSize = [...KIDS_SIZES].some((ks) => sizes.includes(ks));
-        let catIds: number[] = [];
-        if (Array.isArray(r.category_ids)) catIds = r.category_ids.map(Number);
-        const isKidsCategory = r.category_id === 19 || catIds.includes(19);
-        return isKidsSize || isKidsCategory;
-      })
-      .map((r) => r.id);
+        const isKidsCat = hasCategory(r, 19);
+        return isKidsSize || isKidsCat;
+      }
+      return sizes.split(/[,;/]/).some((s: string) => s.trim() === sizeFilter);
+    });
   }
 
+  // 2. Apply Seasonal Sorting
+  const season = getCurrentSeason();
+
+  items.sort((a, b) => {
+    // Apply seasonal boost ONLY in the global catalog (when no specific category is selected)
+    if (categoryId == null) {
+      const aChris = hasCategory(a, 20); // Коледа
+      const bChris = hasCategory(b, 20);
+      const aHal = hasCategory(a, 10);   // Хелоуин
+      const bHal = hasCategory(b, 10);
+
+      if (season === 'christmas') {
+        if (aChris && !bChris) return -1;
+        if (!aChris && bChris) return 1;
+      } else if (season === 'halloween') {
+        if (aHal && !bHal) return -1;
+        if (!aHal && bHal) return 1;
+      } else {
+        // Normal season: push Halloween and Christmas items backwards
+        const aSeasonal = aChris || aHal;
+        const bSeasonal = bChris || bHal;
+        if (aSeasonal && !bSeasonal) return 1;
+        if (!aSeasonal && bSeasonal) return -1;
+      }
+    }
+
+    // Default Fallback: Priority -> ID
+    const pA = a.priority ?? 0;
+    const pB = b.priority ?? 0;
+    if (pA !== pB) return pB - pA;
+    return a.id - b.id;
+  });
+
+  return items.map((r) => r.id);
+}
+
+export async function countProducts(
+  categoryId: number | null,
+  sizeFilter: string | null,
+  search: string | null = null
+): Promise<number> {
+  const ids = await getFilteredAndSortedIds(categoryId, sizeFilter, search);
   return ids.length;
 }
 
@@ -405,40 +406,40 @@ export async function fetchProducts(
   page: number,
   search: string | null = null
 ): Promise<FetchResult> {
-  const total = await countProducts(categoryId, sizeFilter, search);
+  // Get fully sorted and filtered IDs matching the query
+  const allIds = await getFilteredAndSortedIds(categoryId, sizeFilter, search);
+
+  const total = allIds.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const safePage = Math.min(Math.max(0, page), totalPages - 1);
   const from = safePage * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  let query = baseQuery().order('priority', { ascending: false }).order('id', { ascending: true });
+  // Sclice only the IDs meant for the current page
+  const pageIds = allIds.slice(from, to + 1);
 
-  if (categoryId != null) {
-    query = query.or(`category_ids.cs.{${categoryId}},category_id.eq.${categoryId}`);
+  if (pageIds.length === 0) {
+    return {
+      products: [],
+      hasMore: false,
+      total: 0,
+      totalPages: 1,
+    };
   }
 
-  if (search) {
-    const sf = searchFilter(search);
-    if (sf) query = query.or(sf);
-  }
-
-  const { data, error } = await query.range(from, to);
+  // Fetch the full rows ONLY for this page
+  const { data, error } = await supabase
+    .from('products')
+    .select(selectColumns)
+    .in('id', pageIds);
 
   if (error) throw error;
 
-  let products = (data ?? []).map((r) => mapRow(r as unknown as ProductRow));
+  const rawProducts = (data ?? []).map((r) => mapRow(r as unknown as ProductRow));
 
-  if (sizeFilter) {
-    products = products.filter((p) => {
-      const sizes = (p.sizes ?? '').toUpperCase();
-      if (sizeFilter === 'Kids') {
-        return [...KIDS_SIZES].some((ks) => sizes.includes(ks)) || p.categoryId === 19 || p.categoryIds.includes(19);
-      }
-      return sizes
-        .split(/[,;/]/)
-        .some((s) => s.trim() === sizeFilter);
-    });
-  }
+  // Reorder the fetched products to match the 'pageIds' sequence strictly
+  const prodMap = new Map(rawProducts.map(p => [p.id, p]));
+  const products = pageIds.map(id => prodMap.get(id)).filter(Boolean) as Product[];
 
   return {
     products,
