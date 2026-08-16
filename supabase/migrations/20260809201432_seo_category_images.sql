@@ -29,7 +29,7 @@ UPDATE categories SET
 WHERE id = 2;
 
 UPDATE categories SET
-  name_bg   = 'Мъжски',
+  name_bg   = 'Мъжки',
   name_en   = 'Men''s',
   image_url = '/images/categories/men-carnival-costumes.png'
 WHERE id = 3;

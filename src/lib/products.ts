@@ -1,6 +1,6 @@
 // Product data layer — fetches from Supabase `public.products` table.
-// Uses columns: id, old_id, category_id, name_bg, name_en, description_bg,
-// description_en, sizes, price, old_price, image_url, is_active, priority.
+// Uses columns: id, old_id, category_id, category_ids, name_bg, name_en, description_bg,
+// description_en, sizes, price, old_price, image_url, is_active, priority, tags.
 
 import { supabase } from '@/lib/supabase';
 import type { Lang } from '@/lib/i18n';
@@ -19,6 +19,7 @@ export type Product = {
   id: number;
   oldId: number | null;
   categoryId: number | null;
+  categoryIds: number[];
   nameBg: string | null;
   nameEn: string | null;
   descriptionBg: string | null;
@@ -37,6 +38,7 @@ export type ProductRow = {
   id: number;
   old_id: number | null;
   category_id: number | null;
+  category_ids: number[] | string | null;
   name_bg: string | null;
   name_en: string | null;
   description_bg: string | null;
@@ -53,10 +55,40 @@ function mapRow(r: ProductRow): Product {
   const rawPrice = Number(r.price) || 0;
   const rawOldPrice =
     r.old_price != null ? Number(r.old_price) || null : null;
+
+  let categoryIds: number[] = [];
+  const rawCatIds = r.category_ids;
+
+  if (Array.isArray(rawCatIds)) {
+    categoryIds = rawCatIds.map(Number).filter(Boolean);
+  } else if (typeof rawCatIds === 'string') {
+    try {
+      const parsed = JSON.parse(rawCatIds);
+      if (Array.isArray(parsed)) {
+        categoryIds = parsed.map(Number).filter(Boolean);
+      } else {
+        throw new Error();
+      }
+    } catch {
+      if (rawCatIds.startsWith('{') && rawCatIds.endsWith('}')) {
+        categoryIds = rawCatIds.slice(1, -1).split(',').map(Number).filter(Boolean);
+      } else {
+        categoryIds = [Number(rawCatIds)].filter(Boolean);
+      }
+    }
+  } else if (rawCatIds != null) {
+    categoryIds = [Number(rawCatIds)].filter(Boolean);
+  }
+
+  if (categoryIds.length === 0 && r.category_id != null) {
+    categoryIds = [Number(r.category_id)].filter(Boolean);
+  }
+
   return {
     id: r.id,
     oldId: r.old_id,
     categoryId: r.category_id,
+    categoryIds,
     nameBg: r.name_bg,
     nameEn: r.name_en,
     descriptionBg: r.description_bg,
@@ -73,20 +105,6 @@ function mapRow(r: ProductRow): Product {
 }
 
 // --- Category metadata ---
-// Maps category_id from the products table to display info with STRICT ordering:
-// 1. Women's (Дамски) — cat 2 (497 products: dresses, witches, Christmas ladies)
-// 2. Men's (Мъжки) — cat 3 (291 products: musketeer, cowboy, viking)
-// 3. Kids (Детски) — cat 19 (20 products: toddler sizes T, INF, TODD)
-// Then the remaining categories:
-// 4. Magical (Магически) — cat 4 (90: witches, fairies)
-// 5. Masks (Маски) — cat 5 (101: domino, eye masks)
-// 6. Hats (Шапки) — cat 6 (58: gangster hats, cylinder)
-// 7. Wigs (Перуки) — cat 7 (125: Cleopatra, Marilyn)
-// 8. Accessories (Аксесоари) — cat 8 (139: guns, swords, props)
-// 9. Halloween (Хелоуин) — cat 10 (36: skulls, gothic decor)
-// 10. Heroes (Герои) — cat 17 (146: characters, ninjas, zombies)
-// Categories 9 (dog costumes), 12 & 16 (empty names) excluded.
-
 export type CategoryMeta = {
   id: number;
   nameBg: string;
@@ -105,7 +123,7 @@ const FALLBACK_CATEGORIES: CategoryMeta[] = [
   },
   {
     id: 3,
-    nameBg: 'Мъжски',
+    nameBg: 'Мъжки',
     nameEn: "Men's",
     image: '/images/categories/men-carnival-costumes.png',
     group: 'main',
@@ -227,19 +245,17 @@ export function categoryName(id: number | null, lang: Lang): string {
   return lang === 'bg' ? cat.nameBg : cat.nameEn;
 }
 
-// Strips HTML tags, entities, and system symbols from raw DB text.
-// Example: "<div>Contains:&nbsp;Dress and hat.</div>" -> "Contains: Dress and hat."
 export function cleanText(raw: string): string {
   return raw
-    .replace(/<[^>]*>/g, ' ') // strip HTML tags
-    .replace(/&nbsp;/g, ' ') // non-breaking spaces
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"')
     .replace(/&#0*39;/g, "'")
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
-    .replace(/&#\d+;/g, '') // numeric entities
-    .replace(/\s+/g, ' ') // collapse whitespace
+    .replace(/&#\d+;/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -247,8 +263,6 @@ export function productName(p: Product, lang: Lang): string {
   const bg = cleanText(p.nameBg ?? '');
   const en = cleanText(p.nameEn ?? '');
   if (lang === 'bg') return bg || en || `#${p.id}`;
-  // For EN: use cleaned EN if meaningful, else fall back to cleaned BG.
-  // EN is considered "missing/system garbage" if it's empty or just punctuation.
   const enMeaningful = en.length > 1 && /[a-zA-Z]/.test(en);
   return enMeaningful ? en : bg || `#${p.id}`;
 }
@@ -257,14 +271,10 @@ export function productDescription(p: Product, lang: Lang): string {
   const bg = cleanText(p.descriptionBg ?? '');
   const en = cleanText(p.descriptionEn ?? '');
   if (lang === 'bg') return bg || en;
-  // For EN: fall back to BG description (cleaned) if EN is empty or just HTML junk.
   const enMeaningful = en.length > 3 && /[a-zA-Z]/.test(en);
   return enMeaningful ? en : bg;
 }
 
-// --- Size normalization ---
-// The database has many inconsistent size formats. We normalize them to
-// a clean set for the filter dropdown.
 const SIZE_NORMALIZE: Record<string, string> = {
   STD: 'STD',
   STANDARD: 'STD',
@@ -292,12 +302,10 @@ export function productSizes(p: Product): string[] {
     .map((s) => SIZE_NORMALIZE[s] ?? s);
 }
 
-// Get all distinct normalized sizes across the catalog for the filter dropdown.
 export function getAvailableSizes(): string[] {
   return ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'STD', 'Kids'];
 }
 
-// --- Pagination ---
 const PAGE_SIZE = 24;
 
 export type FetchResult = {
@@ -308,9 +316,8 @@ export type FetchResult = {
 };
 
 const selectColumns =
-  'id, old_id, category_id, name_bg, name_en, description_bg, description_en, sizes, price, old_price, image_url, priority, tags';
+  'id, old_id, category_id, category_ids, name_bg, name_en, description_bg, description_en, sizes, price, old_price, image_url, priority, tags';
 
-// Build a base query with the common filters.
 function baseQuery() {
   return supabase
     .from('products')
@@ -321,33 +328,27 @@ function baseQuery() {
     .neq('image_url', '');
 }
 
-// Build a PostgREST `or` filter string for text search across name columns.
-// old_id is a numeric column and cannot be cast to text in PostgREST filters,
-// so we search only name_bg and name_en via ilike.
 function searchFilter(search: string): string {
   const term = search.trim().replace(/[,.()]/g, ' ').trim();
   if (!term) return '';
   return `name_bg.ilike.%${term}%,name_en.ilike.%${term}%`;
 }
 
-// Count total matching products for pagination.
 export async function countProducts(
   categoryId: number | null,
   sizeFilter: string | null,
   search: string | null = null
 ): Promise<number> {
-  // Supabase doesn't support COUNT via the client directly with filters easily,
-  // so we fetch all IDs with only the id column.
   let query = supabase
     .from('products')
-    .select('id')
+    .select('id, category_id, category_ids')
     .eq('is_active', true)
     .gt('price', 0)
     .not('image_url', 'is', null)
     .neq('image_url', '');
 
   if (categoryId != null) {
-    query = query.eq('category_id', categoryId);
+    query = query.or(`category_ids.cs.{${categoryId}},category_id.eq.${categoryId}`);
   }
 
   if (search) {
@@ -361,10 +362,7 @@ export async function countProducts(
 
   let ids = (data ?? []).map((r) => r.id);
 
-  // Size filter is applied client-side because sizes is a text field
-  // with inconsistent formats (comma-separated, slash-separated, etc.)
   if (sizeFilter && sizeFilter !== 'Kids') {
-    // We need to fetch the sizes too for filtering
     let sizeQuery = supabase
       .from('products')
       .select('id, sizes')
@@ -382,7 +380,7 @@ export async function countProducts(
   } else if (sizeFilter === 'Kids') {
     let sizeQuery = supabase
       .from('products')
-      .select('id, sizes, category_id')
+      .select('id, sizes, category_id, category_ids')
       .in('id', ids);
     const { data: sizeData, error: sizeError } = await sizeQuery;
     if (sizeError) throw sizeError;
@@ -390,7 +388,9 @@ export async function countProducts(
       .filter((r) => {
         const sizes = (r.sizes ?? '').toUpperCase();
         const isKidsSize = [...KIDS_SIZES].some((ks) => sizes.includes(ks));
-        const isKidsCategory = r.category_id === 19;
+        let catIds: number[] = [];
+        if (Array.isArray(r.category_ids)) catIds = r.category_ids.map(Number);
+        const isKidsCategory = r.category_id === 19 || catIds.includes(19);
         return isKidsSize || isKidsCategory;
       })
       .map((r) => r.id);
@@ -399,7 +399,6 @@ export async function countProducts(
   return ids.length;
 }
 
-// Fetch a single page of products.
 export async function fetchProducts(
   categoryId: number | null,
   sizeFilter: string | null,
@@ -415,7 +414,7 @@ export async function fetchProducts(
   let query = baseQuery().order('priority', { ascending: false }).order('id', { ascending: true });
 
   if (categoryId != null) {
-    query = query.eq('category_id', categoryId);
+    query = query.or(`category_ids.cs.{${categoryId}},category_id.eq.${categoryId}`);
   }
 
   if (search) {
@@ -429,12 +428,11 @@ export async function fetchProducts(
 
   let products = (data ?? []).map((r) => mapRow(r as unknown as ProductRow));
 
-  // Apply size filter client-side
   if (sizeFilter) {
     products = products.filter((p) => {
       const sizes = (p.sizes ?? '').toUpperCase();
       if (sizeFilter === 'Kids') {
-        return [...KIDS_SIZES].some((ks) => sizes.includes(ks)) || p.categoryId === 19;
+        return [...KIDS_SIZES].some((ks) => sizes.includes(ks)) || p.categoryId === 19 || p.categoryIds.includes(19);
       }
       return sizes
         .split(/[,;/]/)
@@ -450,7 +448,6 @@ export async function fetchProducts(
   };
 }
 
-// Fetch a single product by its bigint id.
 export async function fetchProductById(id: number): Promise<Product | null> {
   const { data, error } = await supabase
     .from('products')
@@ -463,7 +460,6 @@ export async function fetchProductById(id: number): Promise<Product | null> {
   return mapRow(data as unknown as ProductRow);
 }
 
-// Fetch similar products in the same category (excluding current id).
 export async function fetchSimilarProducts(
   categoryId: number | null,
   excludeId: number,
@@ -476,7 +472,7 @@ export async function fetchSimilarProducts(
     .limit(limit);
 
   if (categoryId != null) {
-    query = query.eq('category_id', categoryId);
+    query = query.or(`category_ids.cs.{${categoryId}},category_id.eq.${categoryId}`);
   }
 
   const { data, error } = await query;
