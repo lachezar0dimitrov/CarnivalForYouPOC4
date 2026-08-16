@@ -47,6 +47,30 @@ import { useToast } from '@/components/Toast';
 
 type Tab = 'banners' | 'products' | 'contacts' | 'categories';
 
+const NO_IMAGE = '/no-image.svg';
+
+function AdminImage({
+  src,
+  alt = '',
+  className,
+}: {
+  src: string | null | undefined;
+  alt?: string;
+  className: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const url = src && !failed ? src : NO_IMAGE;
+  return (
+    <img
+      src={url}
+      alt={alt}
+      className={className}
+      onError={() => setFailed(true)}
+      loading="lazy"
+    />
+  );
+}
+
 export default function AdminPage() {
   const { navigate } = useRouter();
   const { lang } = useI18n();
@@ -515,7 +539,6 @@ function useBrokenImages(products: AdminProduct[]) {
       results.forEach((r) => {
         if (!r.ok) bad.add(r.id);
       });
-      // Also flag products with null/empty/non-http image_url
       products.forEach((p) => {
         if (!p.imageUrl || !/^https?:\/\//.test(p.imageUrl)) bad.add(p.id);
       });
@@ -1378,30 +1401,6 @@ function ContactsManager() {
 // ============================================================
 // SHARED UI COMPONENTS
 // ============================================================
-
-const NO_IMAGE = '/no-image.svg';
-
-function AdminImage({
-  src,
-  alt = '',
-  className,
-}: {
-  src: string | null | undefined;
-  alt?: string;
-  className: string;
-}) {
-  const [failed, setFailed] = useState(false);
-  const url = src && !failed ? src : NO_IMAGE;
-  return (
-    <img
-      src={url}
-      alt={alt}
-      className={className}
-      onError={() => setFailed(true)}
-      loading="lazy"
-    />
-  );
-}
 
 function Modal({ children, onClose, title }: { children: ReactNode; onClose: () => void; title: string }) {
   return (
