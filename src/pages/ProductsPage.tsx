@@ -128,7 +128,7 @@ export default function ProductsPage() {
         <button
           onClick={() => {
             setPage((p) => Math.max(0, p - 1));
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            scrollToResults();
           }}
           disabled={page === 0}
           className="flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-2 text-sm text-gold-200 transition hover:bg-gold-400/10 disabled:opacity-30 disabled:hover:bg-transparent"
@@ -142,7 +142,7 @@ export default function ProductsPage() {
             <button
               onClick={() => {
                 setPage(0);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                scrollToResults();
               }}
               className="rounded-lg px-3.5 py-2 text-sm text-gray-300 transition hover:bg-gold-400/10 hover:text-gold-200"
             >
@@ -157,7 +157,7 @@ export default function ProductsPage() {
             key={p}
             onClick={() => {
               setPage(p);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              scrollToResults();
             }}
             className={`rounded-lg px-3.5 py-2 text-sm transition ${
               page === p
@@ -175,7 +175,7 @@ export default function ProductsPage() {
             <button
               onClick={() => {
                 setPage(totalPages - 1);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                scrollToResults();
               }}
               className="rounded-lg px-3.5 py-2 text-sm text-gray-300 transition hover:bg-gold-400/10 hover:text-gold-200"
             >
@@ -187,7 +187,7 @@ export default function ProductsPage() {
         <button
           onClick={() => {
             setPage((p) => Math.min(totalPages - 1, p + 1));
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            scrollToResults();
           }}
           disabled={page >= totalPages - 1}
           className="flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-2 text-sm text-gold-200 transition hover:bg-gold-400/10 disabled:opacity-30 disabled:hover:bg-transparent"
