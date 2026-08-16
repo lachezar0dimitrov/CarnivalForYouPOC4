@@ -130,7 +130,9 @@ export default function ProductDetailPage() {
 
   const sizes = productSizes(product);
   const description = productDescription(product, lang);
-  const catName = categoryName(product.categoryId, lang);
+  const categoriesList = product.categoryIds && product.categoryIds.length > 0
+    ? product.categoryIds
+    : [product.categoryId].filter((id): id is number => id !== null);
 
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-24 sm:px-6 sm:pt-28">
@@ -146,7 +148,7 @@ export default function ProductDetailPage() {
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Image */}
         <div className="product-photo-frame relative aspect-[2/3] w-full overflow-hidden p-2 shadow-card">
-          
+
           {/* CSS Frame - Двойна линия с 8px отстояние (inset-2) */}
           <div className="pointer-events-none absolute inset-2 z-10 border-[3px] border-double border-[#8B5A2B]/70 shadow-[inset_0_0_8px_rgba(139,90,43,0.15)]"></div>
 
@@ -164,9 +166,17 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Етикетите са с z-20, за да са над CSS рамката */}
-          <span className="absolute left-4 top-4 z-20 rounded-full bg-ink-900/70 px-3 py-1 text-xs font-medium text-gold-200 backdrop-blur-sm">
-            {catName}
-          </span>
+          <div className="absolute left-4 top-4 z-20 flex flex-wrap gap-1.5 max-w-[80%]">
+            {categoriesList.map((catId) => (
+              <span
+                key={catId}
+                className="rounded-full bg-ink-900/70 px-3 py-1 text-xs font-medium text-gold-200 backdrop-blur-sm"
+              >
+                {categoryName(catId, lang)}
+              </span>
+            ))}
+          </div>
+
           {product.oldPrice != null && product.oldPrice > product.price && (
             <span className="absolute right-4 top-4 z-20 rounded-full bg-error/90 px-3 py-1 text-xs font-bold text-white shadow-glow-sm">
               -{Math.round((1 - product.price / product.oldPrice) * 100)}%
@@ -226,7 +236,15 @@ export default function ProductDetailPage() {
             <InfoTile
               icon={Tag}
               label={t('common.category')}
-              value={catName}
+              value={
+                <div className="flex flex-wrap gap-1 mt-0.5">
+                  {categoriesList.map((catId) => (
+                    <span key={catId} className="inline-block">
+                      {categoryName(catId, lang)}
+                    </span>
+                  ))}
+                </div>
+              }
             />
           </div>
 
