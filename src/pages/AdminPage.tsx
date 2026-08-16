@@ -12,17 +12,12 @@ import {
   Check,
   AlertCircle,
   Loader2,
-<<<<<<< HEAD
   Save,
   Upload,
   Phone,
   Mail,
   MapPin,
   Clock,
-=======
-  Upload,
-  Phone,
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
   Tag,
 } from 'lucide-react';
 import { useRouter } from '@/lib/router';
@@ -35,16 +30,12 @@ import {
   type Banner,
 } from '@/lib/banners';
 import { categoryMeta, type Product } from '@/lib/products';
-<<<<<<< HEAD
 import { uploadImage, type ImageBucket } from '@/lib/storage';
 import {
   fetchSiteSettings,
   saveSiteSettings,
   type SiteSettings,
 } from '@/lib/siteSettings';
-=======
-import { type ImageBucket } from '@/lib/storage';
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
 import {
   fetchAllCategoriesAdmin,
   saveCategory,
@@ -56,7 +47,6 @@ import { useToast } from '@/components/Toast';
 
 type Tab = 'banners' | 'products' | 'contacts' | 'categories';
 
-<<<<<<< HEAD
 const NO_IMAGE = '/no-image.svg';
 
 function AdminImage({
@@ -81,8 +71,6 @@ function AdminImage({
   );
 }
 
-=======
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
 export default function AdminPage() {
   const { navigate } = useRouter();
   const { lang } = useI18n();
@@ -132,7 +120,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="mb-8 flex gap-2 border-b border-gold-400/15">
+      <div className="mb-8 flex gap-2 border-b border-gold-400/15 overflow-x-auto">
         <TabButton active={tab === 'banners'} onClick={() => setTab('banners')} icon={ImageIcon}>
           {lang === 'bg' ? 'Банери' : 'Banners'}
         </TabButton>
@@ -168,7 +156,7 @@ export default function AdminPage() {
     return (
       <button
         onClick={onClick}
-        className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition ${
+        className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition whitespace-nowrap ${
           active
             ? 'border-gold-400 text-gold-100'
             : 'border-transparent text-gray-400 hover:text-gold-200'
@@ -211,7 +199,7 @@ function LoginForm({ onSignIn }: { onSignIn: (u: string, p: string) => Promise<{
         <p className="mb-6 text-center text-sm text-gray-400">
           {lang === 'bg' ? 'Въведете вашите данни' : 'Enter your credentials'}
         </p>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             type="text"
             value={username}
@@ -490,7 +478,7 @@ function BannerForm({
         </FormField>
 
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm text-gray-300">
+          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
             <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
             {lang === 'bg' ? 'Активен' : 'Active'}
           </label>
@@ -508,11 +496,6 @@ function BannerForm({
 }
 
 // ============================================================
-<<<<<<< HEAD
-// PRODUCT MANAGER
-// ============================================================
-type AdminProduct = Product & { isActive: boolean };
-=======
 // PRODUCT MANAGER & FORM (С поддръжка на categoryIds)
 // ============================================================
 type AdminProduct = Product & { isActive: boolean; categoryIds: number[] };
@@ -546,7 +529,6 @@ function mapAdminRow(r: any): AdminProduct {
     isActive: r.is_active ?? true,
   };
 }
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
 
 function checkImageOk(url: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -705,32 +687,6 @@ function ProductManager() {
                       ? `${brokenProducts.length} продукта с липсваща/невалидна снимка`
                       : `${brokenProducts.length} products with missing/invalid image`)}
               </div>
-<<<<<<< HEAD
-              {!checking && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {brokenProducts.slice(0, 12).map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => { setEditing(p); setShowForm(true); }}
-                      className="flex items-center gap-2 rounded-lg border border-gold-400/25 bg-ink-800/60 px-3 py-2 text-xs text-gray-200 transition hover:bg-gold-400/10"
-                    >
-                      <ImageIcon size={14} className="text-warning" />
-                      <span className="font-medium">#{p.id}</span>
-                      <span className="max-w-[140px] truncate text-gray-400">
-                        {lang === 'bg' ? p.nameBg : p.nameEn}
-                      </span>
-                      <Edit3 size={12} className="text-gold-300" />
-                    </button>
-                  ))}
-                  {brokenProducts.length > 12 && (
-                    <span className="self-center text-xs text-gray-500">
-                      +{brokenProducts.length - 12}
-                    </span>
-                  )}
-                </div>
-              )}
-=======
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
             </div>
           )}
 
@@ -741,11 +697,7 @@ function ProductManager() {
                   <th className="px-4 py-3 font-medium">ID</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Снимка' : 'Image'}</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Име' : 'Name'}</th>
-<<<<<<< HEAD
-                  <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Категория' : 'Category'}</th>
-=======
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Категории' : 'Categories'}</th>
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Цена' : 'Price'}</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Активен' : 'Active'}</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Действия' : 'Actions'}</th>
@@ -753,22 +705,18 @@ function ProductManager() {
               </thead>
               <tbody>
                 {products.map((p) => {
-<<<<<<< HEAD
-                  const cat = categoryMeta.find((c) => c.id === p.categoryId);
-=======
                   const catNames = p.categoryIds
                     ?.map((id) => categoryMeta.find((c) => c.id === id))
                     .filter(Boolean)
                     .map((cat) => (lang === 'bg' ? cat?.nameBg : cat?.nameEn))
                     .join(', ');
 
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
                   return (
                     <tr key={p.id} className="border-t border-gold-400/10 transition hover:bg-gold-400/5">
                       <td className="px-4 py-4 text-gray-500">{p.id}</td>
                       <td className="px-4 py-4">
                         <div className="relative">
-                          <AdminImage src={p.imageUrl} alt="" className="h-[100px] w-[100px] rounded-lg object-cover border border-gold-400/10" />
+                          <AdminImage src={p.imageUrl} alt="" className="h-[80px] w-[80px] rounded-lg object-cover border border-gold-400/10" />
                           {broken.has(p.id) && (
                             <span
                               className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-ink-800 bg-warning text-ink-900"
@@ -792,11 +740,7 @@ function ProductManager() {
                         )}
                       </td>
                       <td className="px-4 py-4 text-gray-400">
-<<<<<<< HEAD
-                        {cat ? (lang === 'bg' ? cat.nameBg : cat.nameEn) : '—'}
-=======
                         {catNames || '—'}
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
                       </td>
                       <td className="px-4 py-4 text-gold-200">{p.price.toFixed(2)} €</td>
                       <td className="px-4 py-4">
@@ -819,15 +763,6 @@ function ProductManager() {
             </table>
           </div>
 
-<<<<<<< HEAD
-          {products.length === 0 && (
-            <p className="py-12 text-center text-gray-500">
-              {lang === 'bg' ? 'Няма намерени продукти.' : 'No products found.'}
-            </p>
-          )}
-
-=======
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
           {totalPages > 1 && (
             <div className="mt-6 flex items-center justify-center gap-2">
               <button
@@ -877,11 +812,7 @@ function ProductForm({
     name_en: product?.nameEn ?? '',
     description_bg: product?.descriptionBg ?? '',
     description_en: product?.descriptionEn ?? '',
-<<<<<<< HEAD
-    category_id: product?.categoryId ?? 2,
-=======
     category_ids: product?.categoryIds?.length ? product.categoryIds : (product?.categoryId ? [product.categoryId] : [2]),
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
     price: product?.rawPrice ?? 0,
     old_price: product?.rawOldPrice ?? null,
     image_url: product?.imageUrl ?? '',
@@ -894,8 +825,6 @@ function ProductForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-<<<<<<< HEAD
-=======
   const toggleCategory = (catId: number) => {
     setForm((prev) => {
       const exists = prev.category_ids.includes(catId);
@@ -906,7 +835,6 @@ function ProductForm({
     });
   };
 
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -919,12 +847,8 @@ function ProductForm({
       name_en: form.name_en || null,
       description_bg: form.description_bg || null,
       description_en: form.description_en || null,
-<<<<<<< HEAD
-      category_id: form.category_id,
-=======
-      category_id: form.category_ids[0] ?? 2, // Основна категория за съвместимост
-      category_ids: form.category_ids,         // Масив от избрани категории
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
+      category_id: form.category_ids[0] ?? 2,
+      category_ids: form.category_ids,
       price: Number(form.price),
       old_price: form.old_price ? Number(form.old_price) : null,
       image_url: form.image_url || null,
@@ -963,7 +887,9 @@ function ProductForm({
           <FormField label={lang === 'bg' ? 'Име (EN)' : 'Name (EN)'}>
             <input type="text" value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} className="form-input" />
           </FormField>
-<<<<<<< HEAD
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label={lang === 'bg' ? 'Описание (БГ)' : 'Description (BG)'}>
             <textarea value={form.description_bg} onChange={(e) => setForm({ ...form, description_bg: e.target.value })} className="form-input min-h-20" />
           </FormField>
@@ -972,22 +898,6 @@ function ProductForm({
           </FormField>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <FormField label={lang === 'bg' ? 'Категория' : 'Category'}>
-            <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: Number(e.target.value) })} className="form-input">
-              {categoryMeta.map((c) => (
-                <option key={c.id} value={c.id}>{lang === 'bg' ? c.nameBg : c.nameEn}</option>
-              ))}
-            </select>
-          </FormField>
-          <FormField label={lang === 'bg' ? 'Цена (лв.)' : 'Price (BGN)'}>
-            <input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className="form-input" />
-          </FormField>
-          <FormField label={lang === 'bg' ? 'Стара цена' : 'Old price'}>
-=======
-        </div>
-
-        {/* Избор на категории чрез чекбоксове */}
         <FormField label={lang === 'bg' ? 'Категории (изберете една или повече)' : 'Categories (select one or more)'}>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-h-48 overflow-y-auto p-3 rounded-lg border border-gold-400/20 bg-ink-900">
             {categoryMeta.map((cat) => {
@@ -1007,31 +917,22 @@ function ProductForm({
           </div>
         </FormField>
 
-        {/* Останалата част от формата остава непроменена */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label={lang === 'bg' ? 'Цена (€)' : 'Price (€)'}>
             <input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className="form-input" required />
           </FormField>
           <FormField label={lang === 'bg' ? 'Стара цена (€)' : 'Old price (€)'}>
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
             <input type="number" step="0.01" value={form.old_price ?? ''} onChange={(e) => setForm({ ...form, old_price: e.target.value ? Number(e.target.value) : null })} className="form-input" />
           </FormField>
         </div>
 
-<<<<<<< HEAD
-        <FormField label={lang === 'bg' ? 'Снимка на продукта' : 'Product image'}>
-=======
         <FormField label={lang === 'bg' ? 'Снимка' : 'Image'}>
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
           <div className="flex flex-col gap-2">
             <ImageUploadButton
               bucket="product-images"
               onUploaded={(url) => setForm({ ...form, image_url: url })}
               label={lang === 'bg' ? 'Качи снимка от файла' : 'Upload from file'}
             />
-<<<<<<< HEAD
-            <input type="text" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="form-input" placeholder="https://... или качете файл" />
-=======
             <input
               type="text"
               value={form.image_url}
@@ -1039,14 +940,12 @@ function ProductForm({
               className="form-input"
               placeholder="https://..."
             />
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
           </div>
         </FormField>
 
         <AdminImage
           src={form.image_url}
           alt=""
-<<<<<<< HEAD
           className="w-full max-h-[300px] rounded-xl border border-gold-400/15 object-cover"
         />
 
@@ -1066,43 +965,17 @@ function ProductForm({
           <input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="form-input" placeholder="венец, маска, хелоуин" />
         </FormField>
 
-        <label className="flex items-center gap-2 text-sm text-gray-300">
+        <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
           <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
           {lang === 'bg' ? 'Активен (видим в каталога)' : 'Active (visible in catalog)'}
         </label>
 
-=======
-          className="w-32 h-32 rounded-xl border border-gold-400/15 object-cover"
-        />
-
-        <FormField label={lang === 'bg' ? 'Размери' : 'Sizes'}>
-          <input type="text" value={form.sizes} onChange={(e) => setForm({ ...form, sizes: e.target.value })} className="form-input" placeholder="S, M, L, XL" />
-        </FormField>
-
-        <FormField label={lang === 'bg' ? 'Тагове (разделени със запетая)' : 'Tags (comma separated)'}>
-          <input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="form-input" placeholder="нов, промоция" />
-        </FormField>
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label={lang === 'bg' ? 'Приоритет' : 'Priority'}>
-            <input type="number" value={form.priority} onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })} className="form-input" />
-          </FormField>
-          <div className="flex items-center pt-6">
-            <label className="flex items-center gap-2 text-sm text-gray-300">
-              <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
-              {lang === 'bg' ? 'Активен продукт' : 'Active product'}
-            </label>
-          </div>
-        </div>
-
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
         {error && <ErrorBox>{error}</ErrorBox>}
 
         <FormActions saving={saving} onCancel={onClose} label={lang === 'bg' ? 'Запази' : 'Save'} />
       </form>
     </Modal>
   );
-<<<<<<< HEAD
 }
 
 // ============================================================
@@ -1297,7 +1170,7 @@ function CategoryForm({
           </FormField>
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-gray-300">
+        <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
           <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
           {lang === 'bg' ? 'Активна' : 'Active'}
         </label>
@@ -1630,50 +1503,4 @@ function FormActions({ saving, onCancel, label }: { saving: boolean; onCancel: (
       </button>
     </div>
   );
-}
-
-// ============================================================
-// HELPERS
-// ============================================================
-type AdminProductRow = {
-  id: number;
-  old_id: number | null;
-  category_id: number | null;
-  name_bg: string | null;
-  name_en: string | null;
-  description_bg: string | null;
-  description_en: string | null;
-  sizes: string | null;
-  price: number;
-  old_price: number | null;
-  image_url: string | null;
-  is_active: boolean | null;
-  priority: number;
-  tags: string[] | null;
-};
-
-function mapAdminRow(r: AdminProductRow): AdminProduct {
-  const rawPrice = r.price ?? 0;
-  const rawOldPrice = r.old_price;
-  const bgnToEur = 0.51;
-  return {
-    id: r.id,
-    oldId: r.old_id,
-    categoryId: r.category_id,
-    nameBg: r.name_bg,
-    nameEn: r.name_en,
-    descriptionBg: r.description_bg,
-    descriptionEn: r.description_en,
-    sizes: r.sizes,
-    price: rawPrice * bgnToEur,
-    rawPrice,
-    oldPrice: rawOldPrice != null ? rawOldPrice * bgnToEur : null,
-    rawOldPrice,
-    imageUrl: r.image_url,
-    priority: r.priority ?? 0,
-    tags: r.tags ?? [],
-    isActive: r.is_active ?? true,
-  };
-=======
->>>>>>> 06919f192290864ddfe52d2268c521bfca4a2169
 }
