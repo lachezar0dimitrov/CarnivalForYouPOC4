@@ -501,9 +501,28 @@ function BannerForm({
 type AdminProduct = Product & { isActive: boolean; categoryIds: number[] };
 
 function mapAdminRow(r: any): AdminProduct {
-  let categoryIds = r.category_ids ?? [];
+  let rawCatIds = r.category_ids;
+  let categoryIds: number[] = [];
+
+  if (Array.isArray(rawCatIds)) {
+    categoryIds = rawCatIds.map(Number).filter(Boolean);
+  } else if (typeof rawCatIds === 'string') {
+    try {
+      if (rawCatIds.startsWith('{') && rawCatIds.endsWith('}')) {
+        categoryIds = rawCatIds.slice(1, -1).split(',').map(Number).filter(Boolean);
+      } else {
+        const parsed = JSON.parse(rawCatIds);
+        if (Array.isArray(parsed)) categoryIds = parsed.map(Number).filter(Boolean);
+      }
+    } catch {
+      categoryIds = [];
+    }
+  } else if (rawCatIds != null) {
+    categoryIds = [Number(rawCatIds)].filter(Boolean);
+  }
+
   if (categoryIds.length === 0 && r.category_id != null) {
-    categoryIds = [r.category_id];
+    categoryIds = [Number(r.category_id)].filter(Boolean);
   }
 
   const rawPrice = Number(r.price) || 0;
