@@ -389,3 +389,19 @@ h1, h2, h3, h4 {
 .form-input::placeholder {
   color: #6b7280;
 }
+
+/* Ограничаване на плътността на частиците и пеперудите за мобилни устройства */
+@media (max-width: 768px) {
+  .butterfly-drift:nth-child(even) {
+    display: none !important;
+  }
+
+  .firefly:nth-child(2n),
+  .hero-firefly:nth-child(2n) {
+    display: none !important;
+  }
+
+  .site-background::after {
+    opacity: 0.25;
+  }
+}
