@@ -1,4 +1,3 @@
-import { useState, useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { type CategoryMeta, getFeaturedCategories } from '@/lib/products';
 import { ArrowRight } from 'lucide-react';
@@ -46,44 +45,25 @@ function CategoryCardItem({
   lang: string;
   t: (key: string) => string;
 }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
-
   const image = category.image || FALLBACK_IMAGES[category.id] || '/no-image.svg';
   const videoSrc = CATEGORY_VIDEOS[category.id];
-
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    if (videoRef.current && videoSrc) {
-      videoRef.current.play().catch(() => {});
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    if (videoRef.current && videoSrc) {
-      videoRef.current.pause();
-    }
-  };
 
   return (
     <button
       type="button"
       onClick={() => onSelect(category.id)}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       className={`group relative aspect-[3/4] w-full overflow-hidden rounded-2xl border shadow-card transition-colors duration-300 ${
         isSelected
           ? 'border-gold-400/60 shadow-glow-sm'
           : 'border-gold-400/15'
       }`}
     >
-      {/* 1. Снимка (без зуум/скалиране) */}
+      {/* 1. Снимка - скрива се при hover точно както е в ProductCard */}
       <img
         src={image}
         alt={lang === 'bg' ? category.nameBg : category.nameEn}
         className={`h-full w-full object-cover object-center transition-opacity duration-500 ${
-          isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+          videoSrc ? 'group-hover:opacity-0' : 'opacity-100'
         }`}
         loading="lazy"
         onError={(event) => {
@@ -93,25 +73,23 @@ function CategoryCardItem({
         }}
       />
 
-      {/* 2. Видео */}
+      {/* 2. Видео - върти се във фонов режим и се показва плавно през CSS opacity */}
       {videoSrc && (
         <video
-          ref={videoRef}
           src={videoSrc}
+          autoPlay
           muted
           loop
           playsInline
-          className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-500 ${
-            isHovered ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="absolute inset-0 h-full w-full object-cover object-center opacity-0 transition-opacity duration-500 group-hover:opacity-100"
         />
       )}
 
       {/* 3. Градиентен овърлей */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-500 group-hover:from-black/90" />
 
-      {/* 4. Текст и икона (без зуум/скалиране) */}
-      <div className="absolute inset-x-0 bottom-0 p-4 text-left z-10">
+      {/* 4. Текст и икона */}
+      <div className="absolute inset-x-0 bottom-0 z-10 p-4 text-left">
         <h3 className="font-display text-base font-semibold leading-tight text-gold-100">
           {lang === 'bg' ? category.nameBg : category.nameEn}
         </h3>
@@ -122,7 +100,7 @@ function CategoryCardItem({
         </span>
       </div>
 
-      <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-gold-300 shadow-glow-sm transition-opacity duration-500 group-hover:opacity-100 z-10" />
+      <span className="absolute right-3 top-3 z-10 h-2 w-2 rounded-full bg-gold-300 shadow-glow-sm transition-opacity duration-500 group-hover:opacity-100" />
     </button>
   );
 }
