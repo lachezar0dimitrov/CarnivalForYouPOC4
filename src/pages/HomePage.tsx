@@ -4,10 +4,10 @@ import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
 import { loadCategories, type CategoryMeta } from '@/lib/products';
-import { forestImage } from '@/data/catalog';
 import SectionHeading from '@/components/SectionHeading';
 import BannerCarousel from '@/components/BannerCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
+import HeroFireflies from '@/components/HeroFireflies';
 
 export default function HomePage() {
   const { navigate } = useRouter();
@@ -26,9 +26,19 @@ export default function HomePage() {
   });
 
   return (
-    <div className="home-page relative">
-      {/* HERO — banner rotator carousel */}
-      <BannerCarousel />
+    <div className="home-page relative -mt-20 sm:-mt-24">
+      {/* HERO — banner rotator carousel with light overlay & fireflies */}
+      <div className="relative w-full overflow-hidden">
+        <BannerCarousel />
+
+        {/* Fireflies / butterflies layer */}
+        <div className="pointer-events-none absolute inset-0 z-10">
+          <HeroFireflies count={25} />
+        </div>
+
+        {/* Minimal bottom gradient for text contrast */}
+        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-ink-900/50 via-transparent to-transparent" />
+      </div>
 
       {/* Categories from DB metadata */}
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
