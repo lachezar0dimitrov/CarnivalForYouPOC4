@@ -261,7 +261,7 @@ WHERE NOT EXISTS (SELECT 1 FROM banners);
 INSERT INTO banners (image_url, title_bg, title_en, subtitle_bg, subtitle_en, link_url, is_active, sort_order)
 SELECT
   '/images/carousel/newwwuue_2026-08-03_22-39-18-672_copy.jpg',
-  'Венециански маски и фантазийни образи',
+  'Венециански маски и фантастични образи',
   'Venetian Masks & Fantasy Looks',
   'Резервирайте на място в нашия магазин',
   'Reserve in store',

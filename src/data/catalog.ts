@@ -47,7 +47,7 @@ export const categories: Category[] = [
   },
   {
     id: 'fantasy',
-    name: 'Фантазийни',
+    name: 'фантастични',
     tagline: 'Елфи, вещици и същества от магическите гори',
     image:
       'https://images.pexels.com/photos/27581197/pexels-photo-27581197.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',

@@ -27,7 +27,7 @@ export default function Footer() {
             <Logo onClick={() => navigate('home')} />
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-gray-400">
               {lang === 'bg'
-                ? 'Магически костюми под наем за всяко събитие. Венециански маски, фантазийни образи и нещо за най-малките.'
+                ? 'Магически костюми под наем за всяко събитие. Венециански маски, фантастични образи и нещо за най-малките.'
                 : 'Magical costume rentals for every event. Venetian masks, fantasy looks and something for the little ones.'}
             </p>
             <div className="mt-4 flex gap-3">
