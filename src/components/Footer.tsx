@@ -118,23 +118,43 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-gold-400/10 pt-6 text-center text-xs text-gray-500 sm:flex-row sm:text-left">
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-gold-400/10 pt-6 text-center text-xs text-gray-500 sm:flex-row sm:text-left">
           <p>
             © {new Date().getFullYear()} CarnivalForYou.{' '}
             {lang === 'bg' ? 'Всички права запазени.' : 'All rights reserved.'}
           </p>
-          <p>
-            {lang === 'bg'
-              ? 'Костюми под наем — София, България.'
-              : 'Costume rentals — Sofia, Bulgaria.'}
-          </p>
-          <button
-            onClick={() => navigate('admin')}
-            className="rounded px-2 py-1 text-[11px] text-gray-600 transition hover:text-gold-300"
-            aria-label="Admin panel"
-          >
-            Admin
-          </button>
+
+          <div className="flex items-center gap-2">
+            <span>{lang === 'bg' ? 'Програмирано от' : 'Built by'}</span>
+            <a
+              href="https://www.core-logic.eu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 font-medium text-gray-300 transition hover:text-white"
+            >
+              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-gradient-to-br from-teal-400 via-teal-600 to-cyan-800 p-0.5 text-[10px] font-extrabold text-slate-950 shadow-sm">
+                &gt;_
+              </div>
+              <span className="text-xs font-semibold tracking-tight text-white">
+                Core<span className="text-teal-400">-</span>Logic
+              </span>
+            </a>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <p>
+              {lang === 'bg'
+                ? 'Костюми под наем — София, България.'
+                : 'Costume rentals — Sofia, Bulgaria.'}
+            </p>
+            <button
+              onClick={() => navigate('admin')}
+              className="rounded px-2 py-1 text-[11px] text-gray-600 transition hover:text-gold-300"
+              aria-label="Admin panel"
+            >
+              Admin
+            </button>
+          </div>
         </div>
       </div>
     </footer>
