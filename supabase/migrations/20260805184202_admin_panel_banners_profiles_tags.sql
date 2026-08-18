@@ -50,7 +50,9 @@ authenticated admins, and creates the first admin user.
 - New INSERT/UPDATE/DELETE policies: admin only.
 
 ## Admin User
-- Creates auth user with email valeriya@carnicalforyou.com, password "Bogomil".
+- Creates auth user with email valeriya@carnicalforyou.com. Password was set at
+  migration-authoring time and has since been rotated via the Supabase dashboard
+  (Authentication > Users > Reset Password) — it is intentionally not recorded here.
 - Email is confirmed (email_confirmed_at set) so login works immediately.
 - Creates matching profile row with role='admin'.
 - Idempotent: uses ON CONFLICT to avoid errors on re-run.
@@ -226,7 +228,9 @@ SELECT
   'authenticated',
   'authenticated',
   'valeriya@carnicalforyou.com',
-  crypt('Bogomil', gen_salt('bf')),
+  -- Placeholder hash only; this migration already ran in production and the real
+  -- password was rotated afterward via the Supabase dashboard, not via this file.
+  crypt(gen_random_uuid()::text, gen_salt('bf')),
   now(),
   now(),
   now(),

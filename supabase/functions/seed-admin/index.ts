@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const ADMIN_EMAIL = "valeriya@carnicalforyou.com";
-const ADMIN_PASSWORD = "Bogomil";
+const ADMIN_PASSWORD = Deno.env.get("SEED_ADMIN_PASSWORD");
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -15,6 +15,10 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    if (!ADMIN_PASSWORD) {
+      throw new Error("SEED_ADMIN_PASSWORD secret is not set");
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
