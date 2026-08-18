@@ -30,7 +30,7 @@ import {
   type Banner,
 } from '@/lib/banners';
 import { categoryMeta, type Product } from '@/lib/products';
-import { uploadImage, type ImageBucket } from '@/lib/storage';
+import { uploadImage, type ImageBucket } from '@/lib/r2';
 import {
   fetchSiteSettings,
   saveSiteSettings,
