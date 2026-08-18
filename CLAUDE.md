@@ -9,9 +9,9 @@ Persistent operational guidelines for Claude Code sessions on this repository.
 - **Path alias**: `@/*` → `src/*` (configured in both `vite.config.ts` and `tsconfig.app.json`)
 - **Hosting**: Cloudflare Pages
 - **Database**: Supabase PostgreSQL — text data, user auth, and metadata/URLs
-- **Media Storage — target architecture**: Cloudflare R2 (S3-compatible) for images/video, to keep media off Supabase's cached-egress quota
+- **Media Storage**: Cloudflare R2 (S3-compatible), bucket `carnival-media`, public via r2.dev subdomain
 
-> **Current implementation status (verified from code, 2026-08-18):** media upload is **not yet migrated to R2**. [src/lib/storage.ts](src/lib/storage.ts) uploads directly to **Supabase Storage** buckets (`product-images`, `banner-images`, `category-images`) via `supabase.storage.from(bucket).upload(...)`. There is no R2/S3 client, no R2 env vars, and no Cloudflare Worker/function in this repo. Treat the R2 architecture below as the **target/planned** design, not current behavior — don't assume R2 URLs exist in the DB until this migration actually happens.
+> **Migrated 2026-08-19.** Media upload now goes through [src/lib/r2.ts](src/lib/r2.ts) → [supabase/functions/r2-media](supabase/functions/r2-media/index.ts) (a Supabase Edge Function, since R2's write credentials must stay server-side — this is a client-only Vite SPA, so they can never be embedded in browser code) → Cloudflare R2. `src/lib/storage.ts` (the old direct-to-Supabase-Storage uploader) was deleted. All product/banner/category media now lives on R2 — catalog is 100% clean (1,760 products, zero broken `image_url` values). 55 products originally had pre-existing corrupted `image_url` values (a bug from the old-site→Supabase import, unrelated to this R2 work, predating it): 52 were recovered by re-scraping the real photo from the still-live legacy PHP site (`carnivalforyou.com/products.php?...&obid=<old_id>`); the other 3 were deleted outright — `id=1604` was a competitor ad (`arlekinobg.com`) imported by mistake, and `id=1285`/`id=1654` had no recoverable image (discontinued costumes, no longer on the old site). Original Supabase Storage files were intentionally left in place as a rollback fallback and have not yet been cleaned up.
 
 ## 2. Infrastructure & Hosting Setup (Cloudflare Pages)
 
@@ -34,11 +34,10 @@ Persistent operational guidelines for Claude Code sessions on this repository.
 
 ## 4. Media & Admin Architecture
 
-- **Current workflow**: Admin interface ([src/pages/AdminPage.tsx](src/pages/AdminPage.tsx)) uploads media → [src/lib/storage.ts](src/lib/storage.ts) → Supabase Storage bucket → public URL saved to Supabase DB table.
-- **Target workflow (post-R2-migration)**: Admin interface uploads media → file sent directly to Cloudflare R2 bucket → R2 returns public domain URL → URL saved to Supabase DB table.
+- **Current workflow**: Admin interface ([src/pages/AdminPage.tsx](src/pages/AdminPage.tsx)) uploads media → [src/lib/r2.ts](src/lib/r2.ts) (client, no secrets) → `r2-media` edge function (server, holds R2 credentials + verifies caller is admin) → Cloudflare R2 → public R2 URL saved to Supabase DB table.
 - **Environment variables**:
-  - Present in `.env` today: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-  - Required once R2 migration lands: `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_PUBLIC_URL`
+  - Local `.env` (client-side, gitignored): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+  - Supabase Edge Function secrets (server-side only, set via `supabase secrets set` or dashboard — not in `.env`, not in the client bundle): `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`
   - `.env` is gitignored — never commit real keys; check Cloudflare Pages dashboard env vars when debugging prod-only issues.
 
 ## 5. Common Local Commands
@@ -55,8 +54,35 @@ Persistent operational guidelines for Claude Code sessions on this repository.
   git push origin main
   ```
 
-## 6. Notes for Future Sessions
+## 6. CRITICAL PENDING TASK: Phase 3 - SEO Preservation & Final Launch
 
-- Before assuming R2 is live, grep for `R2`/`S3Client`/`cloudflare` in `src/` and check `.env` for R2 keys — as of this writing, none exist.
+> **Status: NOT STARTED.** This is the final pending phase of the migration from the old jump.bg-hosted site to the new Cloudflare/React architecture. Do **not** consider the migration complete, and do **not** switch production DNS to Cloudflare, until every item below is done. The separate media-storage DB migration (Supabase Storage → R2) referenced here finished and was pushed to `main` on 2026-08-19 — this SEO phase is independent and can proceed whenever picked up.
+
+### Phase 3: SEO Preservation (Pending)
+
+1. **URL Mapping & 301 Redirects:**
+   - Crawl or extract all existing URLs from the old jump.bg website.
+   - Implement a robust 301 redirect mapping in our new routing system (or via Cloudflare Bulk Redirects/Pages `_redirects` file) to point old URLs to the new structure.
+2. **Metadata Consistency:**
+   - Ensure perfect replication of existing `Title` tags, `Meta Descriptions`, `H1` tags, and `Schema.org` markup for all core pages and categories.
+   - Configure dynamic `<link rel="canonical">` tags for the new pages.
+3. **Post-Deployment SEO Operations (Google Search Console):**
+   - Implement automated generation of `sitemap.xml` and configure `robots.txt`.
+   - Once DNS is switched to Cloudflare, submit the new sitemap to Google Search Console.
+   - Schedule daily checks for 404 crawl errors in GSC during the first 2 weeks post-launch.
+
+## 7. QA/Design Audit & Fixes (2026-08-19)
+
+A full QA pass (category data integrity, mobile/tablet/desktop responsiveness, category-preview video performance) found and fixed three issues, all resolved and validated live:
+
+1. **Category ID collision** — the old site's `tid=10` meant "Украса за парти" (Party Decor); the new `categories` table redefined `id=10` to mean "Хелоуин" (Halloween). 36 products (decor props: skulls, spiderwebs, a smoke machine — verified via the old site's blank "Размери"/"Подходящ за" fields, i.e. not wearable items) had inherited the old numeric ID and were polluting the Halloween costume filter. Fixed by clearing their `category_id`/`category_ids` (SQL run directly by the user — the harness blocks bulk DB writes via this session's tools). Real Halloween/Christmas costumes are correctly cross-tagged via the `category_ids` array on top of a proper primary category (e.g. a women's costume also tagged Halloween) and were untouched. Validated: all 7 active categories (women/men/girls/boys/toddlers/Halloween/Christmas) sampled and confirmed correct; live-checked the Halloween filter on production.
+   - **Known, intentional, left as-is** (stakeholder decisions, not bugs): Masks/Hats/Wigs/Accessories categories stay `is_active=false` (hidden) — 34 of their 464 products also have `price <= 0`/null, low priority since the site's own query already excludes non-positive-price items from all listings regardless of category visibility. 6 old-site categories (pets, themed parties, "our carnival house", purchase-items, party decor, men's formal wear) have no new-system equivalent and are being kept dropped intentionally — their ~135 products sit with orphaned `category_id` values (9/12/16/18) unreachable via category navigation. Men's formal wear specifically was checked and turned out to already be fully absent from the DB (its one remaining old-site listing, `old_id=1416`, was never imported) — nothing to hide.
+2. **Pagination cap bug** (pre-existing, unrelated to the R2 migration — just surfaced during this audit): [src/lib/products.ts](src/lib/products.ts) `getFilteredAndSortedIds` had no `.range()`, so it silently hit PostgREST's default 1000-row cap once the catalog grew past that — the "1000 резултата" on the unfiltered products page was that cap, not a real count, hiding ~43% of the catalog. Fixed by paging through in batches of 1000.
+3. **Category-preview videos loaded unconditionally** — [src/components/CategoryGrid.tsx](src/components/CategoryGrid.tsx)'s 5 hover-preview videos were `autoPlay loop` on every page load regardless of whether they'd ever be seen (only revealed via CSS `opacity` on `:hover`), so touch devices — which have no real hover — downloaded and decoded all 5 (~22MB) for nothing. Fixed two ways: (a) gated behind `matchMedia('(hover: hover) and (pointer: fine)')` so non-hover devices get the static image only, and even hover-capable devices only load/play on actual pointer interaction (`preload="none"`, imperative `.play()`/`.pause()` on mouse enter/leave) instead of eagerly on mount; (b) re-encoded all 5 source videos (480px width, H.264 CRF 28, faststart) since they were oversized for small card previews — combined size went from 21.8MB to 2.45MB with no visible quality loss at actual display size (verified via frame comparison). Halloween/Christmas category cards intentionally do NOT have a preview video (user declined a lesser Ken-Burns-effect substitute rather than real filmed footage, which isn't available without a paid AI video-gen service).
+
+## 8. Notes for Future Sessions
+
+- R2 media migration is live as of 2026-08-19 and the products catalog is fully clean (0 rows with broken `image_url`, verified via `SELECT count(*) FROM products WHERE image_url ilike '%/storage/v1/object/public/%'`). 3 unrecoverable rows (`1604`, `1285`, `1654`) were deleted outright rather than left broken.
+- Original Supabase Storage files were kept as a rollback fallback and not yet deleted — don't assume they're gone, but also don't rely on them; new code should only ever write to R2.
 - Supabase migrations live in `supabase/migrations/`; check there before altering table shape assumptions.
 - This is a Bolt.new-originated project (see `.bolt/config.json`, `.bolt/prompt`) — some code may reflect Bolt scaffolding conventions rather than hand-authored patterns.
