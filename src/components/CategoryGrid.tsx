@@ -1,6 +1,22 @@
+import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { type CategoryMeta, getFeaturedCategories } from '@/lib/products';
 import { ArrowRight } from 'lucide-react';
+
+// Touch devices have no meaningful ":hover" — the video preview would download
+// and decode for every visitor without ever being seen. Only real pointer+hover
+// devices (mouse/trackpad) get the video; everyone else sees the static image.
+function useSupportsHoverPreview(): boolean {
+  const [supported, setSupported] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: hover) and (pointer: fine)');
+    setSupported(mq.matches);
+    const listener = (e: MediaQueryListEvent) => setSupported(e.matches);
+    mq.addEventListener('change', listener);
+    return () => mq.removeEventListener('change', listener);
+  }, []);
+  return supported;
+}
 
 type CategoryGridProps = {
   categories: CategoryMeta[];
@@ -47,11 +63,16 @@ function CategoryCardItem({
 }) {
   const image = category.image || FALLBACK_IMAGES[category.id] || '/no-image.svg';
   const videoSrc = CATEGORY_VIDEOS[category.id];
+  const supportsHoverPreview = useSupportsHoverPreview();
+  const showVideo = Boolean(videoSrc) && supportsHoverPreview;
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   return (
     <button
       type="button"
       onClick={() => onSelect(category.id)}
+      onMouseEnter={() => videoRef.current?.play()}
+      onMouseLeave={() => videoRef.current?.pause()}
       className={`group relative aspect-[3/4] w-full overflow-hidden rounded-2xl border shadow-card transition-colors duration-300 ${
         isSelected
           ? 'border-gold-400/60 shadow-glow-sm'
@@ -63,7 +84,7 @@ function CategoryCardItem({
         src={image}
         alt={lang === 'bg' ? category.nameBg : category.nameEn}
         className={`h-full w-full object-cover object-center transition-opacity duration-500 ${
-          videoSrc ? 'group-hover:opacity-0' : 'opacity-100'
+          showVideo ? 'group-hover:opacity-0' : 'opacity-100'
         }`}
         loading="lazy"
         onError={(event) => {
@@ -73,11 +94,14 @@ function CategoryCardItem({
         }}
       />
 
-      {/* 2. Видео - върти се във фонов режим и се показва плавно през CSS opacity */}
-      {videoSrc && (
+      {/* 2. Видео - зарежда се само при устройства с реален hover (мишка), и
+          започва да тегли/възпроизвежда чак при действително посочване, не още
+          при зареждане на страницата. */}
+      {showVideo && (
         <video
+          ref={videoRef}
           src={videoSrc}
-          autoPlay
+          preload="none"
           muted
           loop
           playsInline

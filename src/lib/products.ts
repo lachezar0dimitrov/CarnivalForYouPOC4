@@ -314,33 +314,47 @@ function searchFilter(search: string): string {
  * Fetches all matching IDs, applies sizes filtering, and sorts them globally
  * taking into account the current season.
  */
+// Supabase/PostgREST caps a single request at its configured max row count
+// (commonly 1000), so a catalog past that size needs paging to fetch all
+// matching rows rather than silently truncating.
+const FETCH_PAGE_SIZE = 1000;
+
 export async function getFilteredAndSortedIds(
   categoryId: number | null,
   sizeFilter: string | null,
   search: string | null = null
 ): Promise<number[]> {
-  let query = supabase
-    .from('products')
-    .select('id, category_id, category_ids, priority, sizes')
-    .eq('is_active', true)
-    .gt('price', 0)
-    .not('image_url', 'is', null)
-    .neq('image_url', '');
-
-  if (categoryId != null) {
-    query = query.or(`category_ids.cs.{${categoryId}},category_id.eq.${categoryId}`);
-  }
-
-  if (search) {
-    const sf = searchFilter(search);
-    if (sf) query = query.or(sf);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let items: any[] = data ?? [];
+  let items: any[] = [];
+  let from = 0;
+
+  for (;;) {
+    let query = supabase
+      .from('products')
+      .select('id, category_id, category_ids, priority, sizes')
+      .eq('is_active', true)
+      .gt('price', 0)
+      .not('image_url', 'is', null)
+      .neq('image_url', '')
+      .range(from, from + FETCH_PAGE_SIZE - 1);
+
+    if (categoryId != null) {
+      query = query.or(`category_ids.cs.{${categoryId}},category_id.eq.${categoryId}`);
+    }
+
+    if (search) {
+      const sf = searchFilter(search);
+      if (sf) query = query.or(sf);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const page = data ?? [];
+    items = items.concat(page);
+    if (page.length < FETCH_PAGE_SIZE) break;
+    from += FETCH_PAGE_SIZE;
+  }
 
   // 1. Apply Size Filter
   if (sizeFilter) {
