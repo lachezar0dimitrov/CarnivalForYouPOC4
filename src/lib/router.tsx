@@ -87,11 +87,13 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       productId: typeof idOrParams === 'string' ? idOrParams : null,
       queryParams: query ?? {},
     });
-    // Instant, not smooth: the new route's content (e.g. a product detail
-    // page's "similar products" section) often finishes loading and grows
-    // the page height while an animated scroll would still be mid-flight,
-    // which can leave the browser resting somewhere other than the top.
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    // Scroll reset happens in a useLayoutEffect keyed to the actual rendered
+    // route (see App.tsx), not here. Firing window.scrollTo() at this point
+    // scrolls whatever DOM currently exists — still the page we're leaving,
+    // since React hasn't committed the new route yet — and hoping that
+    // sticks is exactly the kind of timing-fragile pattern that breaks
+    // differently across browser engines (this was tried and didn't hold on
+    // real mobile Safari).
   };
 
   return (

@@ -3,8 +3,10 @@ import { useI18n } from '@/lib/i18n';
 import { type CategoryMeta, getFeaturedCategories } from '@/lib/products';
 import { ArrowRight } from 'lucide-react';
 
-// Touch devices have no meaningful ":hover" — on those, video playback is
-// instead driven by scroll visibility (see useAutoplayOnVisible below).
+// Real pointer+hover devices (mouse/trackpad) get the video on hover, exactly
+// as before. Touch devices have no meaningful hover, so they get it on tap
+// instead (see the onPointerDown/Up handlers below) — not on scroll, which
+// felt like unwanted autoplay while browsing.
 function useSupportsHoverPreview(): boolean {
   const [supported, setSupported] = useState(false);
   useEffect(() => {
@@ -41,68 +43,6 @@ function usePrefersReducedData(): boolean {
     return () => connection.removeEventListener?.('change', update);
   }, []);
   return reduced;
-}
-
-// At most this many category-preview videos play at once. On a phone only
-// one or two cards are ever fully visible together anyway, so this keeps
-// bandwidth/decoding bounded without needing to be aggressive about it.
-const MAX_CONCURRENT_VIDEOS = 2;
-const activeVideos = new Set<HTMLVideoElement>();
-
-function requestPlay(video: HTMLVideoElement) {
-  if (activeVideos.has(video)) return;
-  if (activeVideos.size >= MAX_CONCURRENT_VIDEOS) {
-    const oldest = activeVideos.values().next().value;
-    if (oldest) {
-      oldest.pause();
-      activeVideos.delete(oldest);
-    }
-  }
-  activeVideos.add(video);
-  video.play().catch(() => {
-    // Autoplay can be rejected in rare cases (e.g. low-power mode) — the
-    // static image stays visible underneath, so this is a silent no-op.
-  });
-}
-
-function releasePlay(video: HTMLVideoElement) {
-  video.pause();
-  activeVideos.delete(video);
-}
-
-// Touch-device equivalent of hover: play while the card is meaningfully
-// on-screen, pause once it scrolls away. Mirrors the "comes alive" feel of
-// desktop hover without requiring a tap.
-function useAutoplayOnVisible(
-  videoRef: React.RefObject<HTMLVideoElement>,
-  enabled: boolean,
-  onActiveChange: (active: boolean) => void
-) {
-  useEffect(() => {
-    if (!enabled) return;
-    const video = videoRef.current;
-    if (!video) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          requestPlay(video);
-          onActiveChange(true);
-        } else {
-          releasePlay(video);
-          onActiveChange(false);
-        }
-      },
-      { threshold: 0.5 }
-    );
-    observer.observe(video);
-
-    return () => {
-      observer.disconnect();
-      releasePlay(video);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled]);
 }
 
 type CategoryGridProps = {
@@ -156,30 +96,36 @@ function CategoryCardItem({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isActive, setIsActive] = useState(false);
 
-  useAutoplayOnVisible(videoRef, showVideo && !supportsHoverPreview, setIsActive);
+  const activate = () => {
+    if (!showVideo) return;
+    videoRef.current?.play().catch(() => {
+      // Autoplay can be rejected in rare cases — the static image stays
+      // visible underneath, so this is a silent no-op.
+    });
+    setIsActive(true);
+  };
+  const deactivate = () => {
+    videoRef.current?.pause();
+    setIsActive(false);
+  };
 
   return (
     <button
       type="button"
       onClick={() => onSelect(category.id)}
-      onMouseEnter={() => {
-        if (!supportsHoverPreview) return;
-        videoRef.current?.play();
-        setIsActive(true);
-      }}
-      onMouseLeave={() => {
-        if (!supportsHoverPreview) return;
-        videoRef.current?.pause();
-        setIsActive(false);
-      }}
+      onMouseEnter={supportsHoverPreview ? activate : undefined}
+      onMouseLeave={supportsHoverPreview ? deactivate : undefined}
+      onPointerDown={!supportsHoverPreview ? activate : undefined}
+      onPointerUp={!supportsHoverPreview ? deactivate : undefined}
+      onPointerCancel={!supportsHoverPreview ? deactivate : undefined}
       className={`group relative aspect-[3/4] w-full overflow-hidden rounded-2xl border shadow-card transition-colors duration-300 ${
         isSelected
           ? 'border-gold-400/60 shadow-glow-sm'
           : 'border-gold-400/15'
       }`}
     >
-      {/* 1. Снимка - изчезва щом видеото стане активно (hover на десктоп,
-          видимост в скрола на мобилно) */}
+      {/* 1. Снимка - изчезва щом видеото стане активно (hover на десктоп, тап
+          на мобилно) */}
       <img
         src={image}
         alt={lang === 'bg' ? category.nameBg : category.nameEn}
@@ -195,8 +141,7 @@ function CategoryCardItem({
       />
 
       {/* 2. Видео - на десктоп зарежда/върти при hover; на мобилно (без
-          реален hover) зарежда/върти докато картата се вижда в скрола,
-          максимум MAX_CONCURRENT_VIDEOS едновременно. */}
+          реален hover) зарежда/върти при допир на картата. */}
       {showVideo && (
         <video
           ref={videoRef}

@@ -1,3 +1,4 @@
+import { useLayoutEffect } from 'react';
 import { RouterProvider, useRouter } from '@/lib/router';
 import { I18nProvider } from '@/lib/i18n';
 import { AuthProvider } from '@/lib/auth';
@@ -18,7 +19,17 @@ import TermsPage from '@/pages/TermsPage';
 import AdminPage from '@/pages/AdminPage';
 
 function CurrentPage() {
-  const { route } = useRouter();
+  const { route, productId } = useRouter();
+
+  // Runs synchronously right after the new route's DOM commits, before the
+  // browser paints — scrolling relative to what's actually about to be shown
+  // instead of whatever page we're navigating away from. Keyed on productId
+  // too, since navigating between two product-detail pages (e.g. clicking a
+  // "similar product") keeps route === 'product-detail' but should still
+  // reset scroll.
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [route, productId]);
 
   switch (route) {
     case 'home':
