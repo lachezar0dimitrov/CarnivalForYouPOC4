@@ -37,6 +37,7 @@ const CATEGORY_VIDEOS: Record<number, string> = {
   10: '/video/halloween-scary-costumes.mp4',
   17: '/video/boys-carnival-costumes.mp4',
   19: '/video/toddler-carnival-costumes.mp4',
+  20: '/video/christmas-carnival-costumes.mp4',
 };
 
 function CategoryCardItem({
