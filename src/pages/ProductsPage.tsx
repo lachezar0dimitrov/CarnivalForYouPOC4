@@ -226,7 +226,7 @@ export default function ProductsPage() {
           {t('products.categories')}
         </h2>
         <CategoryGrid
-          categories={dbCats}
+          categories={dbCats.filter((c) => c.showAsTile)}
           onSelect={handleCategoryCardClick}
           selectedId={categoryFilter}
           showAll
