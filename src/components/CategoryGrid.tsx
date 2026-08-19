@@ -3,10 +3,9 @@ import { useI18n } from '@/lib/i18n';
 import { type CategoryMeta, getFeaturedCategories } from '@/lib/products';
 import { ArrowRight } from 'lucide-react';
 
-// Real pointer+hover devices (mouse/trackpad) get the video on hover, exactly
-// as before. Touch devices have no meaningful hover, so they get it on tap
-// instead (see the onPointerDown/Up handlers below) — not on scroll, which
-// felt like unwanted autoplay while browsing.
+// Touch devices have no meaningful ":hover" — the video preview would download
+// and decode for every visitor without ever being seen. Only real pointer+hover
+// devices (mouse/trackpad) get the video; everyone else sees the static image.
 function useSupportsHoverPreview(): boolean {
   const [supported, setSupported] = useState(false);
   useEffect(() => {
@@ -17,32 +16,6 @@ function useSupportsHoverPreview(): boolean {
     return () => mq.removeEventListener('change', listener);
   }, []);
   return supported;
-}
-
-type NetworkInformation = {
-  saveData?: boolean;
-  effectiveType?: string;
-  addEventListener?: (type: 'change', listener: () => void) => void;
-  removeEventListener?: (type: 'change', listener: () => void) => void;
-};
-
-// Respect the user's own data preference — Data Saver mode or a visibly slow
-// connection (Chrome/Android only; Safari doesn't expose the Network
-// Information API, so this is a bonus rather than a guaranteed check).
-function usePrefersReducedData(): boolean {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const connection = (navigator as Navigator & { connection?: NetworkInformation }).connection;
-    if (!connection) return;
-    const update = () => {
-      const slow = connection.saveData || ['slow-2g', '2g', '3g'].includes(connection.effectiveType ?? '');
-      setReduced(Boolean(slow));
-    };
-    update();
-    connection.addEventListener?.('change', update);
-    return () => connection.removeEventListener?.('change', update);
-  }, []);
-  return reduced;
 }
 
 type CategoryGridProps = {
@@ -91,46 +64,27 @@ function CategoryCardItem({
   const image = category.image || FALLBACK_IMAGES[category.id] || '/no-image.svg';
   const videoSrc = CATEGORY_VIDEOS[category.id];
   const supportsHoverPreview = useSupportsHoverPreview();
-  const prefersReducedData = usePrefersReducedData();
-  const showVideo = Boolean(videoSrc) && !prefersReducedData;
+  const showVideo = Boolean(videoSrc) && supportsHoverPreview;
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isActive, setIsActive] = useState(false);
-
-  const activate = () => {
-    if (!showVideo) return;
-    videoRef.current?.play().catch(() => {
-      // Autoplay can be rejected in rare cases — the static image stays
-      // visible underneath, so this is a silent no-op.
-    });
-    setIsActive(true);
-  };
-  const deactivate = () => {
-    videoRef.current?.pause();
-    setIsActive(false);
-  };
 
   return (
     <button
       type="button"
       onClick={() => onSelect(category.id)}
-      onMouseEnter={supportsHoverPreview ? activate : undefined}
-      onMouseLeave={supportsHoverPreview ? deactivate : undefined}
-      onPointerDown={!supportsHoverPreview ? activate : undefined}
-      onPointerUp={!supportsHoverPreview ? deactivate : undefined}
-      onPointerCancel={!supportsHoverPreview ? deactivate : undefined}
+      onMouseEnter={() => videoRef.current?.play()}
+      onMouseLeave={() => videoRef.current?.pause()}
       className={`group relative aspect-[3/4] w-full overflow-hidden rounded-2xl border shadow-card transition-colors duration-300 ${
         isSelected
           ? 'border-gold-400/60 shadow-glow-sm'
           : 'border-gold-400/15'
       }`}
     >
-      {/* 1. Снимка - изчезва щом видеото стане активно (hover на десктоп, тап
-          на мобилно) */}
+      {/* 1. Снимка - скрива се при hover точно както е в ProductCard */}
       <img
         src={image}
         alt={lang === 'bg' ? category.nameBg : category.nameEn}
         className={`h-full w-full object-cover object-center transition-opacity duration-500 ${
-          showVideo && isActive ? 'opacity-0' : 'opacity-100'
+          showVideo ? 'group-hover:opacity-0' : 'opacity-100'
         }`}
         loading="lazy"
         onError={(event) => {
@@ -140,8 +94,7 @@ function CategoryCardItem({
         }}
       />
 
-      {/* 2. Видео - на десктоп зарежда/върти при hover; на мобилно (без
-          реален hover) зарежда/върти при допир на картата. */}
+      {/* 2. Видео - върти се във фонов режим и се показва плавно през CSS opacity */}
       {showVideo && (
         <video
           ref={videoRef}
@@ -150,9 +103,7 @@ function CategoryCardItem({
           muted
           loop
           playsInline
-          className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-500 ${
-            isActive ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="absolute inset-0 h-full w-full object-cover object-center opacity-0 transition-opacity duration-500 group-hover:opacity-100"
         />
       )}
 

@@ -171,7 +171,13 @@ export function getAllCategories(categories: CategoryMeta[]): CategoryMeta[] {
 
 export function categoryName(id: number | null, lang: Lang): string {
   if (id == null) return lang === 'bg' ? 'Други' : 'Other';
-  const cat = categoryMeta.find((c) => c.id === id);
+  // Prefer the live (already-loaded) DB categories over the static fallback
+  // list — loadCategories() only returns is_active categories, so a product
+  // tagged with a hidden category (e.g. Masks/Hats/Wigs/Accessories) falls
+  // through to "Other" here instead of surfacing a category that was
+  // deliberately taken off public navigation.
+  const source = _dbCategories ?? categoryMeta;
+  const cat = source.find((c) => c.id === id);
   if (!cat) return lang === 'bg' ? 'Други' : 'Other';
   return lang === 'bg' ? cat.nameBg : cat.nameEn;
 }
