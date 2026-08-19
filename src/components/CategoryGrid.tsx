@@ -3,9 +3,8 @@ import { useI18n } from '@/lib/i18n';
 import { type CategoryMeta, getFeaturedCategories } from '@/lib/products';
 import { ArrowRight } from 'lucide-react';
 
-// Touch devices have no meaningful ":hover" — the video preview would download
-// and decode for every visitor without ever being seen. Only real pointer+hover
-// devices (mouse/trackpad) get the video; everyone else sees the static image.
+// Touch devices have no meaningful ":hover" — on those, video playback is
+// instead driven by scroll visibility (see useAutoplayOnVisible below).
 function useSupportsHoverPreview(): boolean {
   const [supported, setSupported] = useState(false);
   useEffect(() => {
@@ -16,6 +15,94 @@ function useSupportsHoverPreview(): boolean {
     return () => mq.removeEventListener('change', listener);
   }, []);
   return supported;
+}
+
+type NetworkInformation = {
+  saveData?: boolean;
+  effectiveType?: string;
+  addEventListener?: (type: 'change', listener: () => void) => void;
+  removeEventListener?: (type: 'change', listener: () => void) => void;
+};
+
+// Respect the user's own data preference — Data Saver mode or a visibly slow
+// connection (Chrome/Android only; Safari doesn't expose the Network
+// Information API, so this is a bonus rather than a guaranteed check).
+function usePrefersReducedData(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: NetworkInformation }).connection;
+    if (!connection) return;
+    const update = () => {
+      const slow = connection.saveData || ['slow-2g', '2g', '3g'].includes(connection.effectiveType ?? '');
+      setReduced(Boolean(slow));
+    };
+    update();
+    connection.addEventListener?.('change', update);
+    return () => connection.removeEventListener?.('change', update);
+  }, []);
+  return reduced;
+}
+
+// At most this many category-preview videos play at once. On a phone only
+// one or two cards are ever fully visible together anyway, so this keeps
+// bandwidth/decoding bounded without needing to be aggressive about it.
+const MAX_CONCURRENT_VIDEOS = 2;
+const activeVideos = new Set<HTMLVideoElement>();
+
+function requestPlay(video: HTMLVideoElement) {
+  if (activeVideos.has(video)) return;
+  if (activeVideos.size >= MAX_CONCURRENT_VIDEOS) {
+    const oldest = activeVideos.values().next().value;
+    if (oldest) {
+      oldest.pause();
+      activeVideos.delete(oldest);
+    }
+  }
+  activeVideos.add(video);
+  video.play().catch(() => {
+    // Autoplay can be rejected in rare cases (e.g. low-power mode) — the
+    // static image stays visible underneath, so this is a silent no-op.
+  });
+}
+
+function releasePlay(video: HTMLVideoElement) {
+  video.pause();
+  activeVideos.delete(video);
+}
+
+// Touch-device equivalent of hover: play while the card is meaningfully
+// on-screen, pause once it scrolls away. Mirrors the "comes alive" feel of
+// desktop hover without requiring a tap.
+function useAutoplayOnVisible(
+  videoRef: React.RefObject<HTMLVideoElement>,
+  enabled: boolean,
+  onActiveChange: (active: boolean) => void
+) {
+  useEffect(() => {
+    if (!enabled) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          requestPlay(video);
+          onActiveChange(true);
+        } else {
+          releasePlay(video);
+          onActiveChange(false);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(video);
+
+    return () => {
+      observer.disconnect();
+      releasePlay(video);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]);
 }
 
 type CategoryGridProps = {
@@ -64,27 +151,40 @@ function CategoryCardItem({
   const image = category.image || FALLBACK_IMAGES[category.id] || '/no-image.svg';
   const videoSrc = CATEGORY_VIDEOS[category.id];
   const supportsHoverPreview = useSupportsHoverPreview();
-  const showVideo = Boolean(videoSrc) && supportsHoverPreview;
+  const prefersReducedData = usePrefersReducedData();
+  const showVideo = Boolean(videoSrc) && !prefersReducedData;
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [isActive, setIsActive] = useState(false);
+
+  useAutoplayOnVisible(videoRef, showVideo && !supportsHoverPreview, setIsActive);
 
   return (
     <button
       type="button"
       onClick={() => onSelect(category.id)}
-      onMouseEnter={() => videoRef.current?.play()}
-      onMouseLeave={() => videoRef.current?.pause()}
+      onMouseEnter={() => {
+        if (!supportsHoverPreview) return;
+        videoRef.current?.play();
+        setIsActive(true);
+      }}
+      onMouseLeave={() => {
+        if (!supportsHoverPreview) return;
+        videoRef.current?.pause();
+        setIsActive(false);
+      }}
       className={`group relative aspect-[3/4] w-full overflow-hidden rounded-2xl border shadow-card transition-colors duration-300 ${
         isSelected
           ? 'border-gold-400/60 shadow-glow-sm'
           : 'border-gold-400/15'
       }`}
     >
-      {/* 1. Снимка - скрива се при hover точно както е в ProductCard */}
+      {/* 1. Снимка - изчезва щом видеото стане активно (hover на десктоп,
+          видимост в скрола на мобилно) */}
       <img
         src={image}
         alt={lang === 'bg' ? category.nameBg : category.nameEn}
         className={`h-full w-full object-cover object-center transition-opacity duration-500 ${
-          showVideo ? 'group-hover:opacity-0' : 'opacity-100'
+          showVideo && isActive ? 'opacity-0' : 'opacity-100'
         }`}
         loading="lazy"
         onError={(event) => {
@@ -94,9 +194,9 @@ function CategoryCardItem({
         }}
       />
 
-      {/* 2. Видео - зарежда се само при устройства с реален hover (мишка), и
-          започва да тегли/възпроизвежда чак при действително посочване, не още
-          при зареждане на страницата. */}
+      {/* 2. Видео - на десктоп зарежда/върти при hover; на мобилно (без
+          реален hover) зарежда/върти докато картата се вижда в скрола,
+          максимум MAX_CONCURRENT_VIDEOS едновременно. */}
       {showVideo && (
         <video
           ref={videoRef}
@@ -105,7 +205,9 @@ function CategoryCardItem({
           muted
           loop
           playsInline
-          className="absolute inset-0 h-full w-full object-cover object-center opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-500 ${
+            isActive ? 'opacity-100' : 'opacity-0'
+          }`}
         />
       )}
 
