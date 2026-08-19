@@ -130,10 +130,14 @@ let _dbCategories: CategoryMeta[] | null = null;
 export async function loadCategories(): Promise<CategoryMeta[]> {
   if (_dbCategories) return _dbCategories;
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('is_active', true)
+    let query = supabase.from('categories').select('*');
+    // Dev-only: also show is_active=false categories so new/in-progress ones
+    // can be reviewed on localhost before going live. import.meta.env.DEV is
+    // false in the production build, so this never applies on the real site.
+    if (!import.meta.env.DEV) {
+      query = query.eq('is_active', true);
+    }
+    const { data, error } = await query
       .order('sort_order', { ascending: true })
       .order('id', { ascending: true });
     if (error) throw error;
