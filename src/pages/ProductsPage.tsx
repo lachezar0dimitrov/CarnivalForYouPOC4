@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2, AlertCircle, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useRouter } from '@/lib/router';
@@ -26,11 +27,108 @@ function toggleInArray<T>(arr: T[], value: T): T[] {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 }
 
+type FilterFieldsProps = {
+  t: (key: string) => string;
+  lang: string;
+  searchQuery: string;
+  onSearchChange: (v: string) => void;
+  secondaryCats: CategoryMeta[];
+  secondaryCategories: number[];
+  onToggleSecondary: (id: number) => void;
+  availableSizes: string[];
+  sizeFilters: string[];
+  onToggleSize: (s: string) => void;
+};
+
+function FilterFields({
+  t,
+  lang,
+  searchQuery,
+  onSearchChange,
+  secondaryCats,
+  secondaryCategories,
+  onToggleSecondary,
+  availableSizes,
+  sizeFilters,
+  onToggleSize,
+}: FilterFieldsProps) {
+  return (
+    <div className="flex flex-col gap-6">
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={(e) => onSearchChange(e.target.value)}
+        placeholder={t('products.searchPlaceholder')}
+        className="w-full rounded-lg border border-gold-400/20 bg-ink-700 px-4 py-2.5 text-sm text-gray-200 transition placeholder:text-gray-500 focus:border-gold-400/60 focus:outline-none"
+      />
+
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+          {t('products.filterCategories')}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {secondaryCats.map((cat) => {
+            const isSelected = secondaryCategories.includes(cat.id);
+            const catName = lang === 'bg' ? cat.nameBg : cat.nameEn;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => onToggleSecondary(cat.id)}
+                aria-pressed={isSelected}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
+                  isSelected
+                    ? 'btn-gold'
+                    : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+                }`}
+              >
+                {catName}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+          {t('products.filterSize')}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {availableSizes.map((s) => {
+            const isSelected = sizeFilters.includes(s);
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => onToggleSize(s)}
+                aria-pressed={isSelected}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
+                  isSelected
+                    ? 'btn-gold'
+                    : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+                }`}
+              >
+                {s}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductsPage() {
   const { t, lang } = useI18n();
   const { queryParams } = useRouter();
 
-  const [categoryFilters, setCategoryFilters] = useState<number[]>(() => parseIdList(queryParams.category));
+  const [primaryCategory, setPrimaryCategory] = useState<number | null>(() => {
+    const ids = parseIdList(queryParams.category);
+    return ids.length > 0 ? ids[0] : null;
+  });
+  const [secondaryCategories, setSecondaryCategories] = useState<number[]>(() =>
+    parseIdList(queryParams.themes)
+  );
   const [sizeFilters, setSizeFilters] = useState<string[]>(() =>
     queryParams.size ? queryParams.size.split(',').filter(Boolean) : []
   );
@@ -46,12 +144,12 @@ export default function ProductsPage() {
   const [dbCats, setDbCats] = useState<CategoryMeta[]>(categoryMeta);
 
   const availableSizes = getAvailableSizes();
+  const primaryCats = dbCats.filter((c) => c.showAsTile);
+  const secondaryCats = dbCats.filter((c) => !c.showAsTile);
 
   const resultsRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const needsScrollRef = useRef(false);
 
-  // Скролване при зареждане на нови данни (когато loading спре)
   useEffect(() => {
     if (!loading && needsScrollRef.current) {
       needsScrollRef.current = false;
@@ -63,11 +161,9 @@ export default function ProductsPage() {
 
   useEffect(() => {
     const urlCats = parseIdList(queryParams.category);
-    const same =
-      urlCats.length === categoryFilters.length &&
-      urlCats.every((id) => categoryFilters.includes(id));
-    if (queryParams.category != null && !same) {
-      setCategoryFilters(urlCats);
+    const urlPrimary = urlCats.length > 0 ? urlCats[0] : null;
+    if (queryParams.category != null && urlPrimary !== primaryCategory) {
+      setPrimaryCategory(urlPrimary);
       scrollToResults();
     }
   }, [queryParams.category]);
@@ -81,10 +177,21 @@ export default function ProductsPage() {
     loadCategories().then((cats) => setDbCats(cats));
   }, []);
 
-  const seoCat =
-    categoryFilters.length === 1
-      ? dbCats.find((c) => c.id === categoryFilters[0])
-      : null;
+  // Lock background scroll while the mobile full-screen filter overlay is
+  // open. Desktop shows the panel as an inline sidebar, not an overlay, so
+  // the results column should stay scrollable there.
+  useEffect(() => {
+    const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+    if (filterOpen && !isDesktop) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [filterOpen]);
+
+  const seoCat = primaryCategory != null ? dbCats.find((c) => c.id === primaryCategory) : null;
   const seoTitle = seoCat
     ? lang === 'bg'
       ? `${seoCat.nameBg} костюми под наем | CarnivalForYou`
@@ -100,11 +207,11 @@ export default function ProductsPage() {
     setLoading(true);
     setError(false);
 
-    const catIds = categoryFilters.length > 0 ? categoryFilters : null;
+    const secondary = secondaryCategories.length > 0 ? secondaryCategories : null;
     const sizes = sizeFilters.length > 0 ? sizeFilters : null;
     const search = debouncedSearch.trim() || null;
 
-    fetchProducts(catIds, sizes, page, search)
+    fetchProducts(primaryCategory, secondary, sizes, page, search)
       .then((result) => {
         if (!cancelled) {
           setProducts(result.products);
@@ -123,38 +230,41 @@ export default function ProductsPage() {
     return () => {
       cancelled = true;
     };
-  }, [categoryFilters, sizeFilters, page, debouncedSearch]);
+  }, [primaryCategory, secondaryCategories, sizeFilters, page, debouncedSearch]);
 
   useEffect(() => {
     setPage(0);
-  }, [categoryFilters, sizeFilters, debouncedSearch]);
+  }, [primaryCategory, secondaryCategories, sizeFilters, debouncedSearch]);
 
   const scrollToResults = () => {
     needsScrollRef.current = true;
   };
 
   const handleCategoryCardClick = (catId: number) => {
-    setCategoryFilters([catId]);
+    setPrimaryCategory((prev) => (prev === catId ? null : catId));
     scrollToResults();
   };
 
-  const toggleCategory = (catId: number) => {
-    setCategoryFilters((prev) => toggleInArray(prev, catId));
-    scrollToResults();
+  const toggleSecondary = (catId: number) => {
+    setSecondaryCategories((prev) => toggleInArray(prev, catId));
   };
 
   const toggleSize = (size: string) => {
     setSizeFilters((prev) => toggleInArray(prev, size));
-    scrollToResults();
   };
 
   const clearFilters = () => {
-    setCategoryFilters([]);
+    setPrimaryCategory(null);
+    setSecondaryCategories([]);
     setSizeFilters([]);
     setSearchQuery('');
   };
 
-  const activeFilterCount = categoryFilters.length + sizeFilters.length + (debouncedSearch.trim() ? 1 : 0);
+  const activeFilterCount =
+    (primaryCategory != null ? 1 : 0) +
+    secondaryCategories.length +
+    sizeFilters.length +
+    (debouncedSearch.trim() ? 1 : 0);
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -259,9 +369,9 @@ export default function ProductsPage() {
           {t('products.categories')}
         </h2>
         <CategoryGrid
-          categories={dbCats.filter((c) => c.showAsTile)}
+          categories={primaryCats}
           onSelect={handleCategoryCardClick}
-          selectedId={categoryFilters.length === 1 ? String(categoryFilters[0]) : undefined}
+          selectedId={primaryCategory != null ? String(primaryCategory) : undefined}
           showAll
         />
       </section>
@@ -302,114 +412,134 @@ export default function ProductsPage() {
         )}
       </div>
 
-      {filterOpen && (
-        <div className="mt-2 flex flex-col gap-4 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-4">
-          <div>
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('products.searchPlaceholder')}
-              className="w-full rounded-lg border border-gold-400/20 bg-ink-700 px-4 py-2.5 text-sm text-gray-200 transition placeholder:text-gray-500 focus:border-gold-400/60 focus:outline-none sm:max-w-sm"
+      {/* Mobile / tablet: full-screen filter overlay with an explicit submit action.
+          Portaled to document.body — the page root has its own `relative z-10`
+          stacking context, which would otherwise cap this overlay's z-index
+          and let the fixed site header (z-50) paint over it regardless of
+          how high a z-index it's given here. */}
+      {filterOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex flex-col bg-ink-900 lg:hidden">
+            <div className="flex items-center justify-between border-b border-gold-400/15 px-4 py-4">
+              <h2 className="font-display text-lg font-semibold text-gold-100">
+                {t('products.advancedFilter')}
+              </h2>
+              <button
+                onClick={() => setFilterOpen(false)}
+                aria-label="Close"
+                className="rounded-full p-2 text-gray-400 transition hover:text-gold-200"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-5">
+              <FilterFields
+                t={t}
+                lang={lang}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                secondaryCats={secondaryCats}
+                secondaryCategories={secondaryCategories}
+                onToggleSecondary={toggleSecondary}
+                availableSizes={availableSizes}
+                sizeFilters={sizeFilters}
+                onToggleSize={toggleSize}
+              />
+            </div>
+            <div className="border-t border-gold-400/15 px-4 py-4">
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="mb-2 w-full text-center text-sm text-gray-400 transition hover:text-gold-200"
+                >
+                  {t('products.clearFilters')}
+                </button>
+              )}
+              <button
+                onClick={() => setFilterOpen(false)}
+                className="btn-gold w-full rounded-full px-4 py-3 text-sm font-medium"
+              >
+                {t('products.showResults')} ({total})
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      <div className="mt-2 lg:flex lg:items-start lg:gap-8">
+        {/* Desktop: inline sidebar, pushes the results column instead of overlaying it */}
+        {filterOpen && (
+          <aside className="hidden lg:sticky lg:top-28 lg:block lg:w-72 lg:shrink-0 lg:rounded-2xl lg:border lg:border-gold-400/15 lg:bg-ink-700/40 lg:p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-sm font-medium text-gold-200">{t('products.advancedFilter')}</span>
+              <button
+                onClick={() => setFilterOpen(false)}
+                aria-label="Close"
+                className="rounded-full p-1 text-gray-400 transition hover:text-gold-200"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <FilterFields
+              t={t}
+              lang={lang}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              secondaryCats={secondaryCats}
+              secondaryCategories={secondaryCategories}
+              onToggleSecondary={toggleSecondary}
+              availableSizes={availableSizes}
+              sizeFilters={sizeFilters}
+              onToggleSize={toggleSize}
             />
-          </div>
+          </aside>
+        )}
 
-          <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-              {t('products.filterCategories')}
+        <div className="min-w-0 flex-1">
+          <div ref={resultsRef} />
+          {!loading && !error && (
+            <p className="mt-4 text-sm text-gray-500">
+              {total} {t('products.results')}
+              {seoCat && (
+                <span className="text-gold-200/80">
+                  {' '}
+                  — {lang === 'bg' ? seoCat.nameBg : seoCat.nameEn}
+                </span>
+              )}
             </p>
-            <div className="flex flex-wrap gap-2">
-              {dbCats.map((cat) => {
-                const isSelected = categoryFilters.includes(cat.id);
-                const catName = lang === 'bg' ? cat.nameBg : cat.nameEn;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => toggleCategory(cat.id)}
-                    aria-pressed={isSelected}
-                    className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
-                      isSelected
-                        ? 'btn-gold'
-                        : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
-                    }`}
-                  >
-                    {catName}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-              {t('products.filterSize')}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {availableSizes.map((s) => {
-                const isSelected = sizeFilters.includes(s);
-                return (
-                  <button
-                    key={s}
-                    onClick={() => toggleSize(s)}
-                    aria-pressed={isSelected}
-                    className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
-                      isSelected
-                        ? 'btn-gold'
-                        : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div ref={resultsRef} />
-      {!loading && !error && (
-        <p className="mt-4 text-sm text-gray-500">
-          {total} {t('products.results')}
-          {seoCat && (
-            <span className="text-gold-200/80">
-              {' '}
-              — {lang === 'bg' ? seoCat.nameBg : seoCat.nameEn}
-            </span>
           )}
-        </p>
-      )}
 
-      {loading ? (
-        <div className="mt-20 flex flex-col items-center gap-3 text-gray-400">
-          <Loader2 size={32} className="animate-spin text-gold-300" />
-          <p className="text-sm">{t('common.loading')}</p>
+          {loading ? (
+            <div className="mt-20 flex flex-col items-center gap-3 text-gray-400">
+              <Loader2 size={32} className="animate-spin text-gold-300" />
+              <p className="text-sm">{t('common.loading')}</p>
+            </div>
+          ) : error ? (
+            <div className="mt-20 flex flex-col items-center gap-3 text-gray-400">
+              <AlertCircle size={32} className="text-error" />
+              <p className="text-sm">{t('common.error')}</p>
+            </div>
+          ) : (
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+              {products.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
+
+          {!loading && !error && products.length === 0 && (
+            <p className="mt-16 text-center text-gray-500">{t('common.noResults')}</p>
+          )}
+
+          {renderPagination()}
+
+          {totalPages > 1 && !loading && !error && (
+            <p className="mt-4 text-center text-xs text-gray-500">
+              {t('products.page')} {page + 1} {t('products.of')} {totalPages}
+            </p>
+          )}
         </div>
-      ) : error ? (
-        <div className="mt-20 flex flex-col items-center gap-3 text-gray-400">
-          <AlertCircle size={32} className="text-error" />
-          <p className="text-sm">{t('common.error')}</p>
-        </div>
-      ) : (
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-3">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      )}
-
-      {!loading && !error && products.length === 0 && (
-        <p className="mt-16 text-center text-gray-500">{t('common.noResults')}</p>
-      )}
-
-      {renderPagination()}
-
-      {totalPages > 1 && !loading && !error && (
-        <p className="mt-4 text-center text-xs text-gray-500">
-          {t('products.page')} {page + 1} {t('products.of')} {totalPages}
-        </p>
-      )}
+      </div>
     </div>
   );
 }

@@ -92,6 +92,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'products.advancedFilter': 'Прецизен филтър за вашата визия',
     'products.clearFilters': 'Изчисти филтрите',
     'products.activeFilters': 'активни филтъра',
+    'products.showResults': 'Покажи резултатите',
 
     // contacts
     'contacts.eyebrow': 'Свържете се с нас',
@@ -266,6 +267,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'products.advancedFilter': 'Precise Filter for Your Look',
     'products.clearFilters': 'Clear Filters',
     'products.activeFilters': 'active filters',
+    'products.showResults': 'Show Results',
     'products.next': 'Next',
     'products.of': 'of',
 
