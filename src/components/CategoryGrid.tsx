@@ -34,6 +34,7 @@ const CATEGORY_VIDEOS: Record<number, string> = {
   2: '/video/womens-carnival-costumes.mp4',
   3: '/video/mens-carnival-costumes.mp4',
   4: '/video/girls-carnival-costumes.mp4',
+  10: '/video/halloween-scary-costumes.mp4',
   17: '/video/boys-carnival-costumes.mp4',
   19: '/video/toddler-carnival-costumes.mp4',
 };
