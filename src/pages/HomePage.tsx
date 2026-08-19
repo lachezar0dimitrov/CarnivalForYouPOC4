@@ -41,7 +41,7 @@ export default function HomePage() {
       </div>
 
       {/* Categories from DB metadata */}
-      <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 2xl:max-w-[1680px]">
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 2xl:max-w-[2016px]">
         <SectionHeading
           eyebrow={t('home.categoriesEyebrow')}
           title={t('home.categoriesTitle')}

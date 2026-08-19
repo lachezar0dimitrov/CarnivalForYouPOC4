@@ -417,16 +417,18 @@ export default function ProductsPage() {
         </p>
       </div>
 
-      <section className="mt-12">
-        <h2 className="mb-5 font-display text-lg font-semibold text-gold-100">
-          {t('products.categories')}
-        </h2>
-        <CategoryGrid
-          categories={tileCats}
-          onSelect={handleCategoryCardClick}
-          selectedIds={[...primaryCategories, ...secondaryCategories]}
-          showAll
-        />
+      <section className="relative mt-12 2xl:left-1/2 2xl:right-1/2 2xl:mx-[-50vw] 2xl:w-screen">
+        <div className="2xl:mx-auto 2xl:max-w-[2016px] 2xl:px-6">
+          <h2 className="mb-5 font-display text-lg font-semibold text-gold-100">
+            {t('products.categories')}
+          </h2>
+          <CategoryGrid
+            categories={tileCats}
+            onSelect={handleCategoryCardClick}
+            selectedIds={[...primaryCategories, ...secondaryCategories]}
+            showAll
+          />
+        </div>
       </section>
 
       <div className="mt-8 flex flex-wrap items-center gap-3 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-3">
