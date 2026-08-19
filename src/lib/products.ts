@@ -333,6 +333,10 @@ function searchFilter(search: string): string {
 // matching rows rather than silently truncating.
 const FETCH_PAGE_SIZE = 1000;
 
+// Маски / Шапки / Перуки / Аксесоари — hidden by stakeholder decision
+// (categories.is_active = false), not shown as tiles or filter chips.
+const HIDDEN_CATEGORY_IDS = [5, 6, 7, 8];
+
 export async function getFilteredAndSortedIds(
   primaryCategoryIds: number[] | null,
   secondaryCategoryIds: number[] | null,
@@ -352,6 +356,19 @@ export async function getFilteredAndSortedIds(
       .not('image_url', 'is', null)
       .neq('image_url', '')
       .range(from, from + FETCH_PAGE_SIZE - 1);
+
+    // Masks/Hats/Wigs/Accessories (5/6/7/8) are hidden categories — not
+    // shown as tiles or filter chips, not browsable at all — but the base
+    // query wasn't excluding their products, so an unscoped keyword search
+    // (or plain unfiltered browsing) could still surface them, e.g.
+    // searching "pirate" pulling in a standalone "pirate shirt" accessory
+    // alongside actual pirate costumes. Excluded unconditionally here
+    // rather than only when no category filter is active, matching how
+    // they're already unreachable via category navigation. category_id
+    // IS NULL is explicitly preserved since PostgREST's not.in excludes
+    // NULLs by default (three-valued SQL logic), which would otherwise
+    // silently drop the handful of products with no category at all.
+    query = query.or(`category_id.is.null,category_id.not.in.(${HIDDEN_CATEGORY_IDS.join(',')})`);
 
     // Primary demographic categories (Women/Men/Boys/...) and secondary
     // refinement tags (Halloween/Christmas/Sexy/Professions/...) are each
