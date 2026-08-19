@@ -200,11 +200,16 @@ export default function ProductsPage() {
     if (queryParams.category == null) return;
     const urlCats = parseIdList(queryParams.category);
     const urlPrimary = urlCats.filter((id) => !SEASONAL_CATEGORY_IDS.has(id));
-    const same =
+    const urlSecondary = urlCats.filter((id) => SEASONAL_CATEGORY_IDS.has(id));
+    const samePrimary =
       urlPrimary.length === primaryCategories.length &&
       urlPrimary.every((id) => primaryCategories.includes(id));
-    if (!same) {
+    const sameSecondary =
+      urlSecondary.length === secondaryCategories.length &&
+      urlSecondary.every((id) => secondaryCategories.includes(id));
+    if (!samePrimary || !sameSecondary) {
       setPrimaryCategories(urlPrimary);
+      setSecondaryCategories(urlSecondary);
       scrollToResults();
     }
   }, [queryParams.category]);
@@ -285,11 +290,18 @@ export default function ProductsPage() {
     needsScrollRef.current = true;
   };
 
+  // Clicking a tile is navigation, not filtering — it jumps straight to that
+  // category's products (replacing any other category selection), matching
+  // how it worked before category chips became multi-select. The chip
+  // toggles below (togglePrimary/toggleSecondary) are the only multi-select
+  // affordance now.
   const handleCategoryCardClick = (catId: number) => {
     if (SEASONAL_CATEGORY_IDS.has(catId)) {
-      setSecondaryCategories((prev) => toggleInArray(prev, catId));
+      setSecondaryCategories([catId]);
+      setPrimaryCategories([]);
     } else {
-      setPrimaryCategories((prev) => toggleInArray(prev, catId));
+      setPrimaryCategories([catId]);
+      setSecondaryCategories([]);
     }
     scrollToResults();
   };
