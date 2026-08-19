@@ -365,9 +365,21 @@ h1, h2, h3, h4 {
   height: 100%;
   object-fit: cover;
 }
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .banner-slide img {
     object-fit: contain;
+  }
+}
+/* Desktop/tablet (matches Tailwind's md: breakpoint exactly): lock the
+   banner to its native ~16:9 aspect ratio instead of a viewport-height-
+   based box. Without this, a wide/ultrawide monitor pairs a huge width
+   with a capped vh height, forcing object-fit: cover to scale the image
+   up hugely to fill the width and crop away most of its vertical extent.
+   Locking the container's own shape to the image's shape means it scales
+   proportionally in both directions at any width. */
+@media (min-width: 768px) {
+  .banner-box {
+    aspect-ratio: 16 / 9;
   }
 }
 

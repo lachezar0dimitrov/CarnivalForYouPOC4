@@ -58,7 +58,7 @@ export default function ContactsPage() {
   const mapsEmbed = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
 
   return (
-    <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
+    <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32 2xl:max-w-[1680px]">
       <SectionHeading
         eyebrow={t('contacts.eyebrow')}
         title={t('contacts.title')}

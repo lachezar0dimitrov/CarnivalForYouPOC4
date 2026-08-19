@@ -405,7 +405,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
+    <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32 2xl:max-w-[1680px]">
       <div className="text-center">
         <p className="eyebrow mb-3">{t('products.eyebrow')}</p>
         <h1 className="font-display text-3xl font-semibold text-gray-100 sm:text-4xl md:text-5xl">
@@ -417,16 +417,18 @@ export default function ProductsPage() {
         </p>
       </div>
 
-      <section className="mt-12">
-        <h2 className="mb-5 font-display text-lg font-semibold text-gold-100">
-          {t('products.categories')}
-        </h2>
-        <CategoryGrid
-          categories={tileCats}
-          onSelect={handleCategoryCardClick}
-          selectedIds={[...primaryCategories, ...secondaryCategories]}
-          showAll
-        />
+      <section className="relative mt-12 2xl:left-1/2 2xl:right-1/2 2xl:mx-[-50vw] 2xl:w-screen">
+        <div className="2xl:mx-auto 2xl:max-w-[2184px] 2xl:px-6">
+          <h2 className="mb-5 font-display text-lg font-semibold text-gold-100">
+            {t('products.categories')}
+          </h2>
+          <CategoryGrid
+            categories={tileCats}
+            onSelect={handleCategoryCardClick}
+            selectedIds={[...primaryCategories, ...secondaryCategories]}
+            showAll
+          />
+        </div>
       </section>
 
       <div className="mt-8 flex flex-wrap items-center gap-3 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-3">
@@ -522,7 +524,8 @@ export default function ProductsPage() {
           document.body
         )}
 
-      <div className="mt-2 lg:flex lg:items-start lg:gap-8">
+      <div className="relative mt-2 2xl:left-1/2 2xl:right-1/2 2xl:mx-[-50vw] 2xl:w-screen">
+      <div className="lg:flex lg:items-start lg:gap-8 2xl:mx-auto 2xl:max-w-[2050px] 2xl:px-6">
         {/* Desktop: inline sidebar, pushes the results column instead of overlaying it */}
         {filterOpen && (
           <aside className="hidden lg:sticky lg:top-28 lg:block lg:w-72 lg:shrink-0 lg:rounded-2xl lg:border lg:border-gold-400/15 lg:bg-ink-700/40 lg:p-5">
@@ -579,7 +582,7 @@ export default function ProductsPage() {
               <p className="text-sm">{t('common.error')}</p>
             </div>
           ) : (
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {products.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
@@ -598,6 +601,7 @@ export default function ProductsPage() {
             </p>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
