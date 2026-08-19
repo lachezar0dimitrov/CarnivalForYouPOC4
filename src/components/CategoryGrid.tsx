@@ -55,8 +55,16 @@ function CategoryCardItem({
     <button
       type="button"
       onClick={() => onSelect(category.id)}
-      onMouseEnter={() => videoRef.current?.play()}
+      onMouseEnter={() => videoRef.current?.play().catch(() => {})}
       onMouseLeave={() => videoRef.current?.pause()}
+      onTouchStart={() => {
+        // A real, direct touch gesture — unlike the synthetic mouseenter a
+        // tap also triggers, this reliably satisfies mobile browsers'
+        // autoplay policy for a programmatic play() call. The CSS opacity
+        // swap already works via that synthetic :hover; without this, the
+        // video area fades in but nothing ever actually plays underneath.
+        videoRef.current?.play().catch(() => {});
+      }}
       className={`group relative aspect-[3/4] w-full overflow-hidden rounded-2xl border shadow-card transition-colors duration-300 ${
         isSelected
           ? 'border-gold-400/60 shadow-glow-sm'
