@@ -9,6 +9,11 @@ type CategoryGridProps = {
   selectedIds?: number[];
   limit?: number;
   showAll?: boolean;
+  // Rendered in the same grid row but hidden below the 2xl breakpoint —
+  // lets a page show a smaller "featured" set on laptop/tablet screens
+  // while revealing the rest only once there's room for them, without a
+  // JS resize listener (pure CSS display toggle within the CSS grid).
+  extraCategories?: CategoryMeta[];
 };
 
 const FALLBACK_IMAGES: Record<number, string> = {
@@ -125,6 +130,7 @@ export default function CategoryGrid({
   selectedIds,
   limit,
   showAll = false,
+  extraCategories,
 }: CategoryGridProps) {
   const { lang, t } = useI18n();
   const visibleCategories = showAll
@@ -134,7 +140,7 @@ export default function CategoryGrid({
       : getFeaturedCategories(categories);
 
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-7 2xl:gap-5">
       {visibleCategories.map((category) => (
         <CategoryCardItem
           key={category.id}
@@ -144,6 +150,17 @@ export default function CategoryGrid({
           lang={lang}
           t={t}
         />
+      ))}
+      {extraCategories?.map((category) => (
+        <div key={category.id} className="hidden 2xl:block">
+          <CategoryCardItem
+            category={category}
+            isSelected={selectedIds?.includes(category.id) ?? false}
+            onSelect={onSelect}
+            lang={lang}
+            t={t}
+          />
+        </div>
       ))}
     </div>
   );

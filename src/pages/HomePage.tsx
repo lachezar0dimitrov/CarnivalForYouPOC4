@@ -3,7 +3,7 @@ import { Sparkles } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
-import { loadCategories, type CategoryMeta } from '@/lib/products';
+import { loadCategories, getFeaturedCategories, type CategoryMeta } from '@/lib/products';
 import SectionHeading from '@/components/SectionHeading';
 import BannerCarousel from '@/components/BannerCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
@@ -41,7 +41,7 @@ export default function HomePage() {
       </div>
 
       {/* Categories from DB metadata */}
-      <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 2xl:max-w-[1680px]">
         <SectionHeading
           eyebrow={t('home.categoriesEyebrow')}
           title={t('home.categoriesTitle')}
@@ -51,13 +51,16 @@ export default function HomePage() {
         <div className="mt-10">
           <CategoryGrid
             categories={categories}
+            extraCategories={categories.filter(
+              (c) => !getFeaturedCategories(categories).some((f) => f.id === c.id)
+            )}
             onSelect={(categoryId) => navigate('products', { category: String(categoryId) })}
           />
         </div>
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20">
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 2xl:max-w-[1680px]">
         <div className="glass relative overflow-hidden rounded-3xl p-8 text-center sm:p-14">
           <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold-400/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-moss-500/20 blur-3xl" />

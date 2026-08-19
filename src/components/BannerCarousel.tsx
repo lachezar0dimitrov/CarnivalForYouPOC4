@@ -82,7 +82,7 @@ export default function BannerCarousel() {
   };
 
   return (
-    <section className="relative w-full overflow-hidden">
+    <section className="banner-box relative w-full overflow-hidden">
       {/* Crossfade slides */}
       <div className="absolute inset-0">
         {banners.map((banner, i) => (
@@ -102,7 +102,7 @@ export default function BannerCarousel() {
       <HeroFireflies count={24} />
 
       {/* Slide content overlay */}
-      <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-16 text-center sm:pb-20 md:min-h-[80vh] md:pb-24">
+      <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-16 text-center sm:pb-20 md:min-h-0 md:h-full md:pb-24">
         {banners.map((banner, i) => (
           <div
             key={banner.id}
