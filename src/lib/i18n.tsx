@@ -93,6 +93,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'products.clearFilters': 'Изчисти филтрите',
     'products.activeFilters': 'активни филтъра',
     'products.showResults': 'Покажи резултатите',
+    'products.themeCategories': 'Теми и сезони',
 
     // contacts
     'contacts.eyebrow': 'Свържете се с нас',
@@ -268,6 +269,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'products.clearFilters': 'Clear Filters',
     'products.activeFilters': 'active filters',
     'products.showResults': 'Show Results',
+    'products.themeCategories': 'Themes & Seasons',
     'products.next': 'Next',
     'products.of': 'of',
 

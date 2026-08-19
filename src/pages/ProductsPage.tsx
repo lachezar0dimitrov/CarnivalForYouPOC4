@@ -27,11 +27,57 @@ function toggleInArray<T>(arr: T[], value: T): T[] {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 }
 
+// Halloween (10) and Christmas (20) keep their tile cards alongside the
+// demographic categories (Women/Men/...), but for filtering purposes they
+// behave as refinement tags, not as another demographic to OR against —
+// selecting Men + Christmas should narrow to Christmas costumes for men,
+// not union Men with everything tagged Christmas.
+const SEASONAL_CATEGORY_IDS = new Set([10, 20]);
+
+function CategoryChips({
+  cats,
+  selected,
+  onToggle,
+  lang,
+}: {
+  cats: CategoryMeta[];
+  selected: number[];
+  onToggle: (id: number) => void;
+  lang: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {cats.map((cat) => {
+        const isSelected = selected.includes(cat.id);
+        const catName = lang === 'bg' ? cat.nameBg : cat.nameEn;
+        return (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => onToggle(cat.id)}
+            aria-pressed={isSelected}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
+              isSelected
+                ? 'btn-gold'
+                : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+            }`}
+          >
+            {catName}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 type FilterFieldsProps = {
   t: (key: string) => string;
   lang: string;
   searchQuery: string;
   onSearchChange: (v: string) => void;
+  primaryCats: CategoryMeta[];
+  primaryCategories: number[];
+  onTogglePrimary: (id: number) => void;
   secondaryCats: CategoryMeta[];
   secondaryCategories: number[];
   onToggleSecondary: (id: number) => void;
@@ -45,6 +91,9 @@ function FilterFields({
   lang,
   searchQuery,
   onSearchChange,
+  primaryCats,
+  primaryCategories,
+  onTogglePrimary,
   secondaryCats,
   secondaryCategories,
   onToggleSecondary,
@@ -66,27 +115,14 @@ function FilterFields({
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
           {t('products.filterCategories')}
         </p>
-        <div className="flex flex-wrap gap-2">
-          {secondaryCats.map((cat) => {
-            const isSelected = secondaryCategories.includes(cat.id);
-            const catName = lang === 'bg' ? cat.nameBg : cat.nameEn;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => onToggleSecondary(cat.id)}
-                aria-pressed={isSelected}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
-                  isSelected
-                    ? 'btn-gold'
-                    : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
-                }`}
-              >
-                {catName}
-              </button>
-            );
-          })}
-        </div>
+        <CategoryChips cats={primaryCats} selected={primaryCategories} onToggle={onTogglePrimary} lang={lang} />
+      </div>
+
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+          {t('products.themeCategories')}
+        </p>
+        <CategoryChips cats={secondaryCats} selected={secondaryCategories} onToggle={onToggleSecondary} lang={lang} />
       </div>
 
       <div>
@@ -122,13 +158,13 @@ export default function ProductsPage() {
   const { t, lang } = useI18n();
   const { queryParams } = useRouter();
 
-  const [primaryCategory, setPrimaryCategory] = useState<number | null>(() => {
-    const ids = parseIdList(queryParams.category);
-    return ids.length > 0 ? ids[0] : null;
-  });
-  const [secondaryCategories, setSecondaryCategories] = useState<number[]>(() =>
-    parseIdList(queryParams.themes)
+  const [primaryCategories, setPrimaryCategories] = useState<number[]>(() =>
+    parseIdList(queryParams.category).filter((id) => !SEASONAL_CATEGORY_IDS.has(id))
   );
+  const [secondaryCategories, setSecondaryCategories] = useState<number[]>(() => [
+    ...parseIdList(queryParams.category).filter((id) => SEASONAL_CATEGORY_IDS.has(id)),
+    ...parseIdList(queryParams.themes),
+  ]);
   const [sizeFilters, setSizeFilters] = useState<string[]>(() =>
     queryParams.size ? queryParams.size.split(',').filter(Boolean) : []
   );
@@ -144,8 +180,9 @@ export default function ProductsPage() {
   const [dbCats, setDbCats] = useState<CategoryMeta[]>(categoryMeta);
 
   const availableSizes = getAvailableSizes();
-  const primaryCats = dbCats.filter((c) => c.showAsTile);
-  const secondaryCats = dbCats.filter((c) => !c.showAsTile);
+  const tileCats = dbCats.filter((c) => c.showAsTile);
+  const primaryCats = dbCats.filter((c) => c.showAsTile && !SEASONAL_CATEGORY_IDS.has(c.id));
+  const secondaryCats = dbCats.filter((c) => !c.showAsTile || SEASONAL_CATEGORY_IDS.has(c.id));
 
   const resultsRef = useRef<HTMLDivElement>(null);
   const needsScrollRef = useRef(false);
@@ -160,10 +197,14 @@ export default function ProductsPage() {
   }, [loading]);
 
   useEffect(() => {
+    if (queryParams.category == null) return;
     const urlCats = parseIdList(queryParams.category);
-    const urlPrimary = urlCats.length > 0 ? urlCats[0] : null;
-    if (queryParams.category != null && urlPrimary !== primaryCategory) {
-      setPrimaryCategory(urlPrimary);
+    const urlPrimary = urlCats.filter((id) => !SEASONAL_CATEGORY_IDS.has(id));
+    const same =
+      urlPrimary.length === primaryCategories.length &&
+      urlPrimary.every((id) => primaryCategories.includes(id));
+    if (!same) {
+      setPrimaryCategories(urlPrimary);
       scrollToResults();
     }
   }, [queryParams.category]);
@@ -191,7 +232,10 @@ export default function ProductsPage() {
     }
   }, [filterOpen]);
 
-  const seoCat = primaryCategory != null ? dbCats.find((c) => c.id === primaryCategory) : null;
+  const seoCat =
+    primaryCategories.length === 1 && secondaryCategories.length === 0
+      ? dbCats.find((c) => c.id === primaryCategories[0])
+      : null;
   const seoTitle = seoCat
     ? lang === 'bg'
       ? `${seoCat.nameBg} костюми под наем | CarnivalForYou`
@@ -207,11 +251,12 @@ export default function ProductsPage() {
     setLoading(true);
     setError(false);
 
+    const primary = primaryCategories.length > 0 ? primaryCategories : null;
     const secondary = secondaryCategories.length > 0 ? secondaryCategories : null;
     const sizes = sizeFilters.length > 0 ? sizeFilters : null;
     const search = debouncedSearch.trim() || null;
 
-    fetchProducts(primaryCategory, secondary, sizes, page, search)
+    fetchProducts(primary, secondary, sizes, page, search)
       .then((result) => {
         if (!cancelled) {
           setProducts(result.products);
@@ -230,19 +275,27 @@ export default function ProductsPage() {
     return () => {
       cancelled = true;
     };
-  }, [primaryCategory, secondaryCategories, sizeFilters, page, debouncedSearch]);
+  }, [primaryCategories, secondaryCategories, sizeFilters, page, debouncedSearch]);
 
   useEffect(() => {
     setPage(0);
-  }, [primaryCategory, secondaryCategories, sizeFilters, debouncedSearch]);
+  }, [primaryCategories, secondaryCategories, sizeFilters, debouncedSearch]);
 
   const scrollToResults = () => {
     needsScrollRef.current = true;
   };
 
   const handleCategoryCardClick = (catId: number) => {
-    setPrimaryCategory((prev) => (prev === catId ? null : catId));
+    if (SEASONAL_CATEGORY_IDS.has(catId)) {
+      setSecondaryCategories((prev) => toggleInArray(prev, catId));
+    } else {
+      setPrimaryCategories((prev) => toggleInArray(prev, catId));
+    }
     scrollToResults();
+  };
+
+  const togglePrimary = (catId: number) => {
+    setPrimaryCategories((prev) => toggleInArray(prev, catId));
   };
 
   const toggleSecondary = (catId: number) => {
@@ -254,14 +307,14 @@ export default function ProductsPage() {
   };
 
   const clearFilters = () => {
-    setPrimaryCategory(null);
+    setPrimaryCategories([]);
     setSecondaryCategories([]);
     setSizeFilters([]);
     setSearchQuery('');
   };
 
   const activeFilterCount =
-    (primaryCategory != null ? 1 : 0) +
+    primaryCategories.length +
     secondaryCategories.length +
     sizeFilters.length +
     (debouncedSearch.trim() ? 1 : 0);
@@ -369,9 +422,9 @@ export default function ProductsPage() {
           {t('products.categories')}
         </h2>
         <CategoryGrid
-          categories={primaryCats}
+          categories={tileCats}
           onSelect={handleCategoryCardClick}
-          selectedId={primaryCategory != null ? String(primaryCategory) : undefined}
+          selectedIds={[...primaryCategories, ...secondaryCategories]}
           showAll
         />
       </section>
@@ -438,6 +491,9 @@ export default function ProductsPage() {
                 lang={lang}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                primaryCats={primaryCats}
+                primaryCategories={primaryCategories}
+                onTogglePrimary={togglePrimary}
                 secondaryCats={secondaryCats}
                 secondaryCategories={secondaryCategories}
                 onToggleSecondary={toggleSecondary}
@@ -485,6 +541,9 @@ export default function ProductsPage() {
               lang={lang}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
+              primaryCats={primaryCats}
+              primaryCategories={primaryCategories}
+              onTogglePrimary={togglePrimary}
               secondaryCats={secondaryCats}
               secondaryCategories={secondaryCategories}
               onToggleSecondary={toggleSecondary}

@@ -338,7 +338,7 @@ function searchFilter(search: string): string {
 const FETCH_PAGE_SIZE = 1000;
 
 export async function getFilteredAndSortedIds(
-  primaryCategoryId: number | null,
+  primaryCategoryIds: number[] | null,
   secondaryCategoryIds: number[] | null,
   sizeFilters: string[] | null,
   search: string | null = null
@@ -357,14 +357,19 @@ export async function getFilteredAndSortedIds(
       .neq('image_url', '')
       .range(from, from + FETCH_PAGE_SIZE - 1);
 
-    // Primary category (Women/Men/Halloween/...) and secondary theme tags
-    // (Sexy/Professions/...) are separate .or() calls, which PostgREST ANDs
-    // together — a product must match the primary AND at least one selected
-    // theme, rather than the two dimensions being flattened into one big OR
-    // (which previously let a "Men + Professions" search surface women's
-    // costumes just because they were tagged Professions).
-    if (primaryCategoryId != null) {
-      query = query.or(`category_ids.cs.{${primaryCategoryId}},category_id.eq.${primaryCategoryId}`);
+    // Primary demographic categories (Women/Men/Boys/...) and secondary
+    // refinement tags (Halloween/Christmas/Sexy/Professions/...) are each
+    // OR'd internally (selecting Men + Women shows both), but the two
+    // groups are separate .or() calls, which PostgREST ANDs together — a
+    // product must match one of the selected primaries AND one of the
+    // selected refinements, rather than every selection being flattened
+    // into one big OR (which previously let a "Men + Professions" search
+    // surface women's costumes just because they were tagged Professions).
+    if (primaryCategoryIds != null && primaryCategoryIds.length > 0) {
+      const clause = primaryCategoryIds
+        .map((id) => `category_ids.cs.{${id}},category_id.eq.${id}`)
+        .join(',');
+      query = query.or(clause);
     }
 
     if (secondaryCategoryIds != null && secondaryCategoryIds.length > 0) {
@@ -445,24 +450,24 @@ export async function getFilteredAndSortedIds(
 }
 
 export async function countProducts(
-  primaryCategoryId: number | null,
+  primaryCategoryIds: number[] | null,
   secondaryCategoryIds: number[] | null,
   sizeFilters: string[] | null,
   search: string | null = null
 ): Promise<number> {
-  const ids = await getFilteredAndSortedIds(primaryCategoryId, secondaryCategoryIds, sizeFilters, search);
+  const ids = await getFilteredAndSortedIds(primaryCategoryIds, secondaryCategoryIds, sizeFilters, search);
   return ids.length;
 }
 
 export async function fetchProducts(
-  primaryCategoryId: number | null,
+  primaryCategoryIds: number[] | null,
   secondaryCategoryIds: number[] | null,
   sizeFilters: string[] | null,
   page: number,
   search: string | null = null
 ): Promise<FetchResult> {
   // Get fully sorted and filtered IDs matching the query
-  const allIds = await getFilteredAndSortedIds(primaryCategoryId, secondaryCategoryIds, sizeFilters, search);
+  const allIds = await getFilteredAndSortedIds(primaryCategoryIds, secondaryCategoryIds, sizeFilters, search);
 
   const total = allIds.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
