@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import { Loader2, AlertCircle, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Loader2, AlertCircle, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useRouter } from '@/lib/router';
 import { useSEO } from '@/lib/useSEO';
@@ -14,17 +15,162 @@ import {
 import ProductCard from '@/components/ProductCard';
 import CategoryGrid from '@/components/CategoryGrid';
 
-const ALL = 'all';
+function parseIdList(raw: string | undefined): number[] {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isFinite(n));
+}
+
+function toggleInArray<T>(arr: T[], value: T): T[] {
+  return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
+}
+
+// Halloween (10) and Christmas (20) keep their tile cards alongside the
+// demographic categories (Women/Men/...), but for filtering purposes they
+// behave as refinement tags, not as another demographic to OR against —
+// selecting Men + Christmas should narrow to Christmas costumes for men,
+// not union Men with everything tagged Christmas.
+const SEASONAL_CATEGORY_IDS = new Set([10, 20]);
+
+function CategoryChips({
+  cats,
+  selected,
+  onToggle,
+  lang,
+}: {
+  cats: CategoryMeta[];
+  selected: number[];
+  onToggle: (id: number) => void;
+  lang: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {cats.map((cat) => {
+        const isSelected = selected.includes(cat.id);
+        const catName = lang === 'bg' ? cat.nameBg : cat.nameEn;
+        return (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => onToggle(cat.id)}
+            aria-pressed={isSelected}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
+              isSelected
+                ? 'btn-gold'
+                : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+            }`}
+          >
+            {catName}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+type FilterFieldsProps = {
+  t: (key: string) => string;
+  lang: string;
+  searchQuery: string;
+  onSearchChange: (v: string) => void;
+  primaryCats: CategoryMeta[];
+  primaryCategories: number[];
+  onTogglePrimary: (id: number) => void;
+  secondaryCats: CategoryMeta[];
+  secondaryCategories: number[];
+  onToggleSecondary: (id: number) => void;
+  availableSizes: string[];
+  sizeFilters: string[];
+  onToggleSize: (s: string) => void;
+};
+
+function FilterFields({
+  t,
+  lang,
+  searchQuery,
+  onSearchChange,
+  primaryCats,
+  primaryCategories,
+  onTogglePrimary,
+  secondaryCats,
+  secondaryCategories,
+  onToggleSecondary,
+  availableSizes,
+  sizeFilters,
+  onToggleSize,
+}: FilterFieldsProps) {
+  return (
+    <div className="flex flex-col gap-6">
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={(e) => onSearchChange(e.target.value)}
+        placeholder={t('products.searchPlaceholder')}
+        className="w-full rounded-lg border border-gold-400/20 bg-ink-700 px-4 py-2.5 text-sm text-gray-200 transition placeholder:text-gray-500 focus:border-gold-400/60 focus:outline-none"
+      />
+
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+          {t('products.filterCategories')}
+        </p>
+        <CategoryChips cats={primaryCats} selected={primaryCategories} onToggle={onTogglePrimary} lang={lang} />
+      </div>
+
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+          {t('products.themeCategories')}
+        </p>
+        <CategoryChips cats={secondaryCats} selected={secondaryCategories} onToggle={onToggleSecondary} lang={lang} />
+      </div>
+
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+          {t('products.filterSize')}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {availableSizes.map((s) => {
+            const isSelected = sizeFilters.includes(s);
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => onToggleSize(s)}
+                aria-pressed={isSelected}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
+                  isSelected
+                    ? 'btn-gold'
+                    : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+                }`}
+              >
+                {s}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ProductsPage() {
   const { t, lang } = useI18n();
   const { queryParams } = useRouter();
 
-  const [categoryFilter, setCategoryFilter] = useState<string>(ALL);
-  const [sizeFilter, setSizeFilter] = useState<string>(ALL);
+  const [primaryCategories, setPrimaryCategories] = useState<number[]>(() =>
+    parseIdList(queryParams.category).filter((id) => !SEASONAL_CATEGORY_IDS.has(id))
+  );
+  const [secondaryCategories, setSecondaryCategories] = useState<number[]>(() => [
+    ...parseIdList(queryParams.category).filter((id) => SEASONAL_CATEGORY_IDS.has(id)),
+    ...parseIdList(queryParams.themes),
+  ]);
+  const [sizeFilters, setSizeFilters] = useState<string[]>(() =>
+    queryParams.size ? queryParams.size.split(',').filter(Boolean) : []
+  );
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -34,12 +180,13 @@ export default function ProductsPage() {
   const [dbCats, setDbCats] = useState<CategoryMeta[]>(categoryMeta);
 
   const availableSizes = getAvailableSizes();
+  const tileCats = dbCats.filter((c) => c.showAsTile);
+  const primaryCats = dbCats.filter((c) => c.showAsTile && !SEASONAL_CATEGORY_IDS.has(c.id));
+  const secondaryCats = dbCats.filter((c) => !c.showAsTile || SEASONAL_CATEGORY_IDS.has(c.id));
 
   const resultsRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const needsScrollRef = useRef(false);
 
-  // Скролване при зареждане на нови данни (когато loading спре)
   useEffect(() => {
     if (!loading && needsScrollRef.current) {
       needsScrollRef.current = false;
@@ -50,9 +197,14 @@ export default function ProductsPage() {
   }, [loading]);
 
   useEffect(() => {
-    const urlCat = queryParams.category;
-    if (urlCat != null && urlCat !== categoryFilter) {
-      setCategoryFilter(urlCat);
+    if (queryParams.category == null) return;
+    const urlCats = parseIdList(queryParams.category);
+    const urlPrimary = urlCats.filter((id) => !SEASONAL_CATEGORY_IDS.has(id));
+    const same =
+      urlPrimary.length === primaryCategories.length &&
+      urlPrimary.every((id) => primaryCategories.includes(id));
+    if (!same) {
+      setPrimaryCategories(urlPrimary);
       scrollToResults();
     }
   }, [queryParams.category]);
@@ -66,9 +218,23 @@ export default function ProductsPage() {
     loadCategories().then((cats) => setDbCats(cats));
   }, []);
 
+  // Lock background scroll while the mobile full-screen filter overlay is
+  // open. Desktop shows the panel as an inline sidebar, not an overlay, so
+  // the results column should stay scrollable there.
+  useEffect(() => {
+    const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+    if (filterOpen && !isDesktop) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [filterOpen]);
+
   const seoCat =
-    categoryFilter !== ALL
-      ? dbCats.find((c) => String(c.id) === categoryFilter)
+    primaryCategories.length === 1 && secondaryCategories.length === 0
+      ? dbCats.find((c) => c.id === primaryCategories[0])
       : null;
   const seoTitle = seoCat
     ? lang === 'bg'
@@ -85,11 +251,12 @@ export default function ProductsPage() {
     setLoading(true);
     setError(false);
 
-    const catId = categoryFilter === ALL ? null : Number(categoryFilter);
-    const sizeId = sizeFilter === ALL ? null : sizeFilter;
+    const primary = primaryCategories.length > 0 ? primaryCategories : null;
+    const secondary = secondaryCategories.length > 0 ? secondaryCategories : null;
+    const sizes = sizeFilters.length > 0 ? sizeFilters : null;
     const search = debouncedSearch.trim() || null;
 
-    fetchProducts(catId, sizeId, page, search)
+    fetchProducts(primary, secondary, sizes, page, search)
       .then((result) => {
         if (!cancelled) {
           setProducts(result.products);
@@ -108,20 +275,49 @@ export default function ProductsPage() {
     return () => {
       cancelled = true;
     };
-  }, [categoryFilter, sizeFilter, page, debouncedSearch]);
+  }, [primaryCategories, secondaryCategories, sizeFilters, page, debouncedSearch]);
 
   useEffect(() => {
     setPage(0);
-  }, [categoryFilter, sizeFilter, debouncedSearch]);
+  }, [primaryCategories, secondaryCategories, sizeFilters, debouncedSearch]);
 
   const scrollToResults = () => {
     needsScrollRef.current = true;
   };
 
   const handleCategoryCardClick = (catId: number) => {
-    setCategoryFilter(String(catId));
+    if (SEASONAL_CATEGORY_IDS.has(catId)) {
+      setSecondaryCategories((prev) => toggleInArray(prev, catId));
+    } else {
+      setPrimaryCategories((prev) => toggleInArray(prev, catId));
+    }
     scrollToResults();
   };
+
+  const togglePrimary = (catId: number) => {
+    setPrimaryCategories((prev) => toggleInArray(prev, catId));
+  };
+
+  const toggleSecondary = (catId: number) => {
+    setSecondaryCategories((prev) => toggleInArray(prev, catId));
+  };
+
+  const toggleSize = (size: string) => {
+    setSizeFilters((prev) => toggleInArray(prev, size));
+  };
+
+  const clearFilters = () => {
+    setPrimaryCategories([]);
+    setSecondaryCategories([]);
+    setSizeFilters([]);
+    setSearchQuery('');
+  };
+
+  const activeFilterCount =
+    primaryCategories.length +
+    secondaryCategories.length +
+    sizeFilters.length +
+    (debouncedSearch.trim() ? 1 : 0);
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -226,131 +422,183 @@ export default function ProductsPage() {
           {t('products.categories')}
         </h2>
         <CategoryGrid
-          categories={dbCats}
+          categories={tileCats}
           onSelect={handleCategoryCardClick}
-          selectedId={categoryFilter}
+          selectedIds={[...primaryCategories, ...secondaryCategories]}
           showAll
         />
       </section>
 
-      <div className="mt-8 flex flex-wrap items-center justify-start gap-2 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-3">
+      <div className="mt-8 flex flex-wrap items-center gap-3 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-3">
         <button
-          onClick={() => { setCategoryFilter(ALL); setSizeFilter(ALL); setSearchQuery(''); }}
-          className={`shrink-0 rounded-full px-4 py-2 text-sm transition ${
-            categoryFilter === ALL && sizeFilter === ALL && !searchQuery
+          onClick={() => setFilterOpen((v) => !v)}
+          className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition ${
+            filterOpen
               ? 'btn-gold'
-              : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+              : 'border border-gold-400/30 text-gold-200 hover:border-gold-400/60 hover:bg-gold-400/10'
           }`}
+          aria-expanded={filterOpen}
         >
-          {t('products.filterAll')}
-        </button>
-
-        {dbCats.map((cat) => {
-          const catIdStr = String(cat.id);
-          const isSelected = categoryFilter === catIdStr;
-          const catName = lang === 'bg' ? cat.nameBg : cat.nameEn;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => {
-                setCategoryFilter(catIdStr);
-                scrollToResults();
-              }}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm transition ${
-                isSelected
-                  ? 'btn-gold'
-                  : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
-              }`}
-            >
-              {catName}
-            </button>
-          );
-        })}
-
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={() => setSearchOpen((v) => !v)}
-            className={`flex h-10 w-10 items-center justify-center rounded-full border transition ${
-              searchOpen
-                ? 'border-gold-400/60 bg-gold-400/10 text-gold-200'
-                : 'border-gold-400/25 text-gold-300/70 hover:border-gold-400/50 hover:text-gold-200'
-            }`}
-            aria-label={t('products.searchPlaceholder')}
-            aria-expanded={searchOpen}
-          >
-            <Search size={18} />
-          </button>
-        </div>
-      </div>
-
-      {searchOpen && (
-        <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-3 sm:flex-row sm:items-center">
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="номер или име на костюм"
-            className="w-full rounded-lg border border-gold-400/20 bg-ink-700 px-4 py-2.5 text-sm text-gray-200 transition placeholder:text-gray-500 focus:border-gold-400/60 focus:outline-none sm:max-w-xs"
-          />
-          <label className="flex items-center gap-2 text-sm">
-            <span className="whitespace-nowrap text-gray-400">{t('products.filterSize')}:</span>
-            <select
-              value={sizeFilter}
-              onChange={(e) => setSizeFilter(e.target.value)}
-              className="rounded-lg border border-gold-400/20 bg-ink-700 px-3 py-1.5 text-sm text-gray-200 transition focus:border-gold-400/60 focus:outline-none"
-            >
-              <option value={ALL}>{t('products.filterAll')}</option>
-              {availableSizes.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-      )}
-
-      <div ref={resultsRef} />
-      {!loading && !error && (
-        <p className="mt-4 text-sm text-gray-500">
-          {total} {t('products.results')}
-          {seoCat && (
-            <span className="text-gold-200/80">
-              {' '}
-              — {lang === 'bg' ? seoCat.nameBg : seoCat.nameEn}
+          <SlidersHorizontal size={16} />
+          {t('products.advancedFilter')}
+          {activeFilterCount > 0 && (
+            <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-ink-900/30 px-1.5 text-xs font-semibold">
+              {activeFilterCount}
             </span>
           )}
-        </p>
-      )}
+        </button>
 
-      {loading ? (
-        <div className="mt-20 flex flex-col items-center gap-3 text-gray-400">
-          <Loader2 size={32} className="animate-spin text-gold-300" />
-          <p className="text-sm">{t('common.loading')}</p>
+        {activeFilterCount > 0 && (
+          <button
+            onClick={clearFilters}
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-gold-400/20 px-3.5 py-2 text-sm text-gray-400 transition hover:border-gold-400/50 hover:text-gold-200"
+          >
+            <X size={14} />
+            {t('products.clearFilters')}
+          </button>
+        )}
+
+        {activeFilterCount > 0 && (
+          <span className="text-xs text-gray-500">
+            {activeFilterCount} {t('products.activeFilters')}
+          </span>
+        )}
+      </div>
+
+      {/* Mobile / tablet: full-screen filter overlay with an explicit submit action.
+          Portaled to document.body — the page root has its own `relative z-10`
+          stacking context, which would otherwise cap this overlay's z-index
+          and let the fixed site header (z-50) paint over it regardless of
+          how high a z-index it's given here. */}
+      {filterOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex flex-col bg-ink-900 lg:hidden">
+            <div className="flex items-center justify-between border-b border-gold-400/15 px-4 py-4">
+              <h2 className="font-display text-lg font-semibold text-gold-100">
+                {t('products.advancedFilter')}
+              </h2>
+              <button
+                onClick={() => setFilterOpen(false)}
+                aria-label="Close"
+                className="rounded-full p-2 text-gray-400 transition hover:text-gold-200"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-5">
+              <FilterFields
+                t={t}
+                lang={lang}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                primaryCats={primaryCats}
+                primaryCategories={primaryCategories}
+                onTogglePrimary={togglePrimary}
+                secondaryCats={secondaryCats}
+                secondaryCategories={secondaryCategories}
+                onToggleSecondary={toggleSecondary}
+                availableSizes={availableSizes}
+                sizeFilters={sizeFilters}
+                onToggleSize={toggleSize}
+              />
+            </div>
+            <div className="border-t border-gold-400/15 px-4 py-4">
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="mb-2 w-full text-center text-sm text-gray-400 transition hover:text-gold-200"
+                >
+                  {t('products.clearFilters')}
+                </button>
+              )}
+              <button
+                onClick={() => setFilterOpen(false)}
+                className="btn-gold w-full rounded-full px-4 py-3 text-sm font-medium"
+              >
+                {t('products.showResults')} ({total})
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      <div className="mt-2 lg:flex lg:items-start lg:gap-8">
+        {/* Desktop: inline sidebar, pushes the results column instead of overlaying it */}
+        {filterOpen && (
+          <aside className="hidden lg:sticky lg:top-28 lg:block lg:w-72 lg:shrink-0 lg:rounded-2xl lg:border lg:border-gold-400/15 lg:bg-ink-700/40 lg:p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-sm font-medium text-gold-200">{t('products.advancedFilter')}</span>
+              <button
+                onClick={() => setFilterOpen(false)}
+                aria-label="Close"
+                className="rounded-full p-1 text-gray-400 transition hover:text-gold-200"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <FilterFields
+              t={t}
+              lang={lang}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              primaryCats={primaryCats}
+              primaryCategories={primaryCategories}
+              onTogglePrimary={togglePrimary}
+              secondaryCats={secondaryCats}
+              secondaryCategories={secondaryCategories}
+              onToggleSecondary={toggleSecondary}
+              availableSizes={availableSizes}
+              sizeFilters={sizeFilters}
+              onToggleSize={toggleSize}
+            />
+          </aside>
+        )}
+
+        <div className="min-w-0 flex-1">
+          <div ref={resultsRef} />
+          {!loading && !error && (
+            <p className="mt-4 text-sm text-gray-500">
+              {total} {t('products.results')}
+              {seoCat && (
+                <span className="text-gold-200/80">
+                  {' '}
+                  — {lang === 'bg' ? seoCat.nameBg : seoCat.nameEn}
+                </span>
+              )}
+            </p>
+          )}
+
+          {loading ? (
+            <div className="mt-20 flex flex-col items-center gap-3 text-gray-400">
+              <Loader2 size={32} className="animate-spin text-gold-300" />
+              <p className="text-sm">{t('common.loading')}</p>
+            </div>
+          ) : error ? (
+            <div className="mt-20 flex flex-col items-center gap-3 text-gray-400">
+              <AlertCircle size={32} className="text-error" />
+              <p className="text-sm">{t('common.error')}</p>
+            </div>
+          ) : (
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+              {products.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
+
+          {!loading && !error && products.length === 0 && (
+            <p className="mt-16 text-center text-gray-500">{t('common.noResults')}</p>
+          )}
+
+          {renderPagination()}
+
+          {totalPages > 1 && !loading && !error && (
+            <p className="mt-4 text-center text-xs text-gray-500">
+              {t('products.page')} {page + 1} {t('products.of')} {totalPages}
+            </p>
+          )}
         </div>
-      ) : error ? (
-        <div className="mt-20 flex flex-col items-center gap-3 text-gray-400">
-          <AlertCircle size={32} className="text-error" />
-          <p className="text-sm">{t('common.error')}</p>
-        </div>
-      ) : (
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-3">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      )}
-
-      {!loading && !error && products.length === 0 && (
-        <p className="mt-16 text-center text-gray-500">{t('common.noResults')}</p>
-      )}
-
-      {renderPagination()}
-
-      {totalPages > 1 && !loading && !error && (
-        <p className="mt-4 text-center text-xs text-gray-500">
-          {t('products.page')} {page + 1} {t('products.of')} {totalPages}
-        </p>
-      )}
+      </div>
     </div>
   );
 }

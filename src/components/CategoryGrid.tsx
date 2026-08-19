@@ -6,7 +6,7 @@ import { ArrowRight } from 'lucide-react';
 type CategoryGridProps = {
   categories: CategoryMeta[];
   onSelect: (categoryId: number) => void;
-  selectedId?: string;
+  selectedIds?: number[];
   limit?: number;
   showAll?: boolean;
 };
@@ -122,7 +122,7 @@ function CategoryCardItem({
 export default function CategoryGrid({
   categories,
   onSelect,
-  selectedId,
+  selectedIds,
   limit,
   showAll = false,
 }: CategoryGridProps) {
@@ -139,7 +139,7 @@ export default function CategoryGrid({
         <CategoryCardItem
           key={category.id}
           category={category}
-          isSelected={selectedId === String(category.id)}
+          isSelected={selectedIds?.includes(category.id) ?? false}
           onSelect={onSelect}
           lang={lang}
           t={t}
