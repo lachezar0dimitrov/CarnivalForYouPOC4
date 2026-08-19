@@ -1,22 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { type CategoryMeta, getFeaturedCategories } from '@/lib/products';
 import { ArrowRight } from 'lucide-react';
-
-// Touch devices have no meaningful ":hover" — the video preview would download
-// and decode for every visitor without ever being seen. Only real pointer+hover
-// devices (mouse/trackpad) get the video; everyone else sees the static image.
-function useSupportsHoverPreview(): boolean {
-  const [supported, setSupported] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(hover: hover) and (pointer: fine)');
-    setSupported(mq.matches);
-    const listener = (e: MediaQueryListEvent) => setSupported(e.matches);
-    mq.addEventListener('change', listener);
-    return () => mq.removeEventListener('change', listener);
-  }, []);
-  return supported;
-}
 
 type CategoryGridProps = {
   categories: CategoryMeta[];
@@ -63,8 +48,7 @@ function CategoryCardItem({
 }) {
   const image = category.image || FALLBACK_IMAGES[category.id] || '/no-image.svg';
   const videoSrc = CATEGORY_VIDEOS[category.id];
-  const supportsHoverPreview = useSupportsHoverPreview();
-  const showVideo = Boolean(videoSrc) && supportsHoverPreview;
+  const showVideo = Boolean(videoSrc);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   return (
