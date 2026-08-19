@@ -87,7 +87,11 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       productId: typeof idOrParams === 'string' ? idOrParams : null,
       queryParams: query ?? {},
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Instant, not smooth: the new route's content (e.g. a product detail
+    // page's "similar products" section) often finishes loading and grows
+    // the page height while an animated scroll would still be mid-flight,
+    // which can leave the browser resting somewhere other than the top.
+    window.scrollTo({ top: 0, behavior: 'auto' });
   };
 
   return (
