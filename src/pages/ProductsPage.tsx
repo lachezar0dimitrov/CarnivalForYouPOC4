@@ -418,7 +418,7 @@ export default function ProductsPage() {
       </div>
 
       <section className="relative mt-12 2xl:left-1/2 2xl:right-1/2 2xl:mx-[-50vw] 2xl:w-screen">
-        <div className="2xl:mx-auto 2xl:max-w-[2016px] 2xl:px-6">
+        <div className="2xl:mx-auto 2xl:max-w-[2184px] 2xl:px-6">
           <h2 className="mb-5 font-display text-lg font-semibold text-gold-100">
             {t('products.categories')}
           </h2>
@@ -524,7 +524,8 @@ export default function ProductsPage() {
           document.body
         )}
 
-      <div className="mt-2 lg:flex lg:items-start lg:gap-8">
+      <div className="relative mt-2 2xl:left-1/2 2xl:right-1/2 2xl:mx-[-50vw] 2xl:w-screen">
+      <div className="lg:flex lg:items-start lg:gap-8 2xl:mx-auto 2xl:max-w-[2050px] 2xl:px-6">
         {/* Desktop: inline sidebar, pushes the results column instead of overlaying it */}
         {filterOpen && (
           <aside className="hidden lg:sticky lg:top-28 lg:block lg:w-72 lg:shrink-0 lg:rounded-2xl lg:border lg:border-gold-400/15 lg:bg-ink-700/40 lg:p-5">
@@ -600,6 +601,7 @@ export default function ProductsPage() {
             </p>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
