@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Loader2, AlertCircle, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Loader2, AlertCircle, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useRouter } from '@/lib/router';
 import { useSEO } from '@/lib/useSEO';
@@ -14,17 +14,29 @@ import {
 import ProductCard from '@/components/ProductCard';
 import CategoryGrid from '@/components/CategoryGrid';
 
-const ALL = 'all';
+function parseIdList(raw: string | undefined): number[] {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isFinite(n));
+}
+
+function toggleInArray<T>(arr: T[], value: T): T[] {
+  return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
+}
 
 export default function ProductsPage() {
   const { t, lang } = useI18n();
   const { queryParams } = useRouter();
 
-  const [categoryFilter, setCategoryFilter] = useState<string>(ALL);
-  const [sizeFilter, setSizeFilter] = useState<string>(ALL);
+  const [categoryFilters, setCategoryFilters] = useState<number[]>(() => parseIdList(queryParams.category));
+  const [sizeFilters, setSizeFilters] = useState<string[]>(() =>
+    queryParams.size ? queryParams.size.split(',').filter(Boolean) : []
+  );
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -50,9 +62,12 @@ export default function ProductsPage() {
   }, [loading]);
 
   useEffect(() => {
-    const urlCat = queryParams.category;
-    if (urlCat != null && urlCat !== categoryFilter) {
-      setCategoryFilter(urlCat);
+    const urlCats = parseIdList(queryParams.category);
+    const same =
+      urlCats.length === categoryFilters.length &&
+      urlCats.every((id) => categoryFilters.includes(id));
+    if (queryParams.category != null && !same) {
+      setCategoryFilters(urlCats);
       scrollToResults();
     }
   }, [queryParams.category]);
@@ -67,8 +82,8 @@ export default function ProductsPage() {
   }, []);
 
   const seoCat =
-    categoryFilter !== ALL
-      ? dbCats.find((c) => String(c.id) === categoryFilter)
+    categoryFilters.length === 1
+      ? dbCats.find((c) => c.id === categoryFilters[0])
       : null;
   const seoTitle = seoCat
     ? lang === 'bg'
@@ -85,11 +100,11 @@ export default function ProductsPage() {
     setLoading(true);
     setError(false);
 
-    const catId = categoryFilter === ALL ? null : Number(categoryFilter);
-    const sizeId = sizeFilter === ALL ? null : sizeFilter;
+    const catIds = categoryFilters.length > 0 ? categoryFilters : null;
+    const sizes = sizeFilters.length > 0 ? sizeFilters : null;
     const search = debouncedSearch.trim() || null;
 
-    fetchProducts(catId, sizeId, page, search)
+    fetchProducts(catIds, sizes, page, search)
       .then((result) => {
         if (!cancelled) {
           setProducts(result.products);
@@ -108,20 +123,38 @@ export default function ProductsPage() {
     return () => {
       cancelled = true;
     };
-  }, [categoryFilter, sizeFilter, page, debouncedSearch]);
+  }, [categoryFilters, sizeFilters, page, debouncedSearch]);
 
   useEffect(() => {
     setPage(0);
-  }, [categoryFilter, sizeFilter, debouncedSearch]);
+  }, [categoryFilters, sizeFilters, debouncedSearch]);
 
   const scrollToResults = () => {
     needsScrollRef.current = true;
   };
 
   const handleCategoryCardClick = (catId: number) => {
-    setCategoryFilter(String(catId));
+    setCategoryFilters([catId]);
     scrollToResults();
   };
+
+  const toggleCategory = (catId: number) => {
+    setCategoryFilters((prev) => toggleInArray(prev, catId));
+    scrollToResults();
+  };
+
+  const toggleSize = (size: string) => {
+    setSizeFilters((prev) => toggleInArray(prev, size));
+    scrollToResults();
+  };
+
+  const clearFilters = () => {
+    setCategoryFilters([]);
+    setSizeFilters([]);
+    setSearchQuery('');
+  };
+
+  const activeFilterCount = categoryFilters.length + sizeFilters.length + (debouncedSearch.trim() ? 1 : 0);
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -228,84 +261,110 @@ export default function ProductsPage() {
         <CategoryGrid
           categories={dbCats.filter((c) => c.showAsTile)}
           onSelect={handleCategoryCardClick}
-          selectedId={categoryFilter}
+          selectedId={categoryFilters.length === 1 ? String(categoryFilters[0]) : undefined}
           showAll
         />
       </section>
 
-      <div className="mt-8 flex flex-wrap items-center justify-start gap-2 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-3">
+      <div className="mt-8 flex flex-wrap items-center gap-3 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-3">
         <button
-          onClick={() => { setCategoryFilter(ALL); setSizeFilter(ALL); setSearchQuery(''); }}
-          className={`shrink-0 rounded-full px-4 py-2 text-sm transition ${
-            categoryFilter === ALL && sizeFilter === ALL && !searchQuery
+          onClick={() => setFilterOpen((v) => !v)}
+          className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition ${
+            filterOpen
               ? 'btn-gold'
-              : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+              : 'border border-gold-400/30 text-gold-200 hover:border-gold-400/60 hover:bg-gold-400/10'
           }`}
+          aria-expanded={filterOpen}
         >
-          {t('products.filterAll')}
+          <SlidersHorizontal size={16} />
+          {t('products.advancedFilter')}
+          {activeFilterCount > 0 && (
+            <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-ink-900/30 px-1.5 text-xs font-semibold">
+              {activeFilterCount}
+            </span>
+          )}
         </button>
 
-        {dbCats.map((cat) => {
-          const catIdStr = String(cat.id);
-          const isSelected = categoryFilter === catIdStr;
-          const catName = lang === 'bg' ? cat.nameBg : cat.nameEn;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => {
-                setCategoryFilter(catIdStr);
-                scrollToResults();
-              }}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm transition ${
-                isSelected
-                  ? 'btn-gold'
-                  : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
-              }`}
-            >
-              {catName}
-            </button>
-          );
-        })}
-
-        <div className="ml-auto flex items-center gap-2">
+        {activeFilterCount > 0 && (
           <button
-            onClick={() => setSearchOpen((v) => !v)}
-            className={`flex h-10 w-10 items-center justify-center rounded-full border transition ${
-              searchOpen
-                ? 'border-gold-400/60 bg-gold-400/10 text-gold-200'
-                : 'border-gold-400/25 text-gold-300/70 hover:border-gold-400/50 hover:text-gold-200'
-            }`}
-            aria-label={t('products.searchPlaceholder')}
-            aria-expanded={searchOpen}
+            onClick={clearFilters}
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-gold-400/20 px-3.5 py-2 text-sm text-gray-400 transition hover:border-gold-400/50 hover:text-gold-200"
           >
-            <Search size={18} />
+            <X size={14} />
+            {t('products.clearFilters')}
           </button>
-        </div>
+        )}
+
+        {activeFilterCount > 0 && (
+          <span className="text-xs text-gray-500">
+            {activeFilterCount} {t('products.activeFilters')}
+          </span>
+        )}
       </div>
 
-      {searchOpen && (
-        <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-3 sm:flex-row sm:items-center">
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="номер или име на костюм"
-            className="w-full rounded-lg border border-gold-400/20 bg-ink-700 px-4 py-2.5 text-sm text-gray-200 transition placeholder:text-gray-500 focus:border-gold-400/60 focus:outline-none sm:max-w-xs"
-          />
-          <label className="flex items-center gap-2 text-sm">
-            <span className="whitespace-nowrap text-gray-400">{t('products.filterSize')}:</span>
-            <select
-              value={sizeFilter}
-              onChange={(e) => setSizeFilter(e.target.value)}
-              className="rounded-lg border border-gold-400/20 bg-ink-700 px-3 py-1.5 text-sm text-gray-200 transition focus:border-gold-400/60 focus:outline-none"
-            >
-              <option value={ALL}>{t('products.filterAll')}</option>
-              {availableSizes.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </label>
+      {filterOpen && (
+        <div className="mt-2 flex flex-col gap-4 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-4">
+          <div>
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('products.searchPlaceholder')}
+              className="w-full rounded-lg border border-gold-400/20 bg-ink-700 px-4 py-2.5 text-sm text-gray-200 transition placeholder:text-gray-500 focus:border-gold-400/60 focus:outline-none sm:max-w-sm"
+            />
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              {t('products.filterCategories')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {dbCats.map((cat) => {
+                const isSelected = categoryFilters.includes(cat.id);
+                const catName = lang === 'bg' ? cat.nameBg : cat.nameEn;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => toggleCategory(cat.id)}
+                    aria-pressed={isSelected}
+                    className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
+                      isSelected
+                        ? 'btn-gold'
+                        : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+                    }`}
+                  >
+                    {catName}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              {t('products.filterSize')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {availableSizes.map((s) => {
+                const isSelected = sizeFilters.includes(s);
+                return (
+                  <button
+                    key={s}
+                    onClick={() => toggleSize(s)}
+                    aria-pressed={isSelected}
+                    className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
+                      isSelected
+                        ? 'btn-gold'
+                        : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 

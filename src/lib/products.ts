@@ -319,7 +319,13 @@ function baseQuery() {
 function searchFilter(search: string): string {
   const term = search.trim().replace(/[,.()]/g, ' ').trim();
   if (!term) return '';
-  return `name_bg.ilike.%${term}%,name_en.ilike.%${term}%`;
+  const base = `name_bg.ilike.%${term}%,name_en.ilike.%${term}%`;
+  // Catalog numbers (old_id) are searched exactly, as printed on the tag —
+  // only meaningful when the whole term is numeric.
+  if (/^\d+$/.test(term)) {
+    return `${base},old_id.eq.${term}`;
+  }
+  return base;
 }
 
 /**
@@ -332,8 +338,8 @@ function searchFilter(search: string): string {
 const FETCH_PAGE_SIZE = 1000;
 
 export async function getFilteredAndSortedIds(
-  categoryId: number | null,
-  sizeFilter: string | null,
+  categoryIds: number[] | null,
+  sizeFilters: string[] | null,
   search: string | null = null
 ): Promise<number[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -350,8 +356,13 @@ export async function getFilteredAndSortedIds(
       .neq('image_url', '')
       .range(from, from + FETCH_PAGE_SIZE - 1);
 
-    if (categoryId != null) {
-      query = query.or(`category_ids.cs.{${categoryId}},category_id.eq.${categoryId}`);
+    if (categoryIds != null && categoryIds.length > 0) {
+      // OR across every selected category — a product matching any one of
+      // them is included, same as a typical faceted-filter checkbox group.
+      const clause = categoryIds
+        .map((id) => `category_ids.cs.{${id}},category_id.eq.${id}`)
+        .join(',');
+      query = query.or(clause);
     }
 
     if (search) {
@@ -368,16 +379,19 @@ export async function getFilteredAndSortedIds(
     from += FETCH_PAGE_SIZE;
   }
 
-  // 1. Apply Size Filter
-  if (sizeFilter) {
+  // 1. Apply Size Filter — OR across every selected size.
+  if (sizeFilters != null && sizeFilters.length > 0) {
     items = items.filter((r) => {
       const sizes = (r.sizes ?? '').toUpperCase();
-      if (sizeFilter === 'Kids') {
-        const isKidsSize = [...KIDS_SIZES].some((ks) => sizes.includes(ks));
-        const isKidsCat = hasCategory(r, 19);
-        return isKidsSize || isKidsCat;
-      }
-      return sizes.split(/[,;/]/).some((s: string) => s.trim() === sizeFilter);
+      const rowSizes = sizes.split(/[,;/]/).map((s: string) => s.trim());
+      return sizeFilters.some((sizeFilter) => {
+        if (sizeFilter === 'Kids') {
+          const isKidsSize = [...KIDS_SIZES].some((ks) => sizes.includes(ks));
+          const isKidsCat = hasCategory(r, 19);
+          return isKidsSize || isKidsCat;
+        }
+        return rowSizes.includes(sizeFilter);
+      });
     });
   }
 
@@ -422,22 +436,22 @@ export async function getFilteredAndSortedIds(
 }
 
 export async function countProducts(
-  categoryId: number | null,
-  sizeFilter: string | null,
+  categoryIds: number[] | null,
+  sizeFilters: string[] | null,
   search: string | null = null
 ): Promise<number> {
-  const ids = await getFilteredAndSortedIds(categoryId, sizeFilter, search);
+  const ids = await getFilteredAndSortedIds(categoryIds, sizeFilters, search);
   return ids.length;
 }
 
 export async function fetchProducts(
-  categoryId: number | null,
-  sizeFilter: string | null,
+  categoryIds: number[] | null,
+  sizeFilters: string[] | null,
   page: number,
   search: string | null = null
 ): Promise<FetchResult> {
   // Get fully sorted and filtered IDs matching the query
-  const allIds = await getFilteredAndSortedIds(categoryId, sizeFilter, search);
+  const allIds = await getFilteredAndSortedIds(categoryIds, sizeFilters, search);
 
   const total = allIds.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
