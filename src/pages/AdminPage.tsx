@@ -19,6 +19,7 @@ import {
   MapPin,
   Clock,
   Tag,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
@@ -603,6 +604,22 @@ function useBrokenImages(products: AdminProduct[]) {
   return { broken, checking };
 }
 
+// A product has exactly one primary "type" (demographic — Women/Men/Boys/…
+// — or, for accessory-only items, one of the hidden Masks/Hats/Wigs/
+// Accessories categories) plus any number of theme/subcategory tags
+// (Halloween, Pirates, Professions, …). `group === 'main'` and `!isActive`
+// together cover every primary id; every other active category is a theme.
+function classifyCategories(categories: Category[]) {
+  return {
+    primaryCategories: categories.filter((c) => c.group === 'main' || !c.isActive),
+    themeCategories: categories.filter((c) => c.group === 'other' && c.isActive),
+  };
+}
+
+function categoryOrClause(ids: number[]): string {
+  return ids.map((id) => `category_ids.cs.{${id}},category_id.eq.${id}`).join(',');
+}
+
 function ProductManager() {
   const { lang } = useI18n();
   const { notify } = useToast();
@@ -616,9 +633,26 @@ function ProductManager() {
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
+  const [filterPrimary, setFilterPrimary] = useState<number[]>([]);
+  const [filterTheme, setFilterTheme] = useState<number[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const pageSize = 20;
   const { broken, checking } = useBrokenImages(products);
   const brokenProducts = products.filter((p) => broken.has(p.id));
+  const { primaryCategories: filterPrimaryOptions, themeCategories: filterThemeOptions } =
+    classifyCategories(categories);
+  const activeFilterCount = filterPrimary.length + filterTheme.length;
+
+  const toggleFilterPrimary = (id: number) => {
+    setFilterPrimary((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+  const toggleFilterTheme = (id: number) => {
+    setFilterTheme((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+  const clearCategoryFilters = () => {
+    setFilterPrimary([]);
+    setFilterTheme([]);
+  };
 
   useEffect(() => {
     fetchAllCategoriesAdmin().then(setCategories).catch(() => setCategories([]));
@@ -629,16 +663,32 @@ function ProductManager() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => { setPage(0); }, [debouncedSearch]);
+  useEffect(() => { setPage(0); }, [debouncedSearch, filterPrimary, filterTheme]);
 
   useEffect(() => {
     setLoading(true);
     let cancelled = false;
     const term = debouncedSearch.trim();
-    const filter = term ? `name_bg.ilike.%${term}%,name_en.ilike.%${term}%` : undefined;
+    // Admins look up products by the old (pre-migration) catalog number
+    // shown on the product page ("Каталожен №") — stored in old_id, which
+    // the name-only search never matched. Deliberately NOT matching the
+    // new internal id here too: id and old_id are unrelated sequences, so
+    // e.g. searching "100" could otherwise also surface whichever unrelated
+    // product happens to have internal id 100.
+    const isNumeric = /^\d+$/.test(term);
+    const searchParts: string[] = [];
+    if (term) {
+      searchParts.push(`name_bg.ilike.%${term}%`, `name_en.ilike.%${term}%`);
+      if (isNumeric) searchParts.push(`old_id.eq.${term}`);
+    }
+    const searchFilter = searchParts.length > 0 ? searchParts.join(',') : undefined;
+    const primaryClause = filterPrimary.length > 0 ? categoryOrClause(filterPrimary) : undefined;
+    const themeClause = filterTheme.length > 0 ? categoryOrClause(filterTheme) : undefined;
 
     const countQuery = supabase.from('products').select('*', { count: 'exact', head: true });
-    if (filter) countQuery.or(filter);
+    if (searchFilter) countQuery.or(searchFilter);
+    if (primaryClause) countQuery.or(primaryClause);
+    if (themeClause) countQuery.or(themeClause);
     countQuery.then(({ count }) => { if (!cancelled) setTotal(count ?? 0); });
 
     const query = supabase
@@ -646,7 +696,9 @@ function ProductManager() {
       .select('*')
       .order('id', { ascending: false })
       .range(page * pageSize, (page + 1) * pageSize - 1);
-    if (filter) query.or(filter);
+    if (searchFilter) query.or(searchFilter);
+    if (primaryClause) query.or(primaryClause);
+    if (themeClause) query.or(themeClause);
 
     query.then(({ data, error }) => {
       if (cancelled) return;
@@ -656,7 +708,7 @@ function ProductManager() {
     });
 
     return () => { cancelled = true; };
-  }, [debouncedSearch, page, reloadKey]);
+  }, [debouncedSearch, page, reloadKey, filterPrimary, filterTheme]);
 
   const handleDelete = async (id: number) => {
     if (!confirm(lang === 'bg' ? 'Сигурни ли сте?' : 'Are you sure?')) return;
@@ -675,15 +727,34 @@ function ProductManager() {
   return (
     <div>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gold-300/60" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={lang === 'bg' ? 'Търси продукт…' : 'Search product…'}
-            className="w-full rounded-lg border border-gold-400/20 bg-ink-700 py-2.5 pl-10 pr-4 text-sm text-gray-200 transition placeholder:text-gray-500 focus:border-gold-400/60 focus:outline-none"
-          />
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-xs">
+            <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gold-300/60" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={lang === 'bg' ? 'Търси продукт или стар №…' : 'Search product or old #…'}
+              className="w-full rounded-lg border border-gold-400/20 bg-ink-700 py-2.5 pl-10 pr-4 text-sm text-gray-200 transition placeholder:text-gray-500 focus:border-gold-400/60 focus:outline-none"
+            />
+          </div>
+          <button
+            onClick={() => setFiltersOpen((v) => !v)}
+            aria-expanded={filtersOpen}
+            className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
+              filtersOpen
+                ? 'btn-gold'
+                : 'border border-gold-400/25 text-gold-200 hover:border-gold-400/50 hover:bg-gold-400/10'
+            }`}
+          >
+            <SlidersHorizontal size={16} />
+            {lang === 'bg' ? 'Категории' : 'Categories'}
+            {activeFilterCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ink-900/30 px-1.5 text-xs font-semibold">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
         </div>
         <button
           onClick={() => { setEditing(null); setShowForm(true); }}
@@ -693,6 +764,74 @@ function ProductManager() {
           {lang === 'bg' ? 'Нов продукт' : 'New product'}
         </button>
       </div>
+
+      {filtersOpen && (
+        <div className="mb-4 flex flex-col gap-4 rounded-xl border border-gold-400/20 bg-ink-900 p-4">
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                {lang === 'bg' ? 'Основна категория (включително скрити)' : 'Primary category (including hidden)'}
+              </p>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearCategoryFilters}
+                  className="flex items-center gap-1 text-xs text-gray-400 transition hover:text-gold-200"
+                >
+                  <X size={12} />
+                  {lang === 'bg' ? 'Изчисти' : 'Clear'}
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {filterPrimaryOptions.map((cat) => {
+                const isSelected = filterPrimary.includes(cat.id);
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => toggleFilterPrimary(cat.id)}
+                    aria-pressed={isSelected}
+                    className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
+                      isSelected
+                        ? 'btn-gold'
+                        : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+                    }`}
+                  >
+                    {lang === 'bg' ? cat.nameBg : cat.nameEn}
+                    {!cat.isActive && (lang === 'bg' ? ' (скрита)' : ' (hidden)')}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              {lang === 'bg' ? 'Подкатегория' : 'Subcategory'}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {filterThemeOptions.map((cat) => {
+                const isSelected = filterTheme.includes(cat.id);
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => toggleFilterTheme(cat.id)}
+                    aria-pressed={isSelected}
+                    className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
+                      isSelected
+                        ? 'btn-gold'
+                        : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+                    }`}
+                  >
+                    {lang === 'bg' ? cat.nameBg : cat.nameEn}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       <p className="mb-4 text-sm text-gray-500">
         {total} {lang === 'bg' ? 'продукта' : 'products'}
@@ -769,7 +908,7 @@ function ProductManager() {
                       <td className="px-4 py-4 text-gray-400">
                         {catNames || '—'}
                       </td>
-                      <td className="px-4 py-4 text-gold-200">{p.price.toFixed(0)} €</td>
+                      <td className="px-4 py-4 text-gold-200">{p.price.toFixed(0)} {lang === 'bg' ? 'лв.' : 'BGN'}</td>
                       <td className="px-4 py-4">
                         {p.isActive ? <Check size={18} className="text-moss-400" /> : <X size={18} className="text-gray-600" />}
                       </td>
@@ -838,14 +977,7 @@ function ProductForm({
   const { lang } = useI18n();
   const { notify } = useToast();
 
-  // A product has exactly one primary "type" (demographic — Women/Men/Boys/…
-  // — or, for accessory-only items, one of the hidden Masks/Hats/Wigs/
-  // Accessories categories) plus any number of theme/subcategory tags
-  // (Halloween, Pirates, Professions, …). `group === 'main'` and
-  // `!isActive` together cover every primary id; every other active
-  // category is a theme.
-  const primaryCategories = categories.filter((c) => c.group === 'main' || !c.isActive);
-  const themeCategories = categories.filter((c) => c.group === 'other' && c.isActive);
+  const { primaryCategories, themeCategories } = classifyCategories(categories);
   const primaryIdSet = new Set(primaryCategories.map((c) => c.id));
   const themeIdSet = new Set(themeCategories.map((c) => c.id));
 
@@ -986,10 +1118,10 @@ function ProductForm({
         </FormField>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label={lang === 'bg' ? 'Цена (€)' : 'Price (€)'}>
+          <FormField label={lang === 'bg' ? 'Цена (лв.)' : 'Price (BGN)'}>
             <input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className="form-input" required />
           </FormField>
-          <FormField label={lang === 'bg' ? 'Стара цена (€)' : 'Old price (€)'}>
+          <FormField label={lang === 'bg' ? 'Стара цена (лв.)' : 'Old price (BGN)'}>
             <input type="number" step="0.01" value={form.old_price ?? ''} onChange={(e) => setForm({ ...form, old_price: e.target.value ? Number(e.target.value) : null })} className="form-input" />
           </FormField>
         </div>
