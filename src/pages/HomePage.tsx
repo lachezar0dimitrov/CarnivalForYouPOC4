@@ -30,7 +30,7 @@ export default function HomePage() {
   return (
     <div className="home-page relative -mt-20 sm:-mt-24">
       {/* HERO — banner rotator carousel with light overlay & fireflies */}
-      <div className="relative w-full overflow-hidden">
+      <div className="relative mx-auto w-full max-w-[1920px] overflow-hidden">
         <BannerCarousel />
 
         {/* Fireflies / butterflies layer */}

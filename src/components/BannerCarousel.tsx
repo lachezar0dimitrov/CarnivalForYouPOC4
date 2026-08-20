@@ -107,7 +107,7 @@ export default function BannerCarousel() {
       {!isChristmas && <HeroFireflies count={24} />}
 
       {/* Slide content overlay */}
-      <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-[clamp(4rem,7.5vw,9rem)] text-center md:min-h-0 md:h-full">
+      <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-[clamp(5rem,14vw,18rem)] text-center md:min-h-0 md:h-full">
         {banners.map((banner, i) => (
           <div
             key={banner.id}
