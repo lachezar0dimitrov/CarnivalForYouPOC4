@@ -13,7 +13,7 @@ export default function Logo({
   return (
     <button
       onClick={onClick}
-      className={`group flex items-center overflow-visible py-1 ${large ? 'gap-2 self-start sm:gap-2.5' : 'gap-1.5'}`}
+      className={`group flex items-center overflow-visible py-1 ${large ? 'gap-2 sm:gap-2.5' : 'gap-1.5'}`}
       aria-label="CarnivalForYou — home"
     >
       <span className="relative hidden sm:block">
@@ -23,7 +23,7 @@ export default function Logo({
         />
       </span>
 
-      <span className={`logo-cursive text-2xl ${large ? 'sm:text-6xl' : 'sm:text-3xl'}`}>
+      <span className={`logo-cursive text-2xl ${large ? 'sm:text-5xl' : 'sm:text-3xl'}`}>
         <span className="logo-cf">Carnival</span>
         <span className="logo-for">for</span>
         <span className="logo-you">You</span>

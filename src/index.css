@@ -516,13 +516,10 @@ body:has(.app-shell[data-theme='christmas'])::-webkit-scrollbar-thumb:hover {
   animation-iteration-count: infinite;
 }
 
-/* Header surface with fine fairy-dust sparkles. overflow: visible (not
-   hidden) is deliberate — the logo is sized taller than this bar and
-   pops out above/below it; the sparkle layer below is `inset: 0` so it
-   stays contained on its own regardless. */
+/* Header surface with fine fairy-dust sparkles. */
 .site-header-surface {
   position: relative;
-  overflow: visible;
+  overflow: hidden;
   background: linear-gradient(180deg, rgba(17, 45, 31, 0.94), rgba(10, 29, 21, 0.9));
   box-shadow: 0 8px 30px rgba(20, 62, 36, 0.2);
 }
