@@ -4,6 +4,7 @@ import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
 import { loadCategories, getFeaturedCategories, type CategoryMeta } from '@/lib/products';
+import { getCurrentSeason } from '@/lib/season';
 import SectionHeading from '@/components/SectionHeading';
 import BannerCarousel from '@/components/BannerCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
@@ -13,6 +14,7 @@ export default function HomePage() {
   const { navigate } = useRouter();
   const { t, lang } = useI18n();
   const [categories, setCategories] = useState<CategoryMeta[]>([]);
+  const isChristmas = getCurrentSeason() === 'christmas';
 
   useEffect(() => {
     loadCategories().then((cats) => {
@@ -33,11 +35,11 @@ export default function HomePage() {
 
         {/* Fireflies / butterflies layer */}
         <div className="pointer-events-none absolute inset-0 z-10">
-          <HeroFireflies count={25} />
+          {!isChristmas && <HeroFireflies count={25} />}
         </div>
 
         {/* Minimal bottom gradient for text contrast */}
-        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-ink-900/50 via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
       </div>
 
       {/* Categories from DB metadata */}

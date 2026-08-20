@@ -1,12 +1,14 @@
-import { useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { RouterProvider, useRouter } from '@/lib/router';
 import { I18nProvider } from '@/lib/i18n';
 import { AuthProvider } from '@/lib/auth';
 import { ToastProvider } from '@/components/Toast';
+import { getCurrentSeason, loadThemeOverride } from '@/lib/season';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Fireflies from '@/components/Fireflies';
 import Butterflies from '@/components/Butterflies';
+import Snowflakes from '@/components/Snowflakes';
 import CookieConsent from '@/components/CookieConsent';
 import HomePage from '@/pages/HomePage';
 import ProductsPage from '@/pages/ProductsPage';
@@ -69,6 +71,14 @@ export default function App() {
 
 function AppShell() {
   const { route } = useRouter();
+  // Forces one re-render once the admin's theme override finishes loading,
+  // since getCurrentSeason() reads it from a synchronous module-level cache
+  // (see src/lib/season.ts) that starts out defaulting to calendar behavior.
+  const [, setThemeLoaded] = useState(false);
+
+  useEffect(() => {
+    loadThemeOverride().then(() => setThemeLoaded(true));
+  }, []);
 
   if (route === 'admin') {
     return (
@@ -78,11 +88,21 @@ function AppShell() {
     );
   }
 
+  const season = getCurrentSeason();
+  const isChristmas = season === 'christmas';
+
   return (
-    <div className="app-shell relative min-h-screen overflow-hidden">
+    <div
+      className="app-shell relative min-h-screen overflow-hidden"
+      data-theme={isChristmas ? 'christmas' : undefined}
+    >
       <div className="site-background pointer-events-none fixed inset-0 z-0" />
-      <Fireflies count={26} />
-      <Butterflies count={5} />
+      {!isChristmas && (
+        <>
+          <Fireflies count={26} />
+          <Butterflies count={5} />
+        </>
+      )}
 
       <Header />
       <main className="site-main relative z-10">
@@ -90,6 +110,10 @@ function AppShell() {
       </main>
       <Footer />
       <CookieConsent />
+      {/* Rendered last (and highest z-index) so falling snow drifts over the
+          whole site — header, hero, cards — like real snowfall, not just in
+          the .site-background layer's negative space. */}
+      {isChristmas && <Snowflakes count={50} />}
     </div>
   );
 }

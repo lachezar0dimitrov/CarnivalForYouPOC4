@@ -19,6 +19,7 @@ import {
   MapPin,
   Clock,
   Tag,
+  Palette,
 } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
@@ -36,6 +37,7 @@ import {
   saveSiteSettings,
   type SiteSettings,
 } from '@/lib/siteSettings';
+import { setThemeOverrideCache, type ThemeOverride } from '@/lib/season';
 import {
   fetchAllCategoriesAdmin,
   saveCategory,
@@ -45,7 +47,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/components/Toast';
 
-type Tab = 'banners' | 'products' | 'contacts' | 'categories';
+type Tab = 'banners' | 'products' | 'contacts' | 'categories' | 'theme';
 
 const NO_IMAGE = '/no-image.svg';
 
@@ -133,12 +135,16 @@ export default function AdminPage() {
         <TabButton active={tab === 'contacts'} onClick={() => setTab('contacts')} icon={Phone}>
           {lang === 'bg' ? 'Контакти' : 'Contacts'}
         </TabButton>
+        <TabButton active={tab === 'theme'} onClick={() => setTab('theme')} icon={Palette}>
+          {lang === 'bg' ? 'Тема' : 'Theme'}
+        </TabButton>
       </div>
 
       {tab === 'banners' && <BannerManager />}
       {tab === 'products' && <ProductManager />}
       {tab === 'categories' && <CategoryManager />}
       {tab === 'contacts' && <ContactsManager />}
+      {tab === 'theme' && <ThemeManager />}
     </div>
   );
 
@@ -1224,6 +1230,7 @@ function ContactsManager() {
           address: '',
           phone: '',
           email: '',
+          themeOverride: 'auto',
           hoursBg: [],
           hoursEn: [],
           mapsQuery: '',
@@ -1453,6 +1460,141 @@ function ContactsManager() {
             {lang === 'bg' ? 'Запазено!' : 'Saved!'}
           </span>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// THEME MANAGER
+// ============================================================
+// Add a new entry here (and a matching value in the site_settings.theme_override
+// CHECK constraint, and a [data-theme="..."] block in src/index.css) to expose
+// another seasonal visual theme the same way Christmas was added.
+const THEME_OPTIONS: {
+  value: ThemeOverride;
+  labelBg: string;
+  labelEn: string;
+  descBg: string;
+  descEn: string;
+}[] = [
+  {
+    value: 'auto',
+    labelBg: 'Автоматично (по дата)',
+    labelEn: 'Automatic (by date)',
+    descBg: 'Коледна тема от 1 ноември до 10 януари, основна тема през останалата част от годината.',
+    descEn: 'Christmas theme Nov 1 – Jan 10, main theme the rest of the year.',
+  },
+  {
+    value: 'main',
+    labelBg: 'Основна тема',
+    labelEn: 'Main theme',
+    descBg: 'Тъмната магическа тема на сайта, независимо от датата.',
+    descEn: "The site's dark magical theme, regardless of date.",
+  },
+  {
+    value: 'christmas',
+    labelBg: 'Коледна тема',
+    labelEn: 'Christmas theme',
+    descBg: 'Светлата снежна тема, независимо от датата.',
+    descEn: 'The light snowy theme, regardless of date.',
+  },
+];
+
+function ThemeManager() {
+  const { lang } = useI18n();
+  const { notify } = useToast();
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchSiteSettings()
+      .then((s) => {
+        setSettings(
+          s ?? {
+            address: '',
+            phone: '',
+            email: '',
+            hoursBg: [],
+            hoursEn: [],
+            mapsQuery: '',
+            themeOverride: 'auto',
+          }
+        );
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const choose = async (value: ThemeOverride) => {
+    if (!settings || saving || settings.themeOverride === value) return;
+    const previous = settings.themeOverride;
+    const next = { ...settings, themeOverride: value };
+    setSettings(next);
+    setSaving(true);
+    try {
+      await saveSiteSettings(next);
+      setThemeOverrideCache(value);
+      notify('success', lang === 'bg' ? 'Темата е сменена.' : 'Theme switched.');
+    } catch {
+      setSettings({ ...next, themeOverride: previous });
+      notify('error', lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 size={28} className="animate-spin text-gold-300" />
+      </div>
+    );
+  }
+
+  if (!settings) {
+    return <p className="text-center text-gray-500">Error loading settings.</p>;
+  }
+
+  return (
+    <div className="glass rounded-2xl p-6">
+      <h2 className="mb-1 font-display text-lg font-semibold text-gold-100">
+        {lang === 'bg' ? 'Тема на сайта' : 'Site theme'}
+      </h2>
+      <p className="mb-5 text-sm text-gray-400">
+        {lang === 'bg'
+          ? 'Избира кой визуален облик виждат посетителите.'
+          : 'Chooses which visual look visitors see.'}
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {THEME_OPTIONS.map((opt) => {
+          const active = settings.themeOverride === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => choose(opt.value)}
+              disabled={saving}
+              className={`flex flex-col items-start gap-1.5 rounded-xl border p-4 text-left transition disabled:opacity-60 ${
+                active
+                  ? 'border-gold-400/60 bg-gold-400/10 shadow-glow-sm'
+                  : 'border-gold-400/15 hover:border-gold-400/35 hover:bg-gold-400/5'
+              }`}
+            >
+              <span className="flex w-full items-center justify-between">
+                <span className="font-display text-sm font-semibold text-gold-100">
+                  {lang === 'bg' ? opt.labelBg : opt.labelEn}
+                </span>
+                {active && <Check size={16} className="shrink-0 text-gold-300" />}
+              </span>
+              <span className="text-xs leading-relaxed text-gray-400">
+                {lang === 'bg' ? opt.descBg : opt.descEn}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

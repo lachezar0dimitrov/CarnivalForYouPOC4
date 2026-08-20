@@ -4,6 +4,7 @@
 
 import { supabase } from '@/lib/supabase';
 import type { Lang } from '@/lib/i18n';
+import { getCurrentSeason } from '@/lib/season';
 
 // --- Currency conversion ---
 const BGN_TO_EUR_RATE = 1.95583;
@@ -245,27 +246,7 @@ export function getAvailableSizes(): string[] {
   return ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'STD', 'Kids'];
 }
 
-// --- Seasonal & Sorting Logic ---
-type Season = 'christmas' | 'halloween' | 'normal';
-
-function getCurrentSeason(): Season {
-  const now = new Date();
-  const month = now.getMonth() + 1; // 1 - 12
-  const day = now.getDate();
-
-  // Коледа: 1 ноември – 10 януари
-  if (month === 11 || month === 12 || (month === 1 && day <= 10)) {
-    return 'christmas';
-  }
-
-  // Хелоуин: 15 август – 1 ноември
-  if ((month === 8 && day >= 15) || month === 9 || month === 10 || (month === 11 && day === 1)) {
-    return 'halloween';
-  }
-
-  return 'normal';
-}
-
+// --- Seasonal Sorting ---
 // Helper to check category presence efficiently
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function hasCategory(row: any, targetId: number): boolean {

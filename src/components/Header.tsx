@@ -124,7 +124,7 @@ export default function Header() {
       {open && (
         <div className="fixed inset-0 top-[60px] z-40 lg:hidden">
           <div
-            className="absolute inset-0 bg-ink-900/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
           <nav className="glass relative mx-3 mt-2 flex flex-col gap-1 rounded-2xl p-4 shadow-card animate-fadeUp">

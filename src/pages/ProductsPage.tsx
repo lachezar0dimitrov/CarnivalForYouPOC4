@@ -12,6 +12,7 @@ import {
   type Product,
   type CategoryMeta,
 } from '@/lib/products';
+import { getCurrentSeason } from '@/lib/season';
 import ProductCard from '@/components/ProductCard';
 import CategoryGrid from '@/components/CategoryGrid';
 
@@ -157,6 +158,7 @@ function FilterFields({
 export default function ProductsPage() {
   const { t, lang } = useI18n();
   const { queryParams } = useRouter();
+  const isChristmas = getCurrentSeason() === 'christmas';
 
   const [primaryCategories, setPrimaryCategories] = useState<number[]>(() =>
     parseIdList(queryParams.category).filter((id) => !SEASONAL_CATEGORY_IDS.has(id))
@@ -486,7 +488,14 @@ export default function ProductsPage() {
           how high a z-index it's given here. */}
       {filterOpen &&
         createPortal(
-          <div className="fixed inset-0 z-[100] flex flex-col bg-ink-900 lg:hidden">
+          // Portaled straight to document.body, outside .app-shell's DOM
+          // subtree — needs its own data-theme attribute since the themed
+          // CSS custom properties (see index.css) inherit via the DOM tree,
+          // not React's component tree.
+          <div
+            className="fixed inset-0 z-[100] flex flex-col bg-ink-900 lg:hidden"
+            data-theme={isChristmas ? 'christmas' : undefined}
+          >
             <div className="flex items-center justify-between border-b border-gold-400/15 px-4 py-4">
               <h2 className="font-display text-lg font-semibold text-gold-100">
                 {t('products.advancedFilter')}

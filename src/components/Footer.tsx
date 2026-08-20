@@ -130,12 +130,12 @@ export default function Footer() {
               href="https://www.core-logic.eu"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 font-medium text-gray-300 transition hover:text-white"
+              className="inline-flex items-center gap-1.5 font-medium text-gray-300 transition hover:text-gray-100"
             >
               <div className="flex h-5 w-5 items-center justify-center rounded-md bg-gradient-to-br from-teal-400 via-teal-600 to-cyan-800 p-0.5 text-[10px] font-extrabold text-slate-950 shadow-sm">
                 &gt;_
               </div>
-              <span className="text-xs font-semibold tracking-tight text-white">
+              <span className="text-xs font-semibold tracking-tight text-gray-100">
                 Core<span className="text-teal-400">-</span>Logic
               </span>
             </a>

@@ -110,11 +110,14 @@ function CategoryCardItem({
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-500 group-hover:from-black/90" />
 
       {/* 4. Текст и икона */}
+      {/* Fixed light gold/gray, not the themed gold/gray tokens — this text
+          sits over a photo/video plus dark scrim, not the page surface, so
+          it must stay legible regardless of the light/dark site theme. */}
       <div className="absolute inset-x-0 bottom-0 z-10 p-4 text-left">
-        <h3 className="font-display text-base font-semibold leading-tight text-gold-100">
+        <h3 className="font-display text-base font-semibold leading-tight text-[#f7e9b8]">
           {lang === 'bg' ? category.nameBg : category.nameEn}
         </h3>
-        <span className="mt-2 inline-flex items-center gap-1 text-xs text-gray-300 transition-colors duration-300 group-hover:text-gold-200">
+        <span className="mt-2 inline-flex items-center gap-1 text-xs text-[#d1d5db] transition-colors duration-300 group-hover:text-[#f0d985]">
           {isSelected ? '✓ ' : ''}
           {t('home.viewLooks')}
           <ArrowRight size={14} />

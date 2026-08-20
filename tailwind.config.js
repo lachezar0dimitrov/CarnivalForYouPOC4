@@ -1,26 +1,39 @@
 /** @type {import('tailwindcss').Config} */
+
+// Theme colors below (ink/gold/moss) resolve through CSS custom properties
+// instead of literal hex, so the Christmas light theme (`.app-shell[data-theme="christmas"]`
+// in src/index.css) can re-theme every existing utility class — including
+// arbitrary opacity modifiers like `bg-ink-900/75` — without touching each
+// component. See src/index.css for the dark (default) and Christmas values.
+function withOpacity(varName) {
+  return ({ opacityValue }) =>
+    opacityValue === undefined
+      ? `rgb(var(${varName}))`
+      : `rgb(var(${varName}) / ${opacityValue})`;
+}
+
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
         ink: {
-          900: '#070b09',
-          800: '#0a0f0d',
-          700: '#0d1410',
-          600: '#111a15',
-          500: '#16221c',
-          400: '#1e2c24',
+          900: withOpacity('--ink-900'),
+          800: withOpacity('--ink-800'),
+          700: withOpacity('--ink-700'),
+          600: withOpacity('--ink-600'),
+          500: withOpacity('--ink-500'),
+          400: withOpacity('--ink-400'),
         },
         gold: {
-          50: '#fbf4dc',
-          100: '#f7e9b8',
-          200: '#f0d985',
-          300: '#e7c44d',
-          400: '#d4af37',
-          500: '#bd9a2a',
-          600: '#9a7c20',
-          700: '#6f5917',
+          50: withOpacity('--gold-50'),
+          100: withOpacity('--gold-100'),
+          200: withOpacity('--gold-200'),
+          300: withOpacity('--gold-300'),
+          400: withOpacity('--gold-400'),
+          500: withOpacity('--gold-500'),
+          600: withOpacity('--gold-600'),
+          700: withOpacity('--gold-700'),
         },
         ember: {
           300: '#fbbf24',
@@ -28,10 +41,10 @@ export default {
           500: '#d97706',
         },
         moss: {
-          400: '#5b8c6e',
-          500: '#3f6b53',
-          600: '#2c4d3c',
-          700: '#1e362a',
+          400: withOpacity('--moss-400'),
+          500: withOpacity('--moss-500'),
+          600: withOpacity('--moss-600'),
+          700: withOpacity('--moss-700'),
         },
         success: '#3fa66a',
         warning: '#e7c44d',

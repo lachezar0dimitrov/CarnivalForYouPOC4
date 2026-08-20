@@ -56,8 +56,8 @@ export default function ServicesPage() {
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/40 to-transparent" />
-                <div className="absolute bottom-3 left-3 inline-flex rounded-xl border border-gold-400/30 bg-ink-900/70 p-2.5 text-gold-300 backdrop-blur-sm">
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="absolute bottom-3 left-3 inline-flex rounded-xl border border-gold-400/30 bg-black/70 p-2.5 text-gold-300 backdrop-blur-sm">
                   <Icon size={22} />
                 </div>
               </div>
