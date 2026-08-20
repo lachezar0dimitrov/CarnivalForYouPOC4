@@ -4,7 +4,6 @@
 
 import { supabase } from '@/lib/supabase';
 import type { Lang } from '@/lib/i18n';
-import { getCurrentSeason } from '@/lib/season';
 
 // --- Currency conversion ---
 const BGN_TO_EUR_RATE = 1.95583;
@@ -174,13 +173,15 @@ export function getAllCategories(categories: CategoryMeta[]): CategoryMeta[] {
 
 export function categoryName(id: number | null, lang: Lang): string {
   if (id == null) return lang === 'bg' ? 'Други' : 'Other';
-  // Prefer the live (already-loaded) DB categories over the static fallback
-  // list — loadCategories() only returns is_active categories, so a product
-  // tagged with a hidden category (e.g. Masks/Hats/Wigs/Accessories) falls
-  // through to "Other" here instead of surfacing a category that was
-  // deliberately taken off public navigation.
+  // loadCategories() only returns is_active categories, so a product cross-
+  // tagged with a hidden category (e.g. Masks/Hats/Wigs/Accessories) won't
+  // resolve against the live DB set — fall back to the static list (which
+  // does include hidden categories) so its real name still displays,
+  // instead of collapsing to "Other". Hidden categories still don't appear
+  // as browsable tiles/filters since that's driven by loadCategories(), not
+  // this display lookup.
   const source = _dbCategories ?? categoryMeta;
-  const cat = source.find((c) => c.id === id);
+  const cat = source.find((c) => c.id === id) ?? categoryMeta.find((c) => c.id === id);
   if (!cat) return lang === 'bg' ? 'Други' : 'Other';
   return lang === 'bg' ? cat.nameBg : cat.nameEn;
 }
@@ -246,7 +247,27 @@ export function getAvailableSizes(): string[] {
   return ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'STD', 'Kids'];
 }
 
-// --- Seasonal Sorting ---
+// --- Seasonal & Sorting Logic ---
+type Season = 'christmas' | 'halloween' | 'normal';
+
+function getCurrentSeason(): Season {
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1 - 12
+  const day = now.getDate();
+
+  // Коледа: 1 ноември – 10 януари
+  if (month === 11 || month === 12 || (month === 1 && day <= 10)) {
+    return 'christmas';
+  }
+
+  // Хелоуин: 15 август – 1 ноември
+  if ((month === 8 && day >= 15) || month === 9 || month === 10 || (month === 11 && day === 1)) {
+    return 'halloween';
+  }
+
+  return 'normal';
+}
+
 // Helper to check category presence efficiently
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function hasCategory(row: any, targetId: number): boolean {
