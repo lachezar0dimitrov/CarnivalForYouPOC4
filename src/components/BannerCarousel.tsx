@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { fetchActiveBanners, type Banner } from '@/lib/banners';
@@ -68,8 +67,14 @@ export default function BannerCarousel() {
     );
   }
 
+  // The whole banner is one click target now (the old "find your look" CTA
+  // button was removed). Falls back to the products page — whose category
+  // grid sits at the top — when a banner has no admin-configured link.
   const handleClick = (linkUrl: string) => {
-    if (!linkUrl) return;
+    if (!linkUrl) {
+      navigate('products');
+      return;
+    }
     if (linkUrl.startsWith('products')) {
       const queryPart = linkUrl.split('?')[1];
       const params: Record<string, string> = {};
@@ -106,12 +111,29 @@ export default function BannerCarousel() {
 
       {!isChristmas && <HeroFireflies count={24} />}
 
+      {/* Full-bleed click target: the entire banner navigates, replacing the
+          old CTA button. Sits under the text overlay (which is
+          pointer-events-none so clicks fall through to here) and under the
+          slide dots, which are a sibling at a higher z-index and therefore
+          still clickable on their own. */}
+      <button
+        type="button"
+        onClick={() => handleClick(banners[current]?.linkUrl ?? '')}
+        aria-label={t('home.findLook')}
+        className="absolute inset-0 z-20 cursor-pointer"
+      />
+
       {/* Slide content overlay */}
-      <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-[clamp(5rem,14vw,18rem)] text-center md:min-h-0 md:h-full">
+      <div className="pointer-events-none relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-[clamp(5rem,14vw,18rem)] text-center md:min-h-0 md:h-full">
         {banners.map((banner, i) => (
           <div
             key={banner.id}
-            className={`absolute inset-x-4 bottom-0 flex flex-col items-center transition-all duration-1000 ${
+            // bottom-8 on mobile keeps the subtitle clear of the slide dots:
+            // the dots sit bottom-left, which used to clear the centered CTA
+            // button, but with that button gone the full-width mobile subtitle
+            // now reaches down into their row. Desktop centres the text in a
+            // narrower column, so it never reaches the dots there.
+            className={`absolute inset-x-4 bottom-8 flex flex-col items-center transition-all duration-1000 sm:bottom-0 ${
               i === current
                 ? 'translate-y-0 opacity-100'
                 : 'pointer-events-none translate-y-4 opacity-0'
@@ -129,22 +151,16 @@ export default function BannerCarousel() {
                 most common desktop resolution — rather than an arbitrary
                 point; anything wider just gets more background, the text
                 doesn't keep growing, and anything narrower scales down
-                smoothly toward that same reference look. */}
-            <h1 className="font-display text-[clamp(1.5rem,4.2vw,5rem)] font-bold leading-tight text-[#f7e9b8] drop-shadow-lg">
+                smoothly toward that same reference look. The title's own
+                scale was then dialled back (it plateaued at 5rem, which
+                overpowered the photography) while keeping that same
+                reach-the-cap-at-1920px shape. */}
+            <h1 className="font-display text-[clamp(1.25rem,2.5vw,3rem)] font-bold leading-tight text-[#f7e9b8] drop-shadow-lg">
               {lang === 'bg' ? banner.titleBg : banner.titleEn}
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-[clamp(0.875rem,1.25vw,1.5rem)] text-[#e5e7eb] drop-shadow">
               {lang === 'bg' ? banner.subtitleBg : banner.subtitleEn}
             </p>
-            {banner.linkUrl && (
-              <button
-                onClick={() => handleClick(banner.linkUrl)}
-                className="btn-gold mt-4 inline-flex items-center gap-2 rounded-full px-[clamp(1.25rem,2.1vw,2.5rem)] py-[clamp(0.65rem,0.92vw,1.1rem)] text-[clamp(0.75rem,1.05vw,1.25rem)] sm:mt-5"
-              >
-                {t('home.findLook')}
-                <ArrowRight size={16} />
-              </button>
-            )}
           </div>
         ))}
       </div>
