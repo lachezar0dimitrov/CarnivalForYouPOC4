@@ -60,7 +60,7 @@ export default function Header() {
     <header ref={headerRef} className="site-header fixed inset-x-0 top-0 z-50">
       <div className="site-header-surface glass border-b border-gold-400/15">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 2xl:max-w-[1680px]">
-          <Logo onClick={() => go('home')} />
+          <Logo onClick={() => go('home')} large />
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-1 lg:flex">
