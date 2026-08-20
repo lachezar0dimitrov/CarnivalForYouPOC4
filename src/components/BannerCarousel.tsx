@@ -107,7 +107,7 @@ export default function BannerCarousel() {
       {!isChristmas && <HeroFireflies count={24} />}
 
       {/* Slide content overlay */}
-      <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-[clamp(4rem,8vw,9rem)] text-center md:min-h-0 md:h-full">
+      <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-[clamp(4rem,7.5vw,9rem)] text-center md:min-h-0 md:h-full">
         {banners.map((banner, i) => (
           <div
             key={banner.id}
@@ -124,18 +124,22 @@ export default function BannerCarousel() {
                 growing with viewport width on wide monitors — text capped at
                 a fixed breakpoint size (e.g. lg:text-4xl) stopped growing
                 past 1024px and looked proportionally smaller on anything
-                wider. vw-based sizing keeps it growing in step with the
-                banner, capped at a sensible max so it never overflows. */}
-            <h1 className="font-display text-[clamp(1.5rem,5vw,5rem)] font-bold leading-tight text-[#f7e9b8] drop-shadow-lg">
+                wider. The vw coefficients below are tuned so the max size
+                (the plateau) is reached right around 1920px — the single
+                most common desktop resolution — rather than an arbitrary
+                point; anything wider just gets more background, the text
+                doesn't keep growing, and anything narrower scales down
+                smoothly toward that same reference look. */}
+            <h1 className="font-display text-[clamp(1.5rem,4.2vw,5rem)] font-bold leading-tight text-[#f7e9b8] drop-shadow-lg">
               {lang === 'bg' ? banner.titleBg : banner.titleEn}
             </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-[clamp(0.875rem,1.5vw,1.5rem)] text-[#e5e7eb] drop-shadow">
+            <p className="mx-auto mt-3 max-w-2xl text-[clamp(0.875rem,1.25vw,1.5rem)] text-[#e5e7eb] drop-shadow">
               {lang === 'bg' ? banner.subtitleBg : banner.subtitleEn}
             </p>
             {banner.linkUrl && (
               <button
                 onClick={() => handleClick(banner.linkUrl)}
-                className="btn-gold mt-4 inline-flex items-center gap-2 rounded-full px-[clamp(1.25rem,2.2vw,2.5rem)] py-[clamp(0.65rem,1.1vw,1.1rem)] text-[clamp(0.75rem,1.3vw,1.25rem)] sm:mt-5"
+                className="btn-gold mt-4 inline-flex items-center gap-2 rounded-full px-[clamp(1.25rem,2.1vw,2.5rem)] py-[clamp(0.65rem,0.92vw,1.1rem)] text-[clamp(0.75rem,1.05vw,1.25rem)] sm:mt-5"
               >
                 {t('home.findLook')}
                 <ArrowRight size={16} />

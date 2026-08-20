@@ -9,10 +9,6 @@ type CategoryGridProps = {
   selectedIds?: number[];
   limit?: number;
   showAll?: boolean;
-  // Appended after `categories`/the featured set — e.g. HomePage passes the
-  // seasonal categories (Halloween/Christmas) here separately from the 5
-  // featured demographic ones, but both groups render in the same grid.
-  extraCategories?: CategoryMeta[];
 };
 
 const FALLBACK_IMAGES: Record<number, string> = {
@@ -134,7 +130,6 @@ export default function CategoryGrid({
   selectedIds,
   limit,
   showAll = false,
-  extraCategories,
 }: CategoryGridProps) {
   const { lang, t } = useI18n();
   const visibleCategories = showAll
@@ -145,14 +140,12 @@ export default function CategoryGrid({
 
   // Fixed at 3 columns from tablet width up — keeps the big-card look at
   // every desktop size instead of packing more (smaller) cards per row as
-  // the window widens. All categories (including ones that used to be
-  // hidden below the 2xl breakpoint) always render now; extra rows form
-  // naturally instead of some cards disappearing on non-fullscreen PCs.
-  const allCategories = [...visibleCategories, ...(extraCategories ?? [])];
-
+  // the window widens. Callers pass the exact set to show (see
+  // getHomepageCategories) with showAll, so nothing gets hidden by
+  // breakpoint here.
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-      {allCategories.map((category) => (
+      {visibleCategories.map((category) => (
         <CategoryCardItem
           key={category.id}
           category={category}

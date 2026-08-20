@@ -9,6 +9,7 @@ import {
   loadCategories,
   fetchProducts,
   getAvailableSizes,
+  getHomepageCategories,
   type Product,
   type CategoryMeta,
 } from '@/lib/products';
@@ -182,7 +183,6 @@ export default function ProductsPage() {
   const [dbCats, setDbCats] = useState<CategoryMeta[]>(categoryMeta);
 
   const availableSizes = getAvailableSizes();
-  const tileCats = dbCats.filter((c) => c.showAsTile);
   const primaryCats = dbCats.filter((c) => c.showAsTile && !SEASONAL_CATEGORY_IDS.has(c.id));
   const secondaryCats = dbCats.filter((c) => !c.showAsTile || SEASONAL_CATEGORY_IDS.has(c.id));
 
@@ -437,7 +437,7 @@ export default function ProductsPage() {
             {t('products.categories')}
           </h2>
           <CategoryGrid
-            categories={tileCats}
+            categories={getHomepageCategories(dbCats)}
             onSelect={handleCategoryCardClick}
             selectedIds={[...primaryCategories, ...secondaryCategories]}
             showAll

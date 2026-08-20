@@ -3,7 +3,7 @@ import { Sparkles } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
-import { loadCategories, getFeaturedCategories, type CategoryMeta } from '@/lib/products';
+import { loadCategories, getHomepageCategories, type CategoryMeta } from '@/lib/products';
 import { getCurrentSeason } from '@/lib/season';
 import SectionHeading from '@/components/SectionHeading';
 import BannerCarousel from '@/components/BannerCarousel';
@@ -52,11 +52,9 @@ export default function HomePage() {
 
         <div className="mt-10">
           <CategoryGrid
-            categories={categories}
-            extraCategories={categories.filter(
-              (c) => !getFeaturedCategories(categories).some((f) => f.id === c.id)
-            )}
+            categories={getHomepageCategories(categories)}
             onSelect={(categoryId) => navigate('products', { category: String(categoryId) })}
+            showAll
           />
         </div>
       </section>

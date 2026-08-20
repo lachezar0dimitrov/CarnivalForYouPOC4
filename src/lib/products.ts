@@ -179,6 +179,19 @@ export function getFeaturedCategories(categories: CategoryMeta[]): CategoryMeta[
   return categories.filter((category) => PRIMARY_CATEGORY_IDS.has(category.id));
 }
 
+// The 5 demographic tiles (Women/Men/Boys/Girls/Toddlers) plus one seasonal
+// tile — Christmas during the Christmas window, Halloween otherwise
+// (matches getCurrentSeason()'s own 'halloween'-as-default-outside-Christmas
+// behavior, and keeps the grid at a clean 6 cards / 2 full rows of 3 instead
+// of a 5+2 mix). Single source of truth for both the home page and the
+// products page category grid.
+export function getHomepageCategories(categories: CategoryMeta[]): CategoryMeta[] {
+  const featured = getFeaturedCategories(categories);
+  const seasonalId = getCurrentSeason() === 'christmas' ? 20 : 10;
+  const seasonal = categories.find((c) => c.id === seasonalId);
+  return seasonal ? [...featured, seasonal] : featured;
+}
+
 export function getAllCategories(categories: CategoryMeta[]): CategoryMeta[] {
   return categories;
 }
