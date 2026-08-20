@@ -10,7 +10,9 @@ const BGN_TO_EUR_RATE = 1.95583;
 const MARKUP = 1.2;
 
 export function bgnToEur(bgn: number): number {
-  return Math.round(((bgn * MARKUP) / BGN_TO_EUR_RATE) * 100) / 100;
+  // Rounded to a whole euro so the site never shows odd cent amounts
+  // (e.g. 14.73 €) — display-only rounding, the DB keeps the exact BGN price.
+  return Math.round((bgn * MARKUP) / BGN_TO_EUR_RATE);
 }
 
 export type Product = {

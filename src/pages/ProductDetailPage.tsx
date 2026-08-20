@@ -207,7 +207,7 @@ export default function ProductDetailPage() {
             <InfoTile
               icon={Coins}
               label={t('common.rentalPrice')}
-              value={`${product.price.toFixed(2)} ${t('common.eur')} ${t('common.perDay')}`}
+              value={`${product.price.toFixed(0)} ${t('common.eur')} ${t('common.perDay')}`}
               accent
             />
             {product.oldPrice != null && product.oldPrice > product.price && (
@@ -217,10 +217,10 @@ export default function ProductDetailPage() {
                 value={
                   <span>
                     <span className="mr-2 line-through opacity-50">
-                      {product.oldPrice != null ? product.oldPrice.toFixed(2) : ''} {t('common.eur')}
+                      {product.oldPrice != null ? product.oldPrice.toFixed(0) : ''} {t('common.eur')}
                     </span>
                     <span className="text-gold-100">
-                      {product.price.toFixed(2)} {t('common.eur')}
+                      {product.price.toFixed(0)} {t('common.eur')}
                     </span>
                   </span>
                 }

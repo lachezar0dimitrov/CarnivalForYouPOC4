@@ -764,7 +764,7 @@ function ProductManager() {
                       <td className="px-4 py-4 text-gray-400">
                         {catNames || '—'}
                       </td>
-                      <td className="px-4 py-4 text-gold-200">{p.price.toFixed(2)} €</td>
+                      <td className="px-4 py-4 text-gold-200">{p.price.toFixed(0)} €</td>
                       <td className="px-4 py-4">
                         {p.isActive ? <Check size={18} className="text-moss-400" /> : <X size={18} className="text-gray-600" />}
                       </td>
