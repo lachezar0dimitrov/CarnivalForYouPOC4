@@ -187,7 +187,13 @@ export default function ProductsPage() {
   const secondaryCats = dbCats.filter((c) => !c.showAsTile || SEASONAL_CATEGORY_IDS.has(c.id));
 
   const resultsRef = useRef<HTMLDivElement>(null);
-  const needsScrollRef = useRef(false);
+  // Arriving with a category already in the URL (e.g. clicking a tile on the
+  // home page) must scroll to the results too. The effect below only reacts
+  // to the category *changing* after mount, but on a fresh mount the state
+  // initialisers above have already parsed the same value out of the URL, so
+  // it sees no change and never fires — leaving the user at the top of the
+  // page looking at the category grid instead of their filtered products.
+  const needsScrollRef = useRef(queryParams.category != null);
 
   useEffect(() => {
     if (!loading && needsScrollRef.current) {
@@ -579,7 +585,10 @@ export default function ProductsPage() {
         )}
 
         <div className="min-w-0 flex-1">
-          <div ref={resultsRef} />
+          {/* Scroll anchor. scroll-margin keeps it clear of the fixed header,
+              which scrollIntoView({block:'start'}) would otherwise park it
+              underneath. */}
+          <div ref={resultsRef} className="scroll-mt-[calc(var(--header-height,4rem)+1rem)]" />
           {!loading && !error && (
             <p className="mt-4 text-sm text-gray-500">
               {total} {t('products.results')}
