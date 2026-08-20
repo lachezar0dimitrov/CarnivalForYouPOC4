@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { ThemeOverride } from '@/lib/season';
 
 export type SiteSettings = {
   address: string;
@@ -7,6 +8,7 @@ export type SiteSettings = {
   hoursBg: { day: string; time: string }[];
   hoursEn: { day: string; time: string }[];
   mapsQuery: string;
+  themeOverride: ThemeOverride;
 };
 
 type SettingsRow = {
@@ -17,6 +19,7 @@ type SettingsRow = {
   hours_bg: { day: string; time: string }[];
   hours_en: { day: string; time: string }[];
   maps_query: string;
+  theme_override: ThemeOverride;
 };
 
 function mapRow(r: SettingsRow): SiteSettings {
@@ -27,6 +30,7 @@ function mapRow(r: SettingsRow): SiteSettings {
     hoursBg: r.hours_bg ?? [],
     hoursEn: r.hours_en ?? [],
     mapsQuery: r.maps_query ?? '',
+    themeOverride: r.theme_override ?? 'auto',
   };
 }
 
@@ -52,6 +56,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
       hours_bg: settings.hoursBg,
       hours_en: settings.hoursEn,
       maps_query: settings.mapsQuery,
+      theme_override: settings.themeOverride,
       updated_at: new Date().toISOString(),
     })
     .eq('id', 1);

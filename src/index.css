@@ -5,6 +5,57 @@
 :root {
   color-scheme: dark;
   --baroque-frame: url('/baroque-frame.webp');
+
+  /* Dark "enchanted forest" theme tokens (default, Halloween & normal season). */
+  --ink-900: 7 11 9;
+  --ink-800: 10 15 13;
+  --ink-700: 13 20 16;
+  --ink-600: 17 26 21;
+  --ink-500: 22 34 28;
+  --ink-400: 30 44 36;
+  --gold-50: 251 244 220;
+  --gold-100: 247 233 184;
+  --gold-200: 240 217 133;
+  --gold-300: 231 196 77;
+  --gold-400: 212 175 55;
+  --gold-500: 189 154 42;
+  --gold-600: 154 124 32;
+  --gold-700: 111 89 23;
+  --moss-400: 91 140 110;
+  --moss-500: 63 107 83;
+  --moss-600: 44 77 60;
+  --moss-700: 30 54 42;
+}
+
+/* Light "snowy Christmas morning" theme tokens — active on any element
+   carrying data-theme="christmas" (the storefront shell in App.tsx, and the
+   ProductsPage mobile filter drawer, which is React-portaled straight to
+   document.body and so falls outside the shell's DOM subtree — CSS custom
+   properties inherit via the DOM tree, not the React tree, so it needs its
+   own copy of this attribute; see ProductsPage.tsx). Scoped to this
+   attribute rather than :root so the separate admin-panel shell (which
+   reuses these same ink/gold/moss tokens assuming permanent dark values)
+   is never affected — nothing in Admin ever carries this attribute. */
+[data-theme='christmas'] {
+  color-scheme: light;
+  --ink-900: 255 253 249;
+  --ink-800: 251 244 232;
+  --ink-700: 247 236 217;
+  --ink-600: 242 226 197;
+  --ink-500: 236 214 174;
+  --ink-400: 229 200 150;
+  --gold-50: 253 246 227;
+  --gold-100: 122 92 18;
+  --gold-200: 138 106 26;
+  --gold-300: 156 122 34;
+  --gold-400: 191 148 30;
+  --gold-500: 168 132 31;
+  --gold-600: 138 106 24;
+  --gold-700: 92 71 16;
+  --moss-400: 47 107 74;
+  --moss-500: 30 81 56;
+  --moss-600: 23 63 43;
+  --moss-700: 15 46 31;
 }
 
 html {
@@ -21,6 +72,13 @@ body {
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
   cursor: url('/cursor-wand.svg') 7 7, auto;
+}
+
+/* body sits outside .app-shell, so the Christmas override needs :has() to
+   react to the storefront shell's theme instead of a plain descendant rule. */
+body:has(.app-shell[data-theme='christmas']) {
+  background-color: #fdf8f0;
+  color: #241c17;
 }
 
 a, button, [role="button"], select, label {
@@ -52,6 +110,16 @@ h1, h2, h3, h4 {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(#d4af37, #9a7c20);
+}
+body:has(.app-shell[data-theme='christmas'])::-webkit-scrollbar-track {
+  background: #fbf0dd;
+}
+body:has(.app-shell[data-theme='christmas'])::-webkit-scrollbar-thumb {
+  background: linear-gradient(#2f6b4a, #173f2b);
+  border: 2px solid #fbf0dd;
+}
+body:has(.app-shell[data-theme='christmas'])::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(#c9a227, #8a6a12);
 }
 
 /* Horizontal scroll without visible scrollbar (swipeable card rows) */
@@ -141,6 +209,64 @@ h1, h2, h3, h4 {
     font-size: 0.7rem;
     color: #d4af37;
   }
+}
+
+/* ---------------------------------------------------------------------
+   Christmas light theme — component-level overrides.
+   Everything below is scoped under [data-theme="christmas"], set on the
+   storefront shell (App.tsx) and the mobile filter drawer (ProductsPage.tsx)
+   when src/lib/season.ts reports the Christmas season.
+   The ink/gold/moss CSS custom properties (see :root above) already
+   re-theme every plain Tailwind utility class; this block only covers
+   the hand-written CSS classes in this file that hardcode colors
+   directly instead of going through those tokens.
+   --------------------------------------------------------------------- */
+[data-theme='christmas'] .glass {
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 248, 235, 0.85) 100%
+  );
+  border: 1px solid rgba(154, 124, 32, 0.22);
+}
+[data-theme='christmas'] .glass-hover:hover {
+  border-color: rgba(154, 124, 32, 0.5);
+  box-shadow: 0 12px 40px rgba(120, 90, 40, 0.16), 0 0 24px rgba(191, 148, 30, 0.18);
+}
+[data-theme='christmas'] .text-gold-grad {
+  background: linear-gradient(120deg, #6b5010 0%, #a8841f 35%, #c9a227 60%, #6b5010 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+[data-theme='christmas'] .text-magic-grad {
+  background: linear-gradient(110deg, #9c1f2e 0%, #c9a227 35%, #1e5138 70%, #9c1f2e 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+[data-theme='christmas'] .btn-gold {
+  background: linear-gradient(135deg, #d9b544 0%, #c9a227 50%, #8a6a12 100%);
+  color: #2b2107;
+  box-shadow: 0 4px 16px rgba(120, 90, 20, 0.28);
+}
+[data-theme='christmas'] .btn-gold:hover {
+  box-shadow: 0 6px 22px rgba(120, 90, 20, 0.4);
+}
+[data-theme='christmas'] .btn-ghost {
+  border: 1px solid rgba(154, 124, 32, 0.5);
+  color: #6b5010;
+}
+[data-theme='christmas'] .btn-ghost:hover {
+  background: rgba(191, 148, 30, 0.12);
+  border-color: rgba(154, 124, 32, 0.8);
+  color: #4a3a0c;
+}
+[data-theme='christmas'] .eyebrow {
+  color: #8a6a12;
 }
 
 /* Firefly dot */
@@ -306,6 +432,90 @@ h1, h2, h3, h4 {
   padding-top: var(--header-height, 4rem);
 }
 
+/* Christmas: swap the dark enchanted-forest scene for a light snowy one. */
+[data-theme='christmas'] .site-background {
+  background-color: #fdf8f0;
+  background-image:
+    linear-gradient(180deg,
+      rgba(255, 253, 249, 0.1) 0%,
+      rgba(255, 248, 235, 0.3) 40%,
+      rgba(250, 238, 215, 0.5) 75%,
+      rgba(245, 228, 198, 0.65) 100%),
+    url('/christmas-bg.svg');
+  background-position: center bottom;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+[data-theme='christmas'] .site-background::after {
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1px 1px at 28% 42%, rgba(225,238,255,0.75), transparent),
+    radial-gradient(1.5px 1.5px at 52% 28%, rgba(255,255,255,0.85), transparent),
+    radial-gradient(1px 1px at 71% 55%, rgba(225,238,255,0.7), transparent),
+    radial-gradient(1.5px 1.5px at 85% 22%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1px 1px at 38% 72%, rgba(225,238,255,0.65), transparent),
+    radial-gradient(1px 1px at 64% 84%, rgba(255,255,255,0.75), transparent),
+    radial-gradient(1.5px 1.5px at 8% 62%, rgba(225,238,255,0.7), transparent);
+  opacity: 0.85;
+}
+
+/* Christmas header: frosted white/cream surface instead of the dark green one. */
+[data-theme='christmas'] .site-header-surface {
+  background: linear-gradient(180deg, rgba(255, 253, 249, 0.95), rgba(251, 244, 232, 0.9));
+  box-shadow: 0 8px 24px rgba(120, 90, 20, 0.1);
+}
+[data-theme='christmas'] .site-header-surface::before {
+  opacity: 0.6;
+  background-image:
+    radial-gradient(1.2px 1.2px at 8% 30%, rgba(255,255,255,0.95), transparent),
+    radial-gradient(1px 1px at 22% 70%, rgba(225,238,255,0.8), transparent),
+    radial-gradient(1.5px 1.5px at 38% 25%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1px 1px at 55% 60%, rgba(225,238,255,0.75), transparent),
+    radial-gradient(1.2px 1.2px at 72% 35%, rgba(255,255,255,0.85), transparent),
+    radial-gradient(1px 1px at 88% 72%, rgba(225,238,255,0.8), transparent),
+    radial-gradient(1.5px 1.5px at 95% 28%, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1px 1px at 15% 85%, rgba(225,238,255,0.7), transparent),
+    radial-gradient(1px 1px at 48% 90%, rgba(225,238,255,0.75), transparent),
+    radial-gradient(1.2px 1.2px at 68% 15%, rgba(255,255,255,0.85), transparent);
+}
+
+/* Christmas: raw Tailwind gray-* text utilities were tuned for light text on
+   the dark forest theme — invert to a warm dark neutral scale so body copy
+   stays legible on the light theme, without touching every component that
+   uses gray-*. Skipped for text-white deliberately: that utility is also used
+   on solid colored badges (discount pills) that must stay theme-invariant, so
+   those two page-background instances are hand-edited in Footer.tsx instead. */
+[data-theme='christmas'] .text-gray-100 { color: #241c17; }
+[data-theme='christmas'] .text-gray-200 { color: #3a2f27; }
+[data-theme='christmas'] .text-gray-300 { color: #4d4038; }
+[data-theme='christmas'] .text-gray-400 { color: #63544a; }
+[data-theme='christmas'] .text-gray-500 { color: #7d6c60; }
+[data-theme='christmas'] .text-gray-600 { color: #988578; }
+
+/* Falling snow — Christmas-only replacement for .firefly, same structural
+   pattern (see Snowflakes.tsx / Fireflies.tsx). */
+.snowflake {
+  position: absolute;
+  top: -8%;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #ffffff 0%, #eaf3ff 55%, rgba(234,243,255,0) 75%);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+@keyframes snowFall {
+  0% { transform: translate3d(0, 0, 0); opacity: 0; }
+  8% { opacity: 0.9; }
+  92% { opacity: 0.9; }
+  100% { transform: translate3d(var(--drift, 30px), 118vh, 0); opacity: 0; }
+}
+.animate-snowFall {
+  animation-name: snowFall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
 /* Header surface with fine fairy-dust sparkles. */
 .site-header-surface {
   position: relative;
@@ -406,6 +616,7 @@ h1, h2, h3, h4 {
 @media (max-width: 768px) {
   .butterfly-drift,
   .firefly,
+  .snowflake,
   .hero-firefly,
   .site-background::after,
   .site-header-surface::before {

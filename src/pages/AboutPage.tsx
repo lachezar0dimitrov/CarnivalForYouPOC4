@@ -36,7 +36,7 @@ export default function AboutPage() {
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink-900/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
 
         <div className="space-y-4">
@@ -73,7 +73,7 @@ export default function AboutPage() {
           className="h-64 w-full object-cover sm:h-80"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-ink-900/70" />
+        <div className="absolute inset-0 bg-black/60" />
         <div className="absolute inset-0 flex items-center justify-center p-6">
           <p className="max-w-xl text-center font-serif text-xl italic leading-relaxed text-gold-100 sm:text-2xl">
             {t('about.quote')}

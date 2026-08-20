@@ -3,11 +3,16 @@ import { ArrowRight } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { fetchActiveBanners, type Banner } from '@/lib/banners';
+import { getCurrentSeason } from '@/lib/season';
 import HeroFireflies from '@/components/HeroFireflies';
 
 export default function BannerCarousel() {
   const { t, lang } = useI18n();
   const { navigate } = useRouter();
+  // Christmas skips the gold/green hero sparkles — the page-wide falling-snow
+  // overlay (Snowflakes.tsx, rendered above everything in App.tsx) covers the
+  // hero too, so a second hero-local particle layer would be redundant.
+  const isChristmas = getCurrentSeason() === 'christmas';
   const [banners, setBanners] = useState<Banner[]>([]);
   const [current, setCurrent] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -48,7 +53,7 @@ export default function BannerCarousel() {
     return (
       <section className="relative w-full overflow-hidden">
         <div className="absolute inset-0 bg-mystical-radial" />
-        <HeroFireflies count={20} />
+        {!isChristmas && <HeroFireflies count={20} />}
         <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-center px-4 text-center md:min-h-[80vh]">
           <h1 className="font-display text-2xl font-bold leading-tight text-gray-100 sm:text-3xl md:text-4xl lg:text-5xl">
             {t('home.heroTitle1')}
@@ -99,7 +104,7 @@ export default function BannerCarousel() {
         ))}
       </div>
 
-      <HeroFireflies count={24} />
+      {!isChristmas && <HeroFireflies count={24} />}
 
       {/* Slide content overlay */}
       <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-16 text-center sm:pb-20 md:min-h-0 md:h-full md:pb-24">
@@ -112,10 +117,12 @@ export default function BannerCarousel() {
                 : 'pointer-events-none translate-y-4 opacity-0'
             }`}
           >
-            <h1 className="font-display text-xl font-bold leading-tight text-gold-100 drop-shadow-lg sm:text-2xl md:text-3xl lg:text-4xl">
+            {/* Fixed colors, not themed tokens — sits directly on an admin-
+                uploaded banner photo, unrelated to the site's light/dark theme. */}
+            <h1 className="font-display text-xl font-bold leading-tight text-[#f7e9b8] drop-shadow-lg sm:text-2xl md:text-3xl lg:text-4xl">
               {lang === 'bg' ? banner.titleBg : banner.titleEn}
             </h1>
-            <p className="mx-auto mt-3 max-w-lg text-xs text-gray-200 drop-shadow sm:text-sm md:text-base">
+            <p className="mx-auto mt-3 max-w-lg text-xs text-[#e5e7eb] drop-shadow sm:text-sm md:text-base">
               {lang === 'bg' ? banner.subtitleBg : banner.subtitleEn}
             </p>
             {banner.linkUrl && (

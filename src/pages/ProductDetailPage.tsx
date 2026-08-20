@@ -170,7 +170,7 @@ export default function ProductDetailPage() {
             {categoriesList.map((catId) => (
               <span
                 key={catId}
-                className="rounded-full bg-ink-900/70 px-3 py-1 text-xs font-medium text-gold-200 backdrop-blur-sm"
+                className="rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-[#f0d985] backdrop-blur-sm"
               >
                 {categoryName(catId, lang)}
               </span>
