@@ -107,7 +107,7 @@ export default function BannerCarousel() {
       {!isChristmas && <HeroFireflies count={24} />}
 
       {/* Slide content overlay */}
-      <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-16 text-center sm:pb-20 md:min-h-0 md:h-full md:pb-24">
+      <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-[clamp(4rem,8vw,9rem)] text-center md:min-h-0 md:h-full">
         {banners.map((banner, i) => (
           <div
             key={banner.id}
@@ -118,17 +118,24 @@ export default function BannerCarousel() {
             }`}
           >
             {/* Fixed colors, not themed tokens — sits directly on an admin-
-                uploaded banner photo, unrelated to the site's light/dark theme. */}
-            <h1 className="font-display text-xl font-bold leading-tight text-[#f7e9b8] drop-shadow-lg sm:text-2xl md:text-3xl lg:text-4xl">
+                uploaded banner photo, unrelated to the site's light/dark theme.
+                Sized with clamp()/vw instead of breakpoint steps: .banner-box
+                locks to a 16:9 ratio from md up, so the banner itself keeps
+                growing with viewport width on wide monitors — text capped at
+                a fixed breakpoint size (e.g. lg:text-4xl) stopped growing
+                past 1024px and looked proportionally smaller on anything
+                wider. vw-based sizing keeps it growing in step with the
+                banner, capped at a sensible max so it never overflows. */}
+            <h1 className="font-display text-[clamp(1.5rem,5vw,5rem)] font-bold leading-tight text-[#f7e9b8] drop-shadow-lg">
               {lang === 'bg' ? banner.titleBg : banner.titleEn}
             </h1>
-            <p className="mx-auto mt-3 max-w-lg text-xs text-[#e5e7eb] drop-shadow sm:text-sm md:text-base">
+            <p className="mx-auto mt-3 max-w-2xl text-[clamp(0.875rem,1.5vw,1.5rem)] text-[#e5e7eb] drop-shadow">
               {lang === 'bg' ? banner.subtitleBg : banner.subtitleEn}
             </p>
             {banner.linkUrl && (
               <button
                 onClick={() => handleClick(banner.linkUrl)}
-                className="btn-gold mt-4 inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs sm:mt-5 sm:px-7 sm:py-3.5 sm:text-sm"
+                className="btn-gold mt-4 inline-flex items-center gap-2 rounded-full px-[clamp(1.25rem,2.2vw,2.5rem)] py-[clamp(0.65rem,1.1vw,1.1rem)] text-[clamp(0.75rem,1.3vw,1.25rem)] sm:mt-5"
               >
                 {t('home.findLook')}
                 <ArrowRight size={16} />

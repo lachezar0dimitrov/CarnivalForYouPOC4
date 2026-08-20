@@ -9,10 +9,9 @@ type CategoryGridProps = {
   selectedIds?: number[];
   limit?: number;
   showAll?: boolean;
-  // Rendered in the same grid row but hidden below the 2xl breakpoint —
-  // lets a page show a smaller "featured" set on laptop/tablet screens
-  // while revealing the rest only once there's room for them, without a
-  // JS resize listener (pure CSS display toggle within the CSS grid).
+  // Appended after `categories`/the featured set — e.g. HomePage passes the
+  // seasonal categories (Halloween/Christmas) here separately from the 5
+  // featured demographic ones, but both groups render in the same grid.
   extraCategories?: CategoryMeta[];
 };
 
@@ -144,9 +143,16 @@ export default function CategoryGrid({
       ? categories.slice(0, limit)
       : getFeaturedCategories(categories);
 
+  // Fixed at 3 columns from tablet width up — keeps the big-card look at
+  // every desktop size instead of packing more (smaller) cards per row as
+  // the window widens. All categories (including ones that used to be
+  // hidden below the 2xl breakpoint) always render now; extra rows form
+  // naturally instead of some cards disappearing on non-fullscreen PCs.
+  const allCategories = [...visibleCategories, ...(extraCategories ?? [])];
+
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-7 2xl:gap-5">
-      {visibleCategories.map((category) => (
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+      {allCategories.map((category) => (
         <CategoryCardItem
           key={category.id}
           category={category}
@@ -155,17 +161,6 @@ export default function CategoryGrid({
           lang={lang}
           t={t}
         />
-      ))}
-      {extraCategories?.map((category) => (
-        <div key={category.id} className="hidden 2xl:block">
-          <CategoryCardItem
-            category={category}
-            isSelected={selectedIds?.includes(category.id) ?? false}
-            onSelect={onSelect}
-            lang={lang}
-            t={t}
-          />
-        </div>
       ))}
     </div>
   );
