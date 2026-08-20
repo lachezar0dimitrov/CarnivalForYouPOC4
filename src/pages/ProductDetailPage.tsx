@@ -228,20 +228,17 @@ export default function ProductDetailPage() {
               <InfoTile
                 icon={Coins}
                 label={
-                  <button
-                    type="button"
-                    onClick={() => setShowDepositInfo((v) => !v)}
-                    aria-expanded={showDepositInfo}
-                    className="inline-flex items-center gap-1 text-gold-300 transition hover:text-gold-200"
-                  >
+                  <span className="inline-flex items-center gap-1">
                     {t('common.deposit')}
                     <Info size={12} />
-                  </button>
+                  </span>
                 }
                 value={`${Math.round(product.price) * 2 + 10} ${t('common.eur')}`}
+                onClick={() => setShowDepositInfo((v) => !v)}
+                expanded={showDepositInfo}
               />
               {showDepositInfo && (
-                <div className="absolute left-1/2 top-full z-30 mt-2 w-[min(15rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-gold-400/20 bg-ink-900/95 p-3 text-xs leading-relaxed text-gray-300 shadow-card backdrop-blur-sm">
+                <div className="absolute right-0 top-full z-30 mt-2 w-[min(15rem,calc(100vw-2rem))] rounded-xl border border-gold-400/20 bg-ink-900/95 p-3 text-xs leading-relaxed text-gray-300 shadow-card backdrop-blur-sm">
                   {t('common.depositInfo')}
                 </div>
               )}
@@ -322,19 +319,42 @@ function InfoTile({
   label,
   value,
   accent,
+  onClick,
+  expanded,
 }: {
   icon: LucideIcon;
   label: React.ReactNode;
   value: React.ReactNode;
   accent?: boolean;
+  onClick?: () => void;
+  expanded?: boolean;
 }) {
+  const interactive = onClick != null;
   return (
-    <div className={`glass rounded-xl p-4 ${accent ? 'border-gold-400/30' : ''}`}>
+    <div
+      className={`glass rounded-xl p-4 ${accent ? 'border-gold-400/30' : ''} ${
+        interactive ? 'cursor-pointer transition hover:border-gold-400/40' : ''
+      }`}
+      onClick={onClick}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-expanded={interactive ? expanded : undefined}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
+    >
       <div className="flex items-center gap-2 text-gold-300">
         <Icon size={15} />
         <span className="eyebrow text-[0.6rem]">{label}</span>
       </div>
-      <p
+      <div
         className={`mt-1.5 text-sm ${
           accent
             ? 'font-display text-lg font-semibold text-gold-100'
@@ -342,7 +362,7 @@ function InfoTile({
         }`}
       >
         {value}
-      </p>
+      </div>
     </div>
   );
 }

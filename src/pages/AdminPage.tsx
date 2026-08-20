@@ -29,7 +29,7 @@ import {
   deleteBanner,
   type Banner,
 } from '@/lib/banners';
-import { categoryMeta, type Product } from '@/lib/products';
+import { type Product } from '@/lib/products';
 import { uploadImage, type ImageBucket } from '@/lib/r2';
 import {
   fetchSiteSettings,
@@ -609,6 +609,7 @@ function ProductManager() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<AdminProduct | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -618,6 +619,10 @@ function ProductManager() {
   const pageSize = 20;
   const { broken, checking } = useBrokenImages(products);
   const brokenProducts = products.filter((p) => broken.has(p.id));
+
+  useEffect(() => {
+    fetchAllCategoriesAdmin().then(setCategories).catch(() => setCategories([]));
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
@@ -728,7 +733,7 @@ function ProductManager() {
               <tbody>
                 {products.map((p) => {
                   const catNames = p.categoryIds
-                    ?.map((id) => categoryMeta.find((c) => c.id === id))
+                    ?.map((id) => categories.find((c) => c.id === id))
                     .filter(Boolean)
                     .map((cat) => (lang === 'bg' ? cat?.nameBg : cat?.nameEn))
                     .join(', ');
@@ -810,6 +815,7 @@ function ProductManager() {
       {showForm && (
         <ProductForm
           product={editing}
+          categories={categories}
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); setReloadKey((k) => k + 1); }}
         />
@@ -820,21 +826,42 @@ function ProductManager() {
 
 function ProductForm({
   product,
+  categories,
   onClose,
   onSaved,
 }: {
   product: AdminProduct | null;
+  categories: Category[];
   onClose: () => void;
   onSaved: () => void;
 }) {
   const { lang } = useI18n();
   const { notify } = useToast();
+
+  // A product has exactly one primary "type" (demographic — Women/Men/Boys/…
+  // — or, for accessory-only items, one of the hidden Masks/Hats/Wigs/
+  // Accessories categories) plus any number of theme/subcategory tags
+  // (Halloween, Pirates, Professions, …). `group === 'main'` and
+  // `!isActive` together cover every primary id; every other active
+  // category is a theme.
+  const primaryCategories = categories.filter((c) => c.group === 'main' || !c.isActive);
+  const themeCategories = categories.filter((c) => c.group === 'other' && c.isActive);
+  const primaryIdSet = new Set(primaryCategories.map((c) => c.id));
+  const themeIdSet = new Set(themeCategories.map((c) => c.id));
+
+  const initialCategoryIds = product?.categoryIds?.length
+    ? product.categoryIds
+    : product?.categoryId
+      ? [product.categoryId]
+      : [];
+
   const [form, setForm] = useState({
     name_bg: product?.nameBg ?? '',
     name_en: product?.nameEn ?? '',
     description_bg: product?.descriptionBg ?? '',
     description_en: product?.descriptionEn ?? '',
-    category_ids: product?.categoryIds?.length ? product.categoryIds : (product?.categoryId ? [product.categoryId] : [2]),
+    primary_category_id: initialCategoryIds.find((id) => primaryIdSet.has(id)) ?? primaryCategories[0]?.id ?? 2,
+    theme_category_ids: initialCategoryIds.filter((id) => themeIdSet.has(id)),
     price: product?.rawPrice ?? 0,
     old_price: product?.rawOldPrice ?? null,
     image_url: product?.imageUrl ?? '',
@@ -847,13 +874,13 @@ function ProductForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const toggleCategory = (catId: number) => {
+  const toggleTheme = (catId: number) => {
     setForm((prev) => {
-      const exists = prev.category_ids.includes(catId);
+      const exists = prev.theme_category_ids.includes(catId);
       const updated = exists
-        ? prev.category_ids.filter((id) => id !== catId)
-        : [...prev.category_ids, catId];
-      return { ...prev, category_ids: updated };
+        ? prev.theme_category_ids.filter((id) => id !== catId)
+        : [...prev.theme_category_ids, catId];
+      return { ...prev, theme_category_ids: updated };
     });
   };
 
@@ -869,8 +896,8 @@ function ProductForm({
       name_en: form.name_en || null,
       description_bg: form.description_bg || null,
       description_en: form.description_en || null,
-      category_id: form.category_ids[0] ?? 2,
-      category_ids: form.category_ids,
+      category_id: form.primary_category_id,
+      category_ids: [form.primary_category_id, ...form.theme_category_ids],
       price: Number(form.price),
       old_price: form.old_price ? Number(form.old_price) : null,
       image_url: form.image_url || null,
@@ -920,16 +947,35 @@ function ProductForm({
           </FormField>
         </div>
 
-        <FormField label={lang === 'bg' ? 'Категории (изберете една или повече)' : 'Categories (select one or more)'}>
+        <FormField label={lang === 'bg' ? 'Основна категория' : 'Primary category'}>
+          <select
+            value={form.primary_category_id}
+            onChange={(e) => setForm({ ...form, primary_category_id: Number(e.target.value) })}
+            className="form-input"
+          >
+            <optgroup label={lang === 'bg' ? 'Пол/възраст' : 'Demographic'}>
+              {primaryCategories.filter((c) => c.group === 'main').map((cat) => (
+                <option key={cat.id} value={cat.id}>{lang === 'bg' ? cat.nameBg : cat.nameEn}</option>
+              ))}
+            </optgroup>
+            <optgroup label={lang === 'bg' ? 'Аксесоари' : 'Accessories'}>
+              {primaryCategories.filter((c) => !c.isActive).map((cat) => (
+                <option key={cat.id} value={cat.id}>{lang === 'bg' ? cat.nameBg : cat.nameEn}</option>
+              ))}
+            </optgroup>
+          </select>
+        </FormField>
+
+        <FormField label={lang === 'bg' ? 'Подкатегории (изберете нула или повече)' : 'Subcategories (select zero or more)'}>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 max-h-48 overflow-y-auto p-3 rounded-lg border border-gold-400/20 bg-ink-900">
-            {categoryMeta.map((cat) => {
-              const checked = form.category_ids.includes(cat.id);
+            {themeCategories.map((cat) => {
+              const checked = form.theme_category_ids.includes(cat.id);
               return (
                 <label key={cat.id} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer p-1 hover:bg-gold-400/5 rounded">
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={() => toggleCategory(cat.id)}
+                    onChange={() => toggleTheme(cat.id)}
                     className="h-4 w-4 rounded border-gold-400/30 bg-ink-700 text-gold-400"
                   />
                   <span>{lang === 'bg' ? cat.nameBg : cat.nameEn}</span>
