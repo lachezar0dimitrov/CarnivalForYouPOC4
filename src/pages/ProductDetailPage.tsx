@@ -55,7 +55,7 @@ export default function ProductDetailPage() {
         setLoading(false);
 
         try {
-          const sim = await fetchSimilarProducts(p.categoryId, p.id, 4);
+          const sim = await fetchSimilarProducts(p.categoryIds, p.id, 4);
           if (!cancelled) setSimilar(sim);
         } catch {
           // similar products are non-critical

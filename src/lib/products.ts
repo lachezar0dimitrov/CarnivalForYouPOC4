@@ -4,6 +4,7 @@
 
 import { supabase } from '@/lib/supabase';
 import type { Lang } from '@/lib/i18n';
+import { getCurrentSeason } from '@/lib/season';
 
 // --- Currency conversion ---
 const BGN_TO_EUR_RATE = 1.95583;
@@ -245,27 +246,7 @@ export function getAvailableSizes(): string[] {
   return ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'STD', 'Kids'];
 }
 
-// --- Seasonal & Sorting Logic ---
-type Season = 'christmas' | 'halloween' | 'normal';
-
-function getCurrentSeason(): Season {
-  const now = new Date();
-  const month = now.getMonth() + 1; // 1 - 12
-  const day = now.getDate();
-
-  // Коледа: 1 ноември – 10 януари
-  if (month === 11 || month === 12 || (month === 1 && day <= 10)) {
-    return 'christmas';
-  }
-
-  // Хелоуин: 15 август – 1 ноември
-  if ((month === 8 && day >= 15) || month === 9 || month === 10 || (month === 11 && day === 1)) {
-    return 'halloween';
-  }
-
-  return 'normal';
-}
-
+// --- Seasonal Sorting ---
 // Helper to check category presence efficiently
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function hasCategory(row: any, targetId: number): boolean {
@@ -302,6 +283,10 @@ export type FetchResult = {
 const selectColumns =
   'id, old_id, category_id, category_ids, name_bg, name_en, description_bg, description_en, sizes, price, old_price, image_url, priority, tags';
 
+// Маски / Шапки / Перуки / Аксесоари — hidden by stakeholder decision
+// (categories.is_active = false), not shown as tiles or filter chips.
+const HIDDEN_CATEGORY_IDS = [5, 6, 7, 8];
+
 function baseQuery() {
   return supabase
     .from('products')
@@ -309,7 +294,8 @@ function baseQuery() {
     .eq('is_active', true)
     .gt('price', 0)
     .not('image_url', 'is', null)
-    .neq('image_url', '');
+    .neq('image_url', '')
+    .or(`category_id.is.null,category_id.not.in.(${HIDDEN_CATEGORY_IDS.join(',')})`);
 }
 
 function searchFilter(search: string): string {
@@ -332,10 +318,6 @@ function searchFilter(search: string): string {
 // (commonly 1000), so a catalog past that size needs paging to fetch all
 // matching rows rather than silently truncating.
 const FETCH_PAGE_SIZE = 1000;
-
-// Маски / Шапки / Перуки / Аксесоари — hidden by stakeholder decision
-// (categories.is_active = false), not shown as tiles or filter chips.
-const HIDDEN_CATEGORY_IDS = [5, 6, 7, 8];
 
 export async function getFilteredAndSortedIds(
   primaryCategoryIds: number[] | null,
@@ -534,25 +516,61 @@ export async function fetchProductById(id: number): Promise<Product | null> {
   return mapRow(data as unknown as ProductRow);
 }
 
+function categoryOrClause(ids: number[]): string {
+  return ids.map((id) => `category_ids.cs.{${id}},category_id.eq.${id}`).join(',');
+}
+
+async function fetchByCategoryGroups(
+  excludeId: number,
+  primary: number[],
+  secondary: number[],
+  limit: number
+): Promise<Product[]> {
+  let query = baseQuery().neq('id', excludeId);
+  if (primary.length > 0) query = query.or(categoryOrClause(primary));
+  if (secondary.length > 0) query = query.or(categoryOrClause(secondary));
+  query = query.order('priority', { ascending: false }).order('id', { ascending: true }).limit(limit);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data as unknown as ProductRow[] | null ?? []).map(mapRow);
+}
+
+// "Similar" products must match the same demographic/primary category
+// (Women/Men/Boys/...) AND at least one shared theme/season tag
+// (Halloween/Christmas/Pirates/...) where the source product has one —
+// previously this only matched the primary category_id, so a Halloween-
+// tagged women's costume could "similar-recommend" unrelated Christmas
+// costumes purely because they shared the same demographic. Falls back to
+// primary-only matches to top up the list when the tightly-matched set is
+// too small (e.g. a product with a rare/unique theme combination).
 export async function fetchSimilarProducts(
-  categoryId: number | null,
+  categoryIds: number[],
   excludeId: number,
   limit: number
 ): Promise<Product[]> {
-  let query = baseQuery()
-    .neq('id', excludeId)
-    .order('priority', { ascending: false })
-    .order('id', { ascending: true })
-    .limit(limit);
+  if (categoryIds.length === 0) return [];
 
-  if (categoryId != null) {
-    query = query.or(`category_ids.cs.{${categoryId}},category_id.eq.${categoryId}`);
+  const primary = categoryIds.filter((id) => PRIMARY_CATEGORY_IDS.has(id));
+  const secondary = categoryIds.filter((id) => !PRIMARY_CATEGORY_IDS.has(id));
+
+  const results =
+    primary.length > 0 && secondary.length > 0
+      ? await fetchByCategoryGroups(excludeId, primary, secondary, limit)
+      : [];
+
+  if (results.length < limit) {
+    const have = new Set(results.map((p) => p.id));
+    const fallbackIds = primary.length > 0 ? primary : categoryIds;
+    const more = await fetchByCategoryGroups(excludeId, fallbackIds, [], limit * 2);
+    for (const p of more) {
+      if (results.length >= limit) break;
+      if (!have.has(p.id)) {
+        results.push(p);
+        have.add(p.id);
+      }
+    }
   }
 
-  const { data, error } = await query;
-
-  if (error) throw error;
-  if (!data) return [];
-
-  return (data as unknown as ProductRow[]).map(mapRow);
+  return results.slice(0, limit);
 }
