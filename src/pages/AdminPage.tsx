@@ -31,7 +31,7 @@ import {
   deleteBanner,
   type Banner,
 } from '@/lib/banners';
-import { type Product } from '@/lib/products';
+import { bgnToEur, eurToBgn, type Product } from '@/lib/products';
 import { uploadImage, type ImageBucket } from '@/lib/r2';
 import {
   fetchSiteSettings,
@@ -914,7 +914,7 @@ function ProductManager() {
                       <td className="px-4 py-4 text-gray-400">
                         {catNames || '—'}
                       </td>
-                      <td className="px-4 py-4 text-gold-200">{p.price.toFixed(0)} {lang === 'bg' ? 'лв.' : 'BGN'}</td>
+                      <td className="px-4 py-4 text-gold-200">{bgnToEur(p.price).toFixed(0)} €</td>
                       <td className="px-4 py-4">
                         {p.isActive ? <Check size={18} className="text-moss-400" /> : <X size={18} className="text-gray-600" />}
                       </td>
@@ -1000,8 +1000,8 @@ function ProductForm({
     description_en: product?.descriptionEn ?? '',
     primary_category_id: initialCategoryIds.find((id) => primaryIdSet.has(id)) ?? primaryCategories[0]?.id ?? 2,
     theme_category_ids: initialCategoryIds.filter((id) => themeIdSet.has(id)),
-    price: product?.rawPrice ?? 0,
-    old_price: product?.rawOldPrice ?? null,
+    price: product ? bgnToEur(product.rawPrice) : 0,
+    old_price: product?.rawOldPrice != null ? bgnToEur(product.rawOldPrice) : null,
     image_url: product?.imageUrl ?? '',
     sizes: product?.sizes ?? '',
     is_active: product?.isActive ?? true,
@@ -1036,8 +1036,8 @@ function ProductForm({
       description_en: form.description_en || null,
       category_id: form.primary_category_id,
       category_ids: [form.primary_category_id, ...form.theme_category_ids],
-      price: Number(form.price),
-      old_price: form.old_price ? Number(form.old_price) : null,
+      price: eurToBgn(Number(form.price)),
+      old_price: form.old_price ? eurToBgn(Number(form.old_price)) : null,
       image_url: form.image_url || null,
       sizes: form.sizes || null,
       is_active: form.is_active,
@@ -1124,11 +1124,11 @@ function ProductForm({
         </FormField>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label={lang === 'bg' ? 'Цена (лв.)' : 'Price (BGN)'}>
-            <input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className="form-input" required />
+          <FormField label={lang === 'bg' ? 'Цена (€)' : 'Price (€)'}>
+            <input type="number" step="1" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className="form-input" required />
           </FormField>
-          <FormField label={lang === 'bg' ? 'Стара цена (лв.)' : 'Old price (BGN)'}>
-            <input type="number" step="0.01" value={form.old_price ?? ''} onChange={(e) => setForm({ ...form, old_price: e.target.value ? Number(e.target.value) : null })} className="form-input" />
+          <FormField label={lang === 'bg' ? 'Стара цена (€)' : 'Old price (€)'}>
+            <input type="number" step="1" value={form.old_price ?? ''} onChange={(e) => setForm({ ...form, old_price: e.target.value ? Number(e.target.value) : null })} className="form-input" />
           </FormField>
         </div>
 

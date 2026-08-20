@@ -16,6 +16,15 @@ export function bgnToEur(bgn: number): number {
   return Math.round((bgn * MARKUP) / BGN_TO_EUR_RATE);
 }
 
+// Inverse of bgnToEur, for admin editing — the DB still stores BGN as the
+// source of truth, but admins think and price in EUR, so the product form
+// converts a typed EUR amount back to BGN on save. Kept at cent precision
+// (unlike the whole-euro display rounding above) since this feeds storage,
+// not a customer-facing label.
+export function eurToBgn(eur: number): number {
+  return Math.round(((eur * BGN_TO_EUR_RATE) / MARKUP) * 100) / 100;
+}
+
 export type Product = {
   id: number;
   oldId: number | null;
