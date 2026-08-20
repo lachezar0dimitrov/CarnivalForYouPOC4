@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
   Tag,
   Ruler,
   Coins,
+  Info,
   FileText,
   Loader2,
   AlertCircle,
@@ -32,6 +33,19 @@ export default function ProductDetailPage() {
   const [similar, setSimilar] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [showDepositInfo, setShowDepositInfo] = useState(false);
+  const depositRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showDepositInfo) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (depositRef.current && !depositRef.current.contains(e.target as Node)) {
+        setShowDepositInfo(false);
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [showDepositInfo]);
 
   const numericId = productId ? Number(productId) : NaN;
 
@@ -210,22 +224,28 @@ export default function ProductDetailPage() {
               value={`${product.price.toFixed(0)} ${t('common.eur')} ${t('common.perDay')}`}
               accent
             />
-            {product.oldPrice != null && product.oldPrice > product.price && (
+            <div ref={depositRef} className="relative">
               <InfoTile
                 icon={Coins}
-                label={t('common.deposit')}
-                value={
-                  <span>
-                    <span className="mr-2 line-through opacity-50">
-                      {product.oldPrice != null ? product.oldPrice.toFixed(0) : ''} {t('common.eur')}
-                    </span>
-                    <span className="text-gold-100">
-                      {product.price.toFixed(0)} {t('common.eur')}
-                    </span>
-                  </span>
+                label={
+                  <button
+                    type="button"
+                    onClick={() => setShowDepositInfo((v) => !v)}
+                    aria-expanded={showDepositInfo}
+                    className="inline-flex items-center gap-1 text-gold-300 transition hover:text-gold-200"
+                  >
+                    {t('common.deposit')}
+                    <Info size={12} />
+                  </button>
                 }
+                value={`${Math.round(product.price) * 2 + 10} ${t('common.eur')}`}
               />
-            )}
+              {showDepositInfo && (
+                <div className="absolute left-1/2 top-full z-30 mt-2 w-[min(15rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-gold-400/20 bg-ink-900/95 p-3 text-xs leading-relaxed text-gray-300 shadow-card backdrop-blur-sm">
+                  {t('common.depositInfo')}
+                </div>
+              )}
+            </div>
             {sizes.length > 0 && (
               <InfoTile
                 icon={Ruler}
@@ -304,7 +324,7 @@ function InfoTile({
   accent,
 }: {
   icon: LucideIcon;
-  label: string;
+  label: React.ReactNode;
   value: React.ReactNode;
   accent?: boolean;
 }) {
