@@ -1005,7 +1005,6 @@ function ProductForm({
     primary_category_id: initialCategoryIds.find((id) => primaryIdSet.has(id)) ?? primaryCategories[0]?.id ?? 2,
     theme_category_ids: initialCategoryIds.filter((id) => themeIdSet.has(id)),
     price: product ? bgnToEur(product.rawPrice) : 0,
-    old_price: product?.rawOldPrice != null ? bgnToEur(product.rawOldPrice) : null,
     image_url: product?.imageUrl ?? '',
     sizes: product?.sizes ?? '',
     is_active: product?.isActive ?? true,
@@ -1041,7 +1040,6 @@ function ProductForm({
       category_id: form.primary_category_id,
       category_ids: [form.primary_category_id, ...form.theme_category_ids],
       price: eurToBgn(Number(form.price)),
-      old_price: form.old_price ? eurToBgn(Number(form.old_price)) : null,
       image_url: form.image_url || null,
       sizes: form.sizes || null,
       is_active: form.is_active,
@@ -1127,14 +1125,9 @@ function ProductForm({
           </div>
         </FormField>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label={lang === 'bg' ? 'Цена (€)' : 'Price (€)'}>
-            <input type="number" step="1" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className="form-input" required />
-          </FormField>
-          <FormField label={lang === 'bg' ? 'Стара цена (€)' : 'Old price (€)'}>
-            <input type="number" step="1" value={form.old_price ?? ''} onChange={(e) => setForm({ ...form, old_price: e.target.value ? Number(e.target.value) : null })} className="form-input" />
-          </FormField>
-        </div>
+        <FormField label={lang === 'bg' ? 'Цена (€)' : 'Price (€)'}>
+          <input type="number" step="1" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className="form-input" required />
+        </FormField>
 
         <FormField label={lang === 'bg' ? 'Снимка' : 'Image'}>
           <div className="flex flex-col gap-2">
