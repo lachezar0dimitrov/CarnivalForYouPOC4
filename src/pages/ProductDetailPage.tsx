@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
   Tag,
   Ruler,
   Coins,
+  Info,
   FileText,
   Loader2,
   AlertCircle,
@@ -32,6 +33,19 @@ export default function ProductDetailPage() {
   const [similar, setSimilar] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [showDepositInfo, setShowDepositInfo] = useState(false);
+  const depositRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showDepositInfo) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (depositRef.current && !depositRef.current.contains(e.target as Node)) {
+        setShowDepositInfo(false);
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [showDepositInfo]);
 
   const numericId = productId ? Number(productId) : NaN;
 
@@ -210,22 +224,25 @@ export default function ProductDetailPage() {
               value={`${product.price.toFixed(0)} ${t('common.eur')} ${t('common.perDay')}`}
               accent
             />
-            {product.oldPrice != null && product.oldPrice > product.price && (
+            <div ref={depositRef} className="relative">
               <InfoTile
                 icon={Coins}
-                label={t('common.deposit')}
-                value={
-                  <span>
-                    <span className="mr-2 line-through opacity-50">
-                      {product.oldPrice != null ? product.oldPrice.toFixed(0) : ''} {t('common.eur')}
-                    </span>
-                    <span className="text-gold-100">
-                      {product.price.toFixed(0)} {t('common.eur')}
-                    </span>
+                label={
+                  <span className="inline-flex items-center gap-1">
+                    {t('common.deposit')}
+                    <Info size={12} />
                   </span>
                 }
+                value={`${Math.round(product.price) * 2 + 10} ${t('common.eur')}`}
+                onClick={() => setShowDepositInfo((v) => !v)}
+                expanded={showDepositInfo}
               />
-            )}
+              {showDepositInfo && (
+                <div className="absolute right-0 top-full z-30 mt-2 w-[min(15rem,calc(100vw-2rem))] rounded-xl border border-gold-400/20 bg-ink-900/95 p-3 text-xs leading-relaxed text-gray-300 shadow-card backdrop-blur-sm">
+                  {t('common.depositInfo')}
+                </div>
+              )}
+            </div>
             {sizes.length > 0 && (
               <InfoTile
                 icon={Ruler}
@@ -302,19 +319,42 @@ function InfoTile({
   label,
   value,
   accent,
+  onClick,
+  expanded,
 }: {
   icon: LucideIcon;
-  label: string;
+  label: React.ReactNode;
   value: React.ReactNode;
   accent?: boolean;
+  onClick?: () => void;
+  expanded?: boolean;
 }) {
+  const interactive = onClick != null;
   return (
-    <div className={`glass rounded-xl p-4 ${accent ? 'border-gold-400/30' : ''}`}>
+    <div
+      className={`glass rounded-xl p-4 ${accent ? 'border-gold-400/30' : ''} ${
+        interactive ? 'cursor-pointer transition hover:border-gold-400/40' : ''
+      }`}
+      onClick={onClick}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-expanded={interactive ? expanded : undefined}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
+    >
       <div className="flex items-center gap-2 text-gold-300">
         <Icon size={15} />
         <span className="eyebrow text-[0.6rem]">{label}</span>
       </div>
-      <p
+      <div
         className={`mt-1.5 text-sm ${
           accent
             ? 'font-display text-lg font-semibold text-gold-100'
@@ -322,7 +362,7 @@ function InfoTile({
         }`}
       >
         {value}
-      </p>
+      </div>
     </div>
   );
 }
