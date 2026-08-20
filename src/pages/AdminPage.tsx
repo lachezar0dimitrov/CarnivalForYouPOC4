@@ -536,7 +536,11 @@ function mapAdminRow(r: any): AdminProduct {
   }
 
   const rawPrice = Number(r.price) || 0;
-  const rawOldPrice = r.old_price != null ? Number(r.old_price) || null : null;
+  // old_price = 0 is a legacy import placeholder meaning "never set", not a
+  // real price — treated as null so the admin field shows blank instead of
+  // a misleading "0", matching how the public site's own discount-badge
+  // check (oldPrice > price) already treats 0 as no discount.
+  const rawOldPrice = r.old_price != null && Number(r.old_price) !== 0 ? Number(r.old_price) : null;
 
   return {
     id: r.id,
