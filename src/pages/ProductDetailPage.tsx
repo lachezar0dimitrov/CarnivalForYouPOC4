@@ -19,6 +19,8 @@ import {
   fetchSimilarProducts,
   productName,
   productDescription,
+  productSeoTitle,
+  productSeoDescription,
   productSizes,
   categoryName,
   type Product,
@@ -87,14 +89,13 @@ export default function ProductDetailPage() {
     };
   }, [numericId]);
 
-  // SEO
+  // SEO — title/description are composed from the product's category, sizes
+  // and price so every product URL gets a unique, length-appropriate tag pair
+  // even when the catalogue description is missing (see productSeoTitle).
   const name = product ? productName(product, lang) : t('seo.homeTitle');
-  const desc = product ? productDescription(product, lang) : t('seo.homeDesc');
   useSEO({
-    title: product
-      ? `${name} | CarnivalForYou`
-      : t('seo.homeTitle'),
-    description: desc || t('seo.homeDesc'),
+    title: product ? productSeoTitle(product, lang) : t('seo.homeTitle'),
+    description: product ? productSeoDescription(product, lang) : t('seo.homeDesc'),
     image: product?.imageUrl ?? undefined,
     type: 'product',
   });

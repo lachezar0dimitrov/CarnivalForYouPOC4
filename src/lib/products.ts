@@ -241,6 +241,90 @@ export function productDescription(p: Product, lang: Lang): string {
   return enMeaningful ? en : bg;
 }
 
+// --- SEO metadata -----------------------------------------------------------
+// Product names in the DB are short catalogue names (avg ~18 chars), which
+// produced <title> tags averaging 35 characters — well under the ~50-60 band
+// search engines render — and 406 active products had no description at all,
+// so their meta description fell back to the generic site blurb (duplicate
+// meta across hundreds of URLs). Rather than pad the stored names with
+// keywords (that would be keyword stuffing, and would leak into the catalogue
+// UI and the admin editor), the high-intent terms are composed here at render
+// time from data the product already has: its category, its rental price and
+// the shop's city.
+
+const SEO_MAX_TITLE = 60;
+const SEO_MAX_DESC = 160;
+
+/** Trim to a length limit on a word boundary, never mid-word. */
+function clampWords(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max - 1);
+  const at = cut.lastIndexOf(' ');
+  return `${(at > max * 0.6 ? cut.slice(0, at) : cut).replace(/[\s,;:.-]+$/, '')}…`;
+}
+
+// Per-category search phrasing. Category *names* can't just be concatenated
+// with "костюм" — Bulgarian category labels are a mix of adjectives ("Дамски"
+// -> "дамски костюм") and plural nouns ("Момичета" -> "костюм за момичета",
+// not "Момичета костюм"). The accessory categories aren't costumes at all, so
+// calling a wig a "костюм" would be both wrong and bad for search intent.
+const SEO_CATEGORY_PHRASE: Record<number, { bg: string; en: string }> = {
+  2:  { bg: 'дамски костюм под наем',          en: "women's costume rental" },
+  3:  { bg: 'мъжки костюм под наем',           en: "men's costume rental" },
+  4:  { bg: 'костюм за момичета под наем',     en: "girls' costume rental" },
+  17: { bg: 'костюм за момчета под наем',      en: "boys' costume rental" },
+  19: { bg: 'детски костюм под наем',          en: 'toddler costume rental' },
+  10: { bg: 'костюм за Хелоуин под наем',      en: 'Halloween costume rental' },
+  20: { bg: 'коледен костюм под наем',         en: 'Christmas costume rental' },
+  5:  { bg: 'карнавална маска под наем',       en: 'carnival mask rental' },
+  6:  { bg: 'парти шапка под наем',            en: 'party hat rental' },
+  7:  { bg: 'перука под наем',                 en: 'wig rental' },
+  8:  { bg: 'карнавален аксесоар под наем',    en: 'costume accessory rental' },
+};
+
+function seoQualifier(p: Product, lang: Lang): string {
+  const phrase = p.categoryId != null ? SEO_CATEGORY_PHRASE[p.categoryId] : undefined;
+  if (phrase) return lang === 'bg' ? phrase.bg : phrase.en;
+  return lang === 'bg' ? 'карнавален костюм под наем' : 'carnival costume rental';
+}
+
+export function productSeoTitle(p: Product, lang: Lang): string {
+  const name = productName(p, lang);
+  // The qualifier carries the actual search intent ("костюм под наем" /
+  // "costume rental"), which the bare catalogue name almost never contains.
+  const core = `${name} — ${seoQualifier(p, lang)}`;
+  const full = `${core} | CarnivalForYou`;
+  if (full.length <= SEO_MAX_TITLE) return full;
+  // Drop the brand suffix before truncating anything meaningful.
+  return clampWords(core, SEO_MAX_TITLE);
+}
+
+export function productSeoDescription(p: Product, lang: Lang): string {
+  const name = productName(p, lang);
+  const body = productDescription(p, lang);
+  const sizes = productSizes(p);
+  const price = p.price > 0 ? `${p.price.toFixed(0)} EUR` : '';
+
+  const parts: string[] = [];
+  if (body) {
+    parts.push(body.replace(/\s+/g, ' ').trim());
+  } else {
+    // No catalogue description: synthesise one from the category phrasing so
+    // the URL still gets a unique meta description instead of falling back to
+    // the generic site blurb shared by every other page.
+    parts.push(`${name} — ${seoQualifier(p, lang)}.`);
+  }
+  if (sizes.length > 0) {
+    parts.push(lang === 'bg' ? `Размери: ${sizes.join(', ')}.` : `Sizes: ${sizes.join(', ')}.`);
+  }
+  if (price) {
+    parts.push(lang === 'bg' ? `Наем от ${price}/ден.` : `Rental from ${price}/day.`);
+  }
+  parts.push(lang === 'bg' ? 'Вземете от магазина в София.' : 'Collect in store in Sofia.');
+
+  return clampWords(parts.join(' '), SEO_MAX_DESC);
+}
+
 const SIZE_NORMALIZE: Record<string, string> = {
   STD: 'STD',
   STANDARD: 'STD',
