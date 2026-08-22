@@ -5,7 +5,6 @@ import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
 import { loadCategories, getHomepageCategories, type CategoryMeta } from '@/lib/products';
 import { getCurrentSeason } from '@/lib/season';
-import SectionHeading from '@/components/SectionHeading';
 import BannerCarousel from '@/components/BannerCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
 import HeroFireflies from '@/components/HeroFireflies';
@@ -45,11 +44,19 @@ export default function HomePage() {
 
       {/* Categories from DB metadata */}
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 2xl:max-w-[2184px]">
-        <SectionHeading
-          eyebrow={t('home.categoriesEyebrow')}
-          title={t('home.categoriesTitle')}
-          subtitle={t('home.categoriesSubtitle')}
-        />
+        <div className="flex items-center justify-center gap-2.5 sm:gap-3">
+          <Sparkles
+            size={20}
+            className="shrink-0 text-gold-300 drop-shadow-[0_0_6px_rgba(212,175,55,0.6)]"
+          />
+          <span className="logo-cursive logo-cf text-3xl sm:text-4xl">
+            {t('home.categoriesEyebrow')}
+          </span>
+          <Sparkles
+            size={16}
+            className="shrink-0 text-moss-400 drop-shadow-[0_0_5px_rgba(91,140,110,0.6)]"
+          />
+        </div>
 
         <div className="mt-10">
           <CategoryGrid
