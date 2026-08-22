@@ -136,22 +136,51 @@ const translations: Record<Lang, Record<string, string>> = {
     'about.eyebrow': 'Историята ни',
     'about.title': 'За нас',
     'about.subtitle':
-      'Магията зад CarnivalForYou — семеен магазин за костюми под наем в сърцето на София.',
+      'Понякога е хубаво да бъдеш някой друг, поне за малко. CarnivalForYou е семеен магазин за костюми под наем в София, където всеки може да открие своя герой.',
+    'about.hookBody':
+      'Всеки ден имаме своята роля — родители, деца, съпрузи, приятели, професионалисти. Правим едни и същи неща, срещаме едни и същи хора, следваме познатия ритъм. Но някъде дълбоко в нас навярно все още живее детето, което е мечтало да бъде принц или принцеса, пират, фея, супергерой, крал или кралица. Ами ако за един ден можем да бъдем точно този герой?',
     'about.storyTitle': 'От малка идея до магически свят',
     'about.story1':
-      'CarnivalForYou започна като малка работилница с една мечта — да помогне на всеки човек да се превърне в героя, за когото мечтае. Днес сме уютен магазин в сърцето на София, където ръчно изработените костюми и венециански маски оживяват.',
+      'CarnivalForYou започна като малка работилница с една мечта — да помогне на всеки човек да се превърне в героя, за когото мечтае. Днес сме уютен магазин в София, който подбира костюми и венециански маски от най-добрите карнавални работилници по света.',
     'about.story2':
       'Вярваме, че костюмът е не само дреха — това е портал към друга история. Затова подбираме всеки образ с внимание към детайла и страст към занаята.',
-    'about.v1Title': 'Ръчна изработка',
+    'about.heroListTitle': 'Може би ще бъдете:',
+    'about.hero1': 'Пиратски капитан, тръгнал по следите на изгубено съкровище',
+    'about.hero2': 'Фея, пристигнала от приказна страна',
+    'about.hero3': 'Крал или кралица — поне за една нощ',
+    'about.hero4': 'Герой от любимия ви филм',
+    'about.hero5': 'Или просто някой, когото никога досега не сте били',
+    'about.offerTitle': 'Над 2000 костюма за всеки повод',
+    'about.offerBody':
+      'При нас ви очакват над 2000 костюма — карнавални, сценични и официални, за деца и възрастни, под наем, за покупка или по поръчка.',
+    'about.addonsBody':
+      'А ако костюмът не е достатъчен, добавяме грим, прическа, маска, перука, шапка, аксесоари и всичко необходимо, за да завършим образа. Професионални дизайнери, стилисти, гримьори и фризьори с опит и нестандартно мислене са на ваше разположение, за да превърнем желанието ви в реалност.',
+    'about.v1Title': 'От най-добрите работилници по света',
     'about.v1Body':
-      'Всеки костюм е създаден с внимание към детайла и любов към занаята.',
+      'Подбираме всеки костюм с внимание към детайла — от най-добрите карнавални работилници по света.',
     'about.v2Title': 'Над 10 години опит',
     'about.v2Body':
       'Създаваме магически образи за хиляди клиенти от цяла България.',
     'about.v3Title': 'С грижа за вас',
     'about.v3Body':
       'Помагаме ви да изберете перфектния образ за вашето събитие.',
-    'about.quote': '„За нас всяка резервация е начало на нова приказка."',
+    'about.originTitle': 'Кои сме ние?',
+    'about.originBody':
+      'Може би ни познавате като модна къща „Одета" — да, това сме ние. След години, посветени на сватбените, вечерните и балните тоалети, решихме да отворим още една врата към света на въображението. Така се роди CarnivalForYou — място за моментите, в които не искате просто да празнувате, а искате да преживеете нещо различно и запомнящо се.',
+    'about.occasionsTitle': 'За всеки повод',
+    'about.occasion1': 'Рожден ден',
+    'about.occasion2': 'Парти с приятели',
+    'about.occasion3': 'Тематично събитие',
+    'about.occasion4': 'Детски празник',
+    'about.occasion5': 'Изненада за любим човек',
+    'about.occasion6': 'Моминско или ергенско парти',
+    'about.occasion7': 'Театрален спектакъл',
+    'about.occasion8': 'Фотосесия',
+    'about.occasion9': 'Или просто ден, в който ви се иска да избягате от обичайното',
+    'about.closingBody':
+      'В нашата приказка няма вълшебни пръчици. Но има костюми, въображение, опит и много желание да ви изненадаме. А останалото зависи от вас.',
+    'about.quote':
+      '„Изберете своя герой, облечете костюм, сложете маска — и нека приключението започне. Понякога е хубаво да бъдеш някой друг."',
     'about.browseBtn': 'Разгледайте костюмите',
 
     // services
@@ -317,21 +346,50 @@ const translations: Record<Lang, Record<string, string>> = {
     'about.eyebrow': 'Our story',
     'about.title': 'About us',
     'about.subtitle':
-      'The magic behind CarnivalForYou — a family-run costume rental store in the heart of Sofia.',
+      "Sometimes it's nice to be someone else, if only for a little while. CarnivalForYou is a family-run costume rental store in Sofia, where everyone can discover their inner hero.",
+    'about.hookBody':
+      'Every day we play our roles — parents, children, partners, friends, professionals. We do the same things, meet the same people, follow the same familiar rhythm. But somewhere deep down, the child who once dreamed of being a prince or princess, a pirate, a fairy, a superhero, a king or queen is probably still there. What if, for one day, we could be that hero?',
     'about.storyTitle': 'From a small idea to a magical world',
     'about.story1':
-      'CarnivalForYou started as a small workshop with one dream — to help everyone become the hero they imagine. Today we are a cozy store in the heart of Sofia, where handcrafted costumes and Venetian masks come to life.',
+      'CarnivalForYou started as a small workshop with one dream — to help everyone become the hero they imagine. Today we are a cozy store in Sofia, curating costumes and Venetian masks from the best carnival costume workshops around the world.',
     'about.story2':
       'We believe a costume is not just clothing — it is a portal to another story. That is why we curate every look with attention to detail and a passion for the craft.',
-    'about.v1Title': 'Handcrafted',
+    'about.heroListTitle': 'You might become:',
+    'about.hero1': 'A pirate captain chasing a lost treasure',
+    'about.hero2': 'A fairy who just arrived from a storybook land',
+    'about.hero3': 'A king or queen — for one night',
+    'about.hero4': 'A hero from your favorite movie',
+    'about.hero5': "Or simply someone you've never been before",
+    'about.offerTitle': 'Over 2000 costumes for every occasion',
+    'about.offerBody':
+      'We have over 2000 costumes waiting for you — carnival, stage and formal wear, for children and adults, available to rent, buy, or order custom-made.',
+    'about.addonsBody':
+      "And if the costume alone isn't enough, we'll add makeup, hairstyling, a mask, a wig, a hat and any accessories needed to complete the look. Experienced, out-of-the-box designers, stylists, makeup artists and hairdressers are on hand to turn your idea into reality.",
+    'about.v1Title': 'From the best workshops in the world',
     'about.v1Body':
-      'Every costume is crafted with attention to detail and love for the craft.',
+      'We select every costume with care for detail — sourced from the best carnival costume workshops around the world.',
     'about.v2Title': 'Over 10 years of experience',
     'about.v2Body':
       'We create magical looks for thousands of clients across Bulgaria.',
     'about.v3Title': 'With care for you',
     'about.v3Body': 'We help you choose the perfect look for your event.',
-    'about.quote': '“For us, every reservation is the start of a new tale."',
+    'about.originTitle': 'Who are we?',
+    'about.originBody':
+      "You might know us as the fashion house Odeta — yes, that's us. After years devoted to wedding, evening and prom gowns, we decided to open another door to the world of imagination. That's how CarnivalForYou was born — a place for the moments when you don't just want to celebrate, but want to experience something different and memorable.",
+    'about.occasionsTitle': 'For every occasion',
+    'about.occasion1': 'Birthdays',
+    'about.occasion2': 'Parties with friends',
+    'about.occasion3': 'Themed events',
+    'about.occasion4': "Kids' celebrations",
+    'about.occasion5': 'A surprise for someone you love',
+    'about.occasion6': 'Bachelorette or bachelor parties',
+    'about.occasion7': 'Theater performances',
+    'about.occasion8': 'Photo shoots',
+    'about.occasion9': 'Or just a day when you want to escape the everyday',
+    'about.closingBody':
+      "There are no magic wands in our story. But there are costumes, imagination, experience, and a real desire to surprise you. The rest is up to you.",
+    'about.quote':
+      '“Choose your hero, put on a costume, wear a mask — and let the adventure begin. Sometimes it\'s nice to be someone else."',
     'about.browseBtn': 'Browse costumes',
 
     // services
