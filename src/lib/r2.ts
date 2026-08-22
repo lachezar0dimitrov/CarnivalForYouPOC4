@@ -15,7 +15,13 @@ async function readError(res: Response): Promise<string> {
   return body?.error || res.statusText;
 }
 
-export async function uploadImage(bucket: ImageBucket, file: File): Promise<string> {
+export type UploadResult = { url: string; mobileUrl?: string };
+
+// mobileUrl is only ever populated for the 'banner-images' bucket — the
+// r2-media function auto-generates a portrait crop for banners specifically
+// (see supabase/functions/r2-media/index.ts), so callers uploading products
+// or categories just get url and can ignore the second field.
+export async function uploadImage(bucket: ImageBucket, file: File): Promise<UploadResult> {
   const form = new FormData();
   form.append('file', file);
   form.append('folder', bucket);
@@ -28,8 +34,7 @@ export async function uploadImage(bucket: ImageBucket, file: File): Promise<stri
 
   if (!res.ok) throw new Error(await readError(res));
 
-  const { url } = await res.json();
-  return url;
+  return res.json();
 }
 
 export async function deleteImage(url: string): Promise<void> {

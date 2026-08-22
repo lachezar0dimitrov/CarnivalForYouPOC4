@@ -100,11 +100,16 @@ export default function BannerCarousel() {
             key={banner.id}
             className={`banner-slide ${i === current ? 'active' : ''}`}
           >
-            <img
-              src={banner.imageUrl}
-              alt={lang === 'bg' ? banner.titleBg : banner.titleEn}
-              loading={i === 0 ? 'eager' : 'lazy'}
-            />
+            <picture>
+              {banner.mobileImageUrl && (
+                <source media="(max-width: 639px)" srcSet={banner.mobileImageUrl} />
+              )}
+              <img
+                src={banner.imageUrl}
+                alt={lang === 'bg' ? banner.titleBg : banner.titleEn}
+                loading={i === 0 ? 'eager' : 'lazy'}
+              />
+            </picture>
           </div>
         ))}
       </div>
