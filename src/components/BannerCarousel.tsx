@@ -140,7 +140,7 @@ export default function BannerCarousel() {
             // button, but with that button gone the full-width mobile subtitle
             // now reaches down into their row. Desktop centres the text in a
             // narrower column, so it never reaches the dots there.
-            className={`absolute inset-x-4 bottom-[clamp(6rem,14vw,18rem)] flex flex-col items-center transition-all duration-1000 ${
+            className={`absolute inset-x-4 bottom-[clamp(3rem,7vw,9rem)] flex flex-col items-center transition-all duration-1000 ${
               i === current
                 ? 'translate-y-0 opacity-100'
                 : 'pointer-events-none translate-y-4 opacity-0'
