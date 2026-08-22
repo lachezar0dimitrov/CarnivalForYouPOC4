@@ -502,10 +502,9 @@ export default function ProductsPage() {
             className="fixed inset-0 z-[100] flex flex-col bg-ink-900 lg:hidden"
             data-theme={isChristmas ? 'christmas' : undefined}
           >
-            <div className="flex items-center justify-between border-b border-gold-400/15 px-4 py-4">
-              <h2 className="font-display text-lg font-semibold text-gold-100">
-                {t('products.advancedFilter')}
-              </h2>
+            {/* No repeated heading here — the toggle button above already
+                says "Прецизен филтър за вашата визия"; just the close action. */}
+            <div className="flex items-center justify-end border-b border-gold-400/15 px-4 py-4">
               <button
                 onClick={() => setFilterOpen(false)}
                 aria-label="Close"
@@ -556,8 +555,7 @@ export default function ProductsPage() {
         {/* Desktop: inline sidebar, pushes the results column instead of overlaying it */}
         {filterOpen && (
           <aside className="hidden lg:sticky lg:top-28 lg:block lg:w-72 lg:shrink-0 lg:rounded-2xl lg:border lg:border-gold-400/15 lg:bg-ink-700/40 lg:p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-sm font-medium text-gold-200">{t('products.advancedFilter')}</span>
+            <div className="mb-4 flex items-center justify-end">
               <button
                 onClick={() => setFilterOpen(false)}
                 aria-label="Close"
