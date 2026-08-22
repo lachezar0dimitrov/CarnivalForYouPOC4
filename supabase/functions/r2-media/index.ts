@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import { AwsClient } from "npm:aws4fetch@1.0.20";
+import { Image } from "https://deno.land/x/imagescript@1.2.17/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +21,25 @@ function json(body: unknown, status = 200) {
 function extFromName(name: string) {
   const ext = name.split(".").pop()?.toLowerCase();
   return ext && /^[a-z0-9]{1,5}$/.test(ext) ? ext : "bin";
+}
+
+// Center-crops a wide banner photo down to a 4:5 portrait frame (banners
+// here are always a centered focal subject with symmetric flanking
+// elements, so a horizontal center crop keeps the subject in frame without
+// needing real subject detection) and re-encodes as JPEG for a much
+// smaller mobile payload than the source PNG. Returns null on any failure
+// so a bad/unsupported source image never blocks the main upload.
+async function generateMobileCrop(bytes: Uint8Array): Promise<Uint8Array | null> {
+  try {
+    const img = await Image.decode(bytes);
+    const targetRatio = 4 / 5;
+    const cropWidth = Math.min(img.width, Math.round(img.height * targetRatio));
+    const cropX = Math.round((img.width - cropWidth) / 2);
+    const cropped = img.crop(cropX, 0, cropWidth, img.height);
+    return await cropped.encodeJPEG(85);
+  } catch {
+    return null;
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -87,10 +107,11 @@ Deno.serve(async (req: Request) => {
         return json({ error: "Unsupported file type" }, 400);
       }
 
+      const bytes = new Uint8Array(await file.arrayBuffer());
       const key = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${extFromName(file.name)}`;
       const putRes = await r2.fetch(`${r2Endpoint}/${r2Bucket}/${key}`, {
         method: "PUT",
-        body: file,
+        body: bytes,
         headers: { "Content-Type": file.type || "application/octet-stream" },
       });
 
@@ -98,7 +119,25 @@ Deno.serve(async (req: Request) => {
         return json({ error: `R2 upload failed: ${await putRes.text()}` }, 502);
       }
 
-      return json({ url: `${r2PublicUrl}/${key}` });
+      // Banners additionally get an auto-generated portrait crop for mobile
+      // — best-effort: a failed/slow crop never blocks the main upload.
+      let mobileUrl: string | undefined;
+      if (folder === "banner-images" && file.type.startsWith("image/")) {
+        const mobileBytes = await generateMobileCrop(bytes);
+        if (mobileBytes) {
+          const mobileKey = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-mobile.jpg`;
+          const mobilePutRes = await r2.fetch(`${r2Endpoint}/${r2Bucket}/${mobileKey}`, {
+            method: "PUT",
+            body: mobileBytes,
+            headers: { "Content-Type": "image/jpeg" },
+          });
+          if (mobilePutRes.ok) {
+            mobileUrl = `${r2PublicUrl}/${mobileKey}`;
+          }
+        }
+      }
+
+      return json({ url: `${r2PublicUrl}/${key}`, mobileUrl });
     }
 
     if (req.method === "DELETE") {

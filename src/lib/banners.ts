@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 export type Banner = {
   id: number;
   imageUrl: string;
+  mobileImageUrl: string | null;
   titleBg: string;
   titleEn: string;
   subtitleBg: string;
@@ -15,6 +16,7 @@ export type Banner = {
 type BannerRow = {
   id: number;
   image_url: string;
+  mobile_image_url: string | null;
   title_bg: string;
   title_en: string;
   subtitle_bg: string;
@@ -28,6 +30,7 @@ function mapRow(r: BannerRow): Banner {
   return {
     id: r.id,
     imageUrl: r.image_url,
+    mobileImageUrl: r.mobile_image_url ?? null,
     titleBg: r.title_bg ?? '',
     titleEn: r.title_en ?? '',
     subtitleBg: r.subtitle_bg ?? '',
@@ -66,6 +69,7 @@ export async function fetchAllBanners(): Promise<Banner[]> {
 export async function saveBanner(banner: Partial<Banner> & { id?: number }): Promise<Banner | null> {
   const payload = {
     image_url: banner.imageUrl,
+    mobile_image_url: banner.mobileImageUrl || null,
     title_bg: banner.titleBg,
     title_en: banner.titleEn,
     subtitle_bg: banner.subtitleBg,

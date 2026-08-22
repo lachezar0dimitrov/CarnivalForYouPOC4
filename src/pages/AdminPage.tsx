@@ -248,7 +248,7 @@ function ImageUploadButton({
   label,
 }: {
   bucket: ImageBucket;
-  onUploaded: (url: string) => void;
+  onUploaded: (url: string, mobileUrl?: string) => void;
   label: string;
 }) {
   const { lang } = useI18n();
@@ -262,8 +262,8 @@ function ImageUploadButton({
     setUploading(true);
     setError(null);
     try {
-      const url = await uploadImage(bucket, file);
-      onUploaded(url);
+      const { url, mobileUrl } = await uploadImage(bucket, file);
+      onUploaded(url, mobileUrl);
       notify('success', lang === 'bg' ? 'Снимката е качена.' : 'Image uploaded.');
     } catch {
       setError('Грешка при качване / Upload failed');
@@ -412,6 +412,7 @@ function BannerForm({
   const { notify } = useToast();
   const [form, setForm] = useState({
     imageUrl: banner?.imageUrl ?? '',
+    mobileImageUrl: banner?.mobileImageUrl ?? '',
     titleBg: banner?.titleBg ?? '',
     titleEn: banner?.titleEn ?? '',
     subtitleBg: banner?.subtitleBg ?? '',
@@ -446,7 +447,9 @@ function BannerForm({
           <div className="flex flex-col gap-2">
             <ImageUploadButton
               bucket="banner-images"
-              onUploaded={(url) => setForm({ ...form, imageUrl: url })}
+              onUploaded={(url, mobileUrl) =>
+                setForm({ ...form, imageUrl: url, mobileImageUrl: mobileUrl ?? form.mobileImageUrl })
+              }
               label={lang === 'bg' ? 'Качи снимка от файла' : 'Upload from file'}
             />
             <input
@@ -456,6 +459,16 @@ function BannerForm({
               className="form-input"
               placeholder="https://... или качете файл"
             />
+            <p className="text-xs text-gray-500">
+              {lang === 'bg'
+                ? 'Версията за телефони се изрязва автоматично при качване.'
+                : 'The mobile version is auto-cropped from this on upload.'}
+              {form.mobileImageUrl && (
+                <span className="ml-1 text-moss-400">
+                  {lang === 'bg' ? '✓ готова' : '✓ ready'}
+                </span>
+              )}
+            </p>
           </div>
         </FormField>
 
