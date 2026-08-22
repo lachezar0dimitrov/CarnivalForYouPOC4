@@ -21,3 +21,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Personal notes on feedback from company owners, not project content
+client_requests.txt
