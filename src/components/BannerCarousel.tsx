@@ -124,7 +124,7 @@ export default function BannerCarousel() {
       />
 
       {/* Slide content overlay */}
-      <div className="pointer-events-none relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-[clamp(5rem,14vw,18rem)] text-center md:min-h-0 md:h-full">
+      <div className="pointer-events-none relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-[clamp(7rem,14vw,25rem)] text-center md:min-h-0 md:h-full">
         {banners.map((banner, i) => (
           <div
             key={banner.id}

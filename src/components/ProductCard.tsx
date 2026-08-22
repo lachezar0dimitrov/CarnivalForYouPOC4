@@ -44,9 +44,9 @@ export default function ProductCard({ product }: { product: Product }) {
           />
         </div>
 
-        {/* Hover Overlay - Приравнен към границите на снимката */}
-        <span className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[1px] transition-opacity duration-300 group-hover:opacity-100">
-          <span className="rounded-full border border-gold-400/50 bg-black/70 px-5 py-2.5 text-sm font-medium text-[#f7e9b8] shadow-glow-sm">
+        {/* Hover label — no darkening/blur backdrop, just the text itself fading in */}
+        <span className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <span className="text-sm font-medium text-[#f7e9b8] drop-shadow-lg">
             {lang === 'bg' ? 'Виж повече' : 'See more'}
           </span>
         </span>

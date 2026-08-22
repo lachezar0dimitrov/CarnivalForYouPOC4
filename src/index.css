@@ -355,6 +355,25 @@ body:has(.app-shell[data-theme='christmas'])::-webkit-scrollbar-thumb:hover {
 .animate-floatY { animation: floatY 8s ease-in-out infinite; }
 .animate-twinkle { animation: twinkle 3s ease-in-out infinite; }
 
+/* New-arrivals ribbon: continuous right-to-left marquee. The track holds two
+   copies of the product list back to back, so scrolling exactly -50% loops
+   seamlessly. --marquee-duration is set per-instance (scales with item count
+   so the per-card speed stays constant regardless of list length). */
+@keyframes marqueeScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marqueeScroll var(--marquee-duration, 40s) linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
 /* Butterfly drift animations */
 @keyframes butterflyFlap {
   0%, 100% { transform: scaleX(1); }

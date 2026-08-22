@@ -9,6 +9,7 @@ import SectionHeading from '@/components/SectionHeading';
 import BannerCarousel from '@/components/BannerCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
 import HeroFireflies from '@/components/HeroFireflies';
+import NewArrivalsRibbon from '@/components/NewArrivalsRibbon';
 
 export default function HomePage() {
   const { navigate } = useRouter();
@@ -58,6 +59,8 @@ export default function HomePage() {
           />
         </div>
       </section>
+
+      <NewArrivalsRibbon />
 
       {/* CTA */}
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 2xl:max-w-[1680px]">
