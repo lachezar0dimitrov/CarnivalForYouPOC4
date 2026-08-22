@@ -594,11 +594,6 @@ body:has(.app-shell[data-theme='christmas'])::-webkit-scrollbar-thumb:hover {
   height: 100%;
   object-fit: cover;
 }
-@media (max-width: 767px) {
-  .banner-slide img {
-    object-fit: contain;
-  }
-}
 /* Desktop/tablet (matches Tailwind's md: breakpoint exactly): lock the
    banner to its native ~16:9 aspect ratio instead of a viewport-height-
    based box. Without this, a wide/ultrawide monitor pairs a huge width

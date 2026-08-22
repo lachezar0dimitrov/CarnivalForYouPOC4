@@ -44,16 +44,17 @@ export default function HomePage() {
 
       {/* Categories from DB metadata */}
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 2xl:max-w-[2184px]">
-        <div className="flex items-center justify-center gap-3 sm:gap-4">
+        <div className="flex items-center justify-center gap-2.5 sm:gap-3">
           <Sparkles
-            size={26}
+            size={18}
             className="shrink-0 text-gold-300 drop-shadow-[0_0_8px_rgba(212,175,55,0.65)]"
           />
-          <span className="font-display text-4xl font-bold text-[#176b4b] drop-shadow-[0_0_14px_rgba(23,107,75,0.45)] sm:text-6xl">
+          {/* Same size as the banner title (text-[clamp(1.25rem,2.5vw,3rem)]) */}
+          <span className="font-display text-[clamp(1.25rem,2.5vw,3rem)] font-bold text-[#176b4b] drop-shadow-[0_0_14px_rgba(23,107,75,0.45)]">
             {t('home.categoriesEyebrow')}
           </span>
           <Sparkles
-            size={20}
+            size={14}
             className="shrink-0 text-[#b93232] drop-shadow-[0_0_8px_rgba(185,50,50,0.6)]"
           />
         </div>

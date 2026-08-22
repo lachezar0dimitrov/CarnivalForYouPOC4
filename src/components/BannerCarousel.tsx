@@ -108,6 +108,14 @@ export default function BannerCarousel() {
                 src={banner.imageUrl}
                 alt={lang === 'bg' ? banner.titleBg : banner.titleEn}
                 loading={i === 0 ? 'eager' : 'lazy'}
+                // The auto-cropped mobile source is already framed to fit a
+                // phone screen, so it should fill the box (cover) with no
+                // letterboxing. A banner with no mobile crop yet (legacy
+                // data, or a failed crop) falls back to the wide desktop
+                // photo below 640px — object-contain there avoids cropping
+                // its sides down to nothing, at the cost of some letterbox
+                // bars, which is the lesser evil for that fallback case only.
+                className={banner.mobileImageUrl ? 'object-cover' : 'object-contain sm:object-cover'}
               />
             </picture>
           </div>
