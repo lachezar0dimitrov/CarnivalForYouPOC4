@@ -23,16 +23,20 @@ function extFromName(name: string) {
   return ext && /^[a-z0-9]{1,5}$/.test(ext) ? ext : "bin";
 }
 
-// Center-crops a wide banner photo down to a 4:5 portrait frame (banners
-// here are always a centered focal subject with symmetric flanking
-// elements, so a horizontal center crop keeps the subject in frame without
-// needing real subject detection) and re-encodes as JPEG for a much
-// smaller mobile payload than the source PNG. Returns null on any failure
-// so a bad/unsupported source image never blocks the main upload.
+// Center-crops a wide banner photo down to a near-square portrait frame
+// (banners here are always a centered focal subject with symmetric
+// flanking elements, so a horizontal center crop keeps the subject in
+// frame without needing real subject detection) and re-encodes as JPEG
+// for a much smaller mobile payload than the source PNG. Returns null on
+// any failure so a bad/unsupported source image never blocks the main
+// upload. Ratio is 0.9 (not a tighter 4:5) to match the ~0.9–1.1 aspect
+// of a real phone's `min-h-50vh` hero box across common devices — the
+// closer this is to the container's own shape, the less object-fit:cover
+// has to crop again on top of this crop to fill it.
 async function generateMobileCrop(bytes: Uint8Array): Promise<Uint8Array | null> {
   try {
     const img = await Image.decode(bytes);
-    const targetRatio = 4 / 5;
+    const targetRatio = 0.9;
     const cropWidth = Math.min(img.width, Math.round(img.height * targetRatio));
     const cropX = Math.round((img.width - cropWidth) / 2);
     const cropped = img.crop(cropX, 0, cropWidth, img.height);
