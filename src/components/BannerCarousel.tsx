@@ -123,8 +123,10 @@ export default function BannerCarousel() {
         className="absolute inset-0 z-20 cursor-pointer"
       />
 
-      {/* Slide content overlay */}
-      <div className="pointer-events-none relative z-20 flex min-h-[50vh] flex-col items-center justify-end px-4 pb-[clamp(9rem,17vw,31rem)] text-center md:min-h-0 md:h-full">
+      {/* Slide content overlay — each slide inside is absolutely positioned
+          (see bottom-[clamp...] below), so this wrapper only needs to size
+          the stacking context; it does not itself control text position. */}
+      <div className="pointer-events-none relative z-20 min-h-[50vh] px-4 text-center md:min-h-0 md:h-full">
         {banners.map((banner, i) => (
           <div
             key={banner.id}
@@ -133,7 +135,7 @@ export default function BannerCarousel() {
             // button, but with that button gone the full-width mobile subtitle
             // now reaches down into their row. Desktop centres the text in a
             // narrower column, so it never reaches the dots there.
-            className={`absolute inset-x-4 bottom-8 flex flex-col items-center transition-all duration-1000 sm:bottom-0 ${
+            className={`absolute inset-x-4 bottom-[clamp(6rem,14vw,18rem)] flex flex-col items-center transition-all duration-1000 ${
               i === current
                 ? 'translate-y-0 opacity-100'
                 : 'pointer-events-none translate-y-4 opacity-0'

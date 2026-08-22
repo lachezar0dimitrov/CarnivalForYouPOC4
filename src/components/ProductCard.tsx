@@ -44,9 +44,10 @@ export default function ProductCard({ product }: { product: Product }) {
           />
         </div>
 
-        {/* Hover label — no darkening/blur backdrop, just the text itself fading in */}
+        {/* Hover label — no darkening/blur backdrop over the photo, just a
+            small pill behind the text so it stays readable on busy images */}
         <span className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <span className="text-sm font-medium text-[#f7e9b8] drop-shadow-lg">
+          <span className="rounded-full border border-gold-400/50 bg-black/70 px-5 py-2.5 text-sm font-medium text-[#f7e9b8] shadow-glow-sm">
             {lang === 'bg' ? 'Виж повече' : 'See more'}
           </span>
         </span>
