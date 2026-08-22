@@ -28,6 +28,7 @@ export function eurToBgn(eur: number): number {
 export type Product = {
   id: number;
   oldId: number | null;
+  oldCatalogNumber: string | null;
   categoryId: number | null;
   categoryIds: number[];
   nameBg: string | null;
@@ -47,6 +48,7 @@ export type Product = {
 export type ProductRow = {
   id: number;
   old_id: number | null;
+  old_catalog_number: string | null;
   category_id: number | null;
   category_ids: number[] | string | null;
   name_bg: string | null;
@@ -97,6 +99,7 @@ function mapRow(r: ProductRow): Product {
   return {
     id: r.id,
     oldId: r.old_id,
+    oldCatalogNumber: r.old_catalog_number,
     categoryId: r.category_id,
     categoryIds,
     nameBg: r.name_bg,
@@ -391,7 +394,7 @@ export type FetchResult = {
 };
 
 const selectColumns =
-  'id, old_id, category_id, category_ids, name_bg, name_en, description_bg, description_en, sizes, price, old_price, image_url, priority, tags';
+  'id, old_id, old_catalog_number, category_id, category_ids, name_bg, name_en, description_bg, description_en, sizes, price, old_price, image_url, priority, tags';
 
 // Маски / Шапки / Перуки / Аксесоари — hidden by stakeholder decision
 // (categories.is_active = false), not shown as tiles or filter chips.
@@ -412,10 +415,12 @@ function searchFilter(search: string): string {
   const term = search.trim().replace(/[,.()]/g, ' ').trim();
   if (!term) return '';
   const base = `name_bg.ilike.%${term}%,name_en.ilike.%${term}%`;
-  // Catalog numbers (old_id) are searched exactly, as printed on the tag —
-  // only meaningful when the whole term is numeric.
+  // The number printed on the physical tag is old_catalog_number, not
+  // old_id (which is just the legacy site's internal obid). Matched with
+  // ilike since some catalog numbers have leading zeros staff may omit.
+  // old_id is kept as a secondary fallback for internal reference lookups.
   if (/^\d+$/.test(term)) {
-    return `${base},old_id.eq.${term}`;
+    return `${base},old_catalog_number.ilike.%${term}%,old_id.eq.${term}`;
   }
   return base;
 }

@@ -205,9 +205,9 @@ export default function ProductDetailPage() {
             {name}
           </h1>
 
-          {product.oldId != null && (
+          {product.oldCatalogNumber != null && (
             <p className="mt-1.5 text-sm font-medium text-gold-300/80">
-              {t('common.catalogNumber')}: {product.oldId}
+              {t('common.catalogNumber')}: {product.oldCatalogNumber}
             </p>
           )}
 

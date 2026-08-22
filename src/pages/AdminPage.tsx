@@ -545,6 +545,7 @@ function mapAdminRow(r: any): AdminProduct {
   return {
     id: r.id,
     oldId: r.old_id ?? null,
+    oldCatalogNumber: r.old_catalog_number ?? null,
     categoryId: r.category_id ?? categoryIds[0] ?? 2,
     categoryIds,
     nameBg: r.name_bg ?? '',
@@ -679,16 +680,20 @@ function ProductManager() {
     setLoading(true);
     let cancelled = false;
     const term = debouncedSearch.trim();
-    // Admins look up products by the old (pre-migration) catalog number
-    // shown on the product page ("Каталожен №") — stored in old_id, which
-    // the name-only search never matched. Deliberately NOT matching the
+    // Admins look up products by the number printed on the old paper tag
+    // ("Каталожен №"), which is old_catalog_number — a distinct, arbitrary
+    // per-product number scraped from the legacy site, NOT old_id (which is
+    // just that site's internal obid URL param and was the field this
+    // search used to match, hence never finding anything). Matched with
+    // ilike since catalog numbers can have leading zeros. old_id kept as a
+    // fallback for internal reference lookups. Deliberately NOT matching the
     // new internal id here too: id and old_id are unrelated sequences, so
     // e.g. searching "100" could otherwise also surface whichever unrelated
     // product happens to have internal id 100.
     const isNumeric = /^\d+$/.test(term);
     const searchParts: string[] = [];
     if (term) {
-      searchParts.push(`name_bg.ilike.%${term}%`, `name_en.ilike.%${term}%`);
+      searchParts.push(`name_bg.ilike.%${term}%`, `name_en.ilike.%${term}%`, `old_catalog_number.ilike.%${term}%`);
       if (isNumeric) searchParts.push(`old_id.eq.${term}`);
     }
     const searchFilter = searchParts.length > 0 ? searchParts.join(',') : undefined;
@@ -1010,6 +1015,7 @@ function ProductForm({
     is_active: product?.isActive ?? true,
     priority: product?.priority ?? 0,
     old_id: product?.oldId ?? null,
+    old_catalog_number: product?.oldCatalogNumber ?? '',
     tags: product?.tags?.join(', ') ?? '',
   });
   const [saving, setSaving] = useState(false);
@@ -1045,6 +1051,7 @@ function ProductForm({
       is_active: form.is_active,
       priority: Number(form.priority),
       old_id: form.old_id ? Number(form.old_id) : null,
+      old_catalog_number: form.old_catalog_number.trim() || null,
       tags: tagsArray,
     };
 
@@ -1157,12 +1164,15 @@ function ProductForm({
             <input type="text" value={form.sizes} onChange={(e) => setForm({ ...form, sizes: e.target.value })} className="form-input" placeholder="S, M, L" />
           </FormField>
           <FormField label={lang === 'bg' ? 'Каталожен №' : 'Catalog №'}>
-            <input type="number" value={form.old_id ?? ''} onChange={(e) => setForm({ ...form, old_id: e.target.value ? Number(e.target.value) : null })} className="form-input" />
+            <input type="text" value={form.old_catalog_number} onChange={(e) => setForm({ ...form, old_catalog_number: e.target.value })} className="form-input" placeholder="напр. 20423" />
           </FormField>
           <FormField label={lang === 'bg' ? 'Приоритет' : 'Priority'}>
             <input type="number" value={form.priority} onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })} className="form-input" />
           </FormField>
         </div>
+        <FormField label={lang === 'bg' ? 'Стар ID (obid от стария сайт)' : 'Legacy ID (old site obid)'}>
+          <input type="number" value={form.old_id ?? ''} onChange={(e) => setForm({ ...form, old_id: e.target.value ? Number(e.target.value) : null })} className="form-input" />
+        </FormField>
 
         <FormField label={lang === 'bg' ? 'Тагове (разделени със запетая)' : 'Tags (comma-separated)'}>
           <input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="form-input" placeholder="венец, маска, хелоуин" />
