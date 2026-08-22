@@ -7,16 +7,16 @@ import SectionHeading from '@/components/SectionHeading';
 
 function RibbonCard({ product, name }: { product: Product; name: string }) {
   const { navigate } = useRouter();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   return (
     <button
       type="button"
       onClick={() => navigate('product-detail', String(product.id))}
-      className="group relative flex w-40 shrink-0 flex-col overflow-hidden rounded-xl border border-gold-400/15 bg-ink-900/60 shadow-card transition hover:border-gold-400/40 sm:w-48"
+      className="group relative flex w-48 shrink-0 flex-col overflow-hidden rounded-xl border border-gold-400/15 bg-ink-900/60 shadow-card transition hover:border-gold-400/40 sm:w-56"
     >
-      <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-error/90 px-2.5 py-1 text-[0.65rem] font-bold text-white shadow-glow-sm">
+      <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-[#176b4b]/90 px-2.5 py-1 text-[0.65rem] font-bold text-white shadow-glow-sm">
         <Sparkles size={10} />
-        NEW
+        {lang === 'bg' ? 'НОВО' : 'NEW'}
       </span>
       <div className="aspect-[2/3] w-full overflow-hidden bg-white/5">
         <img
