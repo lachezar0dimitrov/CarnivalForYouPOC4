@@ -25,7 +25,10 @@ export default function CookieConsent() {
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[60] p-3 sm:p-4 animate-fadeUp">
-      <div className="glass mx-auto flex max-w-3xl flex-col gap-4 rounded-2xl border border-gold-400/25 p-5 shadow-glow-lg sm:flex-row sm:items-center sm:gap-5 sm:p-6">
+      {/* Solid background, not .glass — this is a one-click utility banner,
+          not decorative chrome, and translucency made the page text behind
+          it bleed through and hurt readability. */}
+      <div className="mx-auto flex max-w-3xl flex-col gap-4 rounded-2xl border border-gold-400/25 bg-ink-800 p-5 shadow-glow-lg sm:flex-row sm:items-center sm:gap-5 sm:p-6">
         <div className="flex shrink-0 items-start gap-3 sm:items-center">
           <div className="inline-flex rounded-xl border border-gold-400/20 bg-gold-400/5 p-2.5 text-gold-300">
             <Cookie size={22} />

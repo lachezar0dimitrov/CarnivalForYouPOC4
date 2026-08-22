@@ -49,7 +49,7 @@ export default function HomePage() {
             size={26}
             className="shrink-0 text-gold-300 drop-shadow-[0_0_8px_rgba(212,175,55,0.65)]"
           />
-          <span className="logo-cursive logo-cf text-4xl drop-shadow-[0_0_14px_rgba(23,107,75,0.45)] sm:text-6xl">
+          <span className="font-display text-4xl font-bold text-[#176b4b] drop-shadow-[0_0_14px_rgba(23,107,75,0.45)] sm:text-6xl">
             {t('home.categoriesEyebrow')}
           </span>
           <Sparkles
