@@ -41,7 +41,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'common.bgn': 'лв.',
     'common.eur': '€',
     'common.deposit': 'Депозит',
-    'common.depositInfo': 'Депозитът се връща напълно, когато върнете костюма.',
+    'common.depositInfo': 'Депозитът се внася при вземане на костюма и се възстановява изцяло при връщането му, ако е без трайни повреди.',
     'common.sizes': 'Размери',
     'common.tags': 'Тагове',
     'common.rentalPrice': 'Цена за наем',
@@ -66,6 +66,8 @@ const translations: Record<Lang, Record<string, string>> = {
     'home.categoriesSubtitle':
       'Четири свята на въображението — изберете своето и се потопете в историята.',
     'home.viewLooks': 'Виж образи',
+    'home.newArrivalsEyebrow': 'Нови пристигания',
+    'home.newArrivalsTitle': 'Нашите най-нови образи',
     'home.quote': '„Всеки костюм е портал към друга история — изберете своята."',
     'home.ctaTitle': 'Готови ли сте за трансформация?',
     'home.ctaBody':
@@ -220,7 +222,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'common.bgn': 'BGN',
     'common.eur': '€',
     'common.deposit': 'Deposit',
-    'common.depositInfo': 'The deposit is fully refunded when you return the costume.',
+    'common.depositInfo': 'The deposit is paid when you collect the costume and refunded in full when it is returned undamaged.',
     'common.sizes': 'Sizes',
     'common.tags': 'Tags',
     'common.rentalPrice': 'Rental price',
@@ -245,6 +247,8 @@ const translations: Record<Lang, Record<string, string>> = {
     'home.categoriesSubtitle':
       'Four worlds of imagination — pick yours and dive into the story.',
     'home.viewLooks': 'View looks',
+    'home.newArrivalsEyebrow': 'New arrivals',
+    'home.newArrivalsTitle': 'Our newest looks',
     'home.quote': '“Every costume is a portal to another story — choose yours."',
     'home.ctaTitle': 'Ready for a transformation?',
     'home.ctaBody':

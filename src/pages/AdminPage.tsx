@@ -560,6 +560,7 @@ function mapAdminRow(r: any): AdminProduct {
     priority: r.priority ?? 0,
     tags: r.tags ?? [],
     isActive: r.is_active ?? true,
+    isNew: r.is_new ?? false,
   };
 }
 
@@ -1008,6 +1009,7 @@ function ProductForm({
     image_url: product?.imageUrl ?? '',
     sizes: product?.sizes ?? '',
     is_active: product?.isActive ?? true,
+    is_new: product?.isNew ?? false,
     priority: product?.priority ?? 0,
     old_id: product?.oldId ?? null,
     tags: product?.tags?.join(', ') ?? '',
@@ -1043,6 +1045,7 @@ function ProductForm({
       image_url: form.image_url || null,
       sizes: form.sizes || null,
       is_active: form.is_active,
+      is_new: form.is_new,
       priority: Number(form.priority),
       old_id: form.old_id ? Number(form.old_id) : null,
       tags: tagsArray,
@@ -1168,10 +1171,16 @@ function ProductForm({
           <input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="form-input" placeholder="венец, маска, хелоуин" />
         </FormField>
 
-        <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-          <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
-          {lang === 'bg' ? 'Активен (видим в каталога)' : 'Active (visible in catalog)'}
-        </label>
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-6">
+          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+            <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
+            {lang === 'bg' ? 'Активен (видим в каталога)' : 'Active (visible in catalog)'}
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+            <input type="checkbox" checked={form.is_new} onChange={(e) => setForm({ ...form, is_new: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
+            {lang === 'bg' ? 'Нов продукт (лента на началната страница)' : 'New product (home page ribbon)'}
+          </label>
+        </div>
 
         {error && <ErrorBox>{error}</ErrorBox>}
 

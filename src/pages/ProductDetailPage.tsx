@@ -180,18 +180,6 @@ export default function ProductDetailPage() {
             />
           </div>
 
-          {/* Етикетите са с z-20, за да са над CSS рамката */}
-          <div className="absolute left-4 top-4 z-20 flex flex-wrap gap-1.5 max-w-[80%]">
-            {categoriesList.map((catId) => (
-              <span
-                key={catId}
-                className="rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-[#f0d985] backdrop-blur-sm"
-              >
-                {categoryName(catId, lang)}
-              </span>
-            ))}
-          </div>
-
           {product.oldPrice != null && product.oldPrice > product.price && (
             <span className="absolute right-4 top-4 z-20 rounded-full bg-error/90 px-3 py-1 text-xs font-bold text-white shadow-glow-sm">
               -{Math.round((1 - product.price / product.oldPrice) * 100)}%

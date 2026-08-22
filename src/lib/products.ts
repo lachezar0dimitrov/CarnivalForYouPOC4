@@ -42,6 +42,7 @@ export type Product = {
   imageUrl: string | null;
   priority: number;
   tags: string[];
+  isNew: boolean;
 };
 
 export type ProductRow = {
@@ -59,6 +60,7 @@ export type ProductRow = {
   image_url: string | null;
   priority: number;
   tags: string[] | null;
+  is_new: boolean | null;
 };
 
 function mapRow(r: ProductRow): Product {
@@ -111,6 +113,7 @@ function mapRow(r: ProductRow): Product {
     imageUrl: r.image_url,
     priority: r.priority ?? 0,
     tags: r.tags ?? [],
+    isNew: r.is_new ?? false,
   };
 }
 
@@ -391,7 +394,7 @@ export type FetchResult = {
 };
 
 const selectColumns =
-  'id, old_id, category_id, category_ids, name_bg, name_en, description_bg, description_en, sizes, price, old_price, image_url, priority, tags';
+  'id, old_id, category_id, category_ids, name_bg, name_en, description_bg, description_en, sizes, price, old_price, image_url, priority, tags, is_new';
 
 // Маски / Шапки / Перуки / Аксесоари — hidden by stakeholder decision
 // (categories.is_active = false), not shown as tiles or filter chips.
@@ -624,6 +627,18 @@ export async function fetchProductById(id: number): Promise<Product | null> {
   if (error) throw error;
   if (!data) return null;
   return mapRow(data as unknown as ProductRow);
+}
+
+// Products flagged "new" in the admin form, for the home page ribbon.
+export async function fetchNewProducts(limit = 20): Promise<Product[]> {
+  const { data, error } = await baseQuery()
+    .eq('is_new', true)
+    .order('priority', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data as unknown as ProductRow[] | null ?? []).map(mapRow);
 }
 
 function categoryOrClause(ids: number[]): string {
