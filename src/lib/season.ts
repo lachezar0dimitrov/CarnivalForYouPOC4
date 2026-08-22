@@ -63,6 +63,16 @@ function calendarSeason(): Season {
   return 'normal';
 }
 
+// Same Oct 31 boundary the Halloween window above is built around — kept
+// here as the single source of truth so a footer countdown (or anything
+// else that needs "how long until Halloween") never drifts from the season
+// the products grid actually sorts by, and never needs a yearly manual bump.
+export function getNextHalloweenDate(): Date {
+  const now = new Date();
+  const thisYear = new Date(now.getFullYear(), 9, 31, 0, 0, 0);
+  return now < thisYear ? thisYear : new Date(now.getFullYear() + 1, 9, 31, 0, 0, 0);
+}
+
 export function getCurrentSeason(): Season {
   // QA/demo override: ?season=christmas|halloween|normal forces a season
   // regardless of the real date or the admin setting, for testing/preview.

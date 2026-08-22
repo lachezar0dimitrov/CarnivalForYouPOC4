@@ -44,17 +44,17 @@ export default function HomePage() {
 
       {/* Categories from DB metadata */}
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 2xl:max-w-[2184px]">
-        <div className="flex items-center justify-center gap-2.5 sm:gap-3">
+        <div className="flex items-center justify-center gap-3 sm:gap-4">
           <Sparkles
-            size={20}
-            className="shrink-0 text-gold-300 drop-shadow-[0_0_6px_rgba(212,175,55,0.6)]"
+            size={26}
+            className="shrink-0 text-gold-300 drop-shadow-[0_0_8px_rgba(212,175,55,0.65)]"
           />
-          <span className="logo-cursive logo-cf text-3xl sm:text-4xl">
+          <span className="logo-cursive logo-cf text-4xl drop-shadow-[0_0_14px_rgba(23,107,75,0.45)] sm:text-6xl">
             {t('home.categoriesEyebrow')}
           </span>
           <Sparkles
-            size={16}
-            className="shrink-0 text-moss-400 drop-shadow-[0_0_5px_rgba(91,140,110,0.6)]"
+            size={20}
+            className="shrink-0 text-[#b93232] drop-shadow-[0_0_8px_rgba(185,50,50,0.6)]"
           />
         </div>
 
