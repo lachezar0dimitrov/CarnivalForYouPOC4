@@ -3,6 +3,7 @@ import { useRouter, type Route } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { storeInfo } from '@/data/catalog';
 import Logo from '@/components/Logo';
+import HalloweenCountdown from '@/components/HalloweenCountdown';
 
 export default function Footer() {
   const { navigate } = useRouter();
@@ -20,6 +21,8 @@ export default function Footer() {
 
   return (
     <footer className="relative z-10 border-t border-gold-400/15 bg-ink-800/80">
+      <HalloweenCountdown />
+
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 2xl:max-w-[1680px]">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}

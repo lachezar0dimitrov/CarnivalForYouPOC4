@@ -67,10 +67,7 @@ export default function NewArrivalsRibbon() {
 
   return (
     <section className="relative z-10 mx-auto max-w-7xl px-4 pb-4 pt-16 sm:px-6 sm:pt-20 2xl:max-w-[1680px]">
-      <SectionHeading
-        eyebrow={t('home.newArrivalsEyebrow')}
-        title={t('home.newArrivalsTitle')}
-      />
+      <SectionHeading title={t('home.newArrivalsTitle')} />
 
       <div className="marquee-mask relative mt-10 overflow-hidden">
         <div
