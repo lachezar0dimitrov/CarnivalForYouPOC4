@@ -28,7 +28,16 @@ export default function HomePage() {
   });
 
   return (
-    <div className="home-page relative -mt-20 sm:-mt-24">
+    // The hero only bleeds up under the fixed header (negative margin,
+    // cancelling .site-main's padding-top compensation for it) from lg
+    // (1024px) up. Below that the banner box is short (a fixed 16:9 box,
+    // BannerCarousel.tsx/index.css) -- pulling it up by a fixed 80-96px
+    // there ate a large enough fraction of its own height that a
+    // multi-line banner title could render underneath (and get visually
+    // clipped/hidden by) the opaque header. Below lg the hero just starts
+    // cleanly below the header instead; the immersive bleed effect only
+    // matters once the box is tall enough to absorb it unnoticed anyway.
+    <div className="home-page relative lg:-mt-24">
       {/* HERO — banner rotator carousel with light overlay & fireflies */}
       <div className="relative mx-auto w-full max-w-[1920px] overflow-hidden">
         <BannerCarousel />
