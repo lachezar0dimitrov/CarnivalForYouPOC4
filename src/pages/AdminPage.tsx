@@ -47,6 +47,7 @@ import {
 } from '@/lib/categories';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/components/Toast';
+import carouselImages from 'virtual:carousel-images';
 
 type Tab = 'banners' | 'products' | 'contacts' | 'categories' | 'theme';
 
@@ -292,6 +293,76 @@ function ImageUploadButton({
   );
 }
 
+// Lets the admin pick one of the source photos already sitting in
+// public/images/carousel/ (see vite.config.ts's carouselImagesPlugin)
+// instead of only uploading a new file. The picked file still goes through
+// the normal upload pipeline (fetched client-side, then re-posted to
+// r2-media) so it ends up on R2 with an auto-generated mobile crop, exactly
+// like a manual upload — no separate, degraded code path.
+function CarouselPicker({
+  onUploaded,
+}: {
+  onUploaded: (url: string, mobileUrl?: string) => void;
+}) {
+  const { lang } = useI18n();
+  const { notify } = useToast();
+  const [open, setOpen] = useState(false);
+  const [busyPath, setBusyPath] = useState<string | null>(null);
+
+  if (carouselImages.length === 0) return null;
+
+  const handlePick = async (path: string) => {
+    setBusyPath(path);
+    try {
+      const res = await fetch(path);
+      const blob = await res.blob();
+      const filename = path.split('/').pop() || 'image.jpg';
+      const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
+      const { url, mobileUrl } = await uploadImage('banner-images', file);
+      onUploaded(url, mobileUrl);
+      notify('success', lang === 'bg' ? 'Снимката е избрана.' : 'Image selected.');
+      setOpen(false);
+    } catch {
+      notify('error', lang === 'bg' ? 'Грешка при избора.' : 'Failed to select image.');
+    } finally {
+      setBusyPath(null);
+    }
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-lg border border-gold-400/25 px-4 py-2.5 text-sm text-gold-200 transition hover:bg-gold-400/10"
+      >
+        <ImageIcon size={16} />
+        {lang === 'bg' ? 'Избери от карусела' : 'Choose from carousel'}
+      </button>
+      {open && (
+        <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg border border-gold-400/15 bg-ink-800 p-2 sm:grid-cols-4">
+          {carouselImages.map((path) => (
+            <button
+              key={path}
+              type="button"
+              onClick={() => handlePick(path)}
+              disabled={busyPath !== null}
+              className="relative aspect-video overflow-hidden rounded-lg border border-gold-400/15 transition hover:border-gold-400/50 disabled:opacity-50"
+            >
+              <img src={path} alt="" className="h-full w-full object-cover" />
+              {busyPath === path && (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/60">
+                  <Loader2 size={18} className="animate-spin text-gold-300" />
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ============================================================
 // BANNER MANAGER
 // ============================================================
@@ -445,13 +516,20 @@ function BannerForm({
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
         <FormField label={lang === 'bg' ? 'Снимка' : 'Image'}>
           <div className="flex flex-col gap-2">
-            <ImageUploadButton
-              bucket="banner-images"
-              onUploaded={(url, mobileUrl) =>
-                setForm({ ...form, imageUrl: url, mobileImageUrl: mobileUrl ?? form.mobileImageUrl })
-              }
-              label={lang === 'bg' ? 'Качи снимка от файла' : 'Upload from file'}
-            />
+            <div className="flex flex-wrap gap-2">
+              <ImageUploadButton
+                bucket="banner-images"
+                onUploaded={(url, mobileUrl) =>
+                  setForm({ ...form, imageUrl: url, mobileImageUrl: mobileUrl ?? '' })
+                }
+                label={lang === 'bg' ? 'Качи снимка от файла' : 'Upload from file'}
+              />
+              <CarouselPicker
+                onUploaded={(url, mobileUrl) =>
+                  setForm({ ...form, imageUrl: url, mobileImageUrl: mobileUrl ?? '' })
+                }
+              />
+            </div>
             <input
               type="text"
               value={form.imageUrl}
@@ -472,10 +550,14 @@ function BannerForm({
           </div>
         </FormField>
 
+        {/* aspect-video matches the live .banner-box's 16:9 ratio on desktop
+            (BannerCarousel.tsx), so this preview shows the same crop viewers
+            actually get instead of an arbitrary, much-wider strip that hid
+            most of the photo behind a misleadingly tight crop. */}
         <AdminImage
           src={form.imageUrl}
           alt=""
-          className="w-full max-h-[300px] rounded-xl border border-gold-400/15 object-cover"
+          className="aspect-video w-full rounded-xl border border-gold-400/15 object-cover"
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
