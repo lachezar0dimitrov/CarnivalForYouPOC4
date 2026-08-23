@@ -168,10 +168,10 @@ export default function BannerCarousel() {
                 scale was then dialled back (it plateaued at 5rem, which
                 overpowered the photography) while keeping that same
                 reach-the-cap-at-1920px shape. */}
-            <h1 className="font-display text-[clamp(1.25rem,2.5vw,3rem)] font-bold leading-tight text-[#f7e9b8] drop-shadow-lg">
+            <h1 className="font-display text-[clamp(1.125rem,2.25vw,2.75rem)] font-bold leading-tight text-[#f7e9b8] drop-shadow-lg">
               {lang === 'bg' ? banner.titleBg : banner.titleEn}
             </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-[clamp(0.875rem,1.25vw,1.5rem)] text-[#e5e7eb] drop-shadow">
+            <p className="mx-auto mt-2 max-w-2xl text-[clamp(0.875rem,1.25vw,1.5rem)] text-[#e5e7eb] drop-shadow">
               {lang === 'bg' ? banner.subtitleBg : banner.subtitleEn}
             </p>
           </div>
