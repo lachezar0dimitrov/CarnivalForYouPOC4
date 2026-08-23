@@ -579,7 +579,17 @@ body:has(.app-shell[data-theme='christmas'])::-webkit-scrollbar-thumb:hover {
   border-radius: 0;
 }
 
-/* Crossfade banner carousel transitions */
+/* Crossfade banner carousel transitions. .banner-box locks to the same
+   16:9 shape as the admin edit form's preview (aspect-video, AdminPage.tsx)
+   at EVERY width, not just desktop -- previously this only applied at
+   md+ (768px), so a narrow viewport (a real phone, or just a browser
+   window with devtools docked) fell back to a height driven by
+   min-h-[50vh] paired with object-fit: cover, which crops. object-fit
+   is now contain everywhere: with the box already shaped like the
+   photo, contain never needs to letterbox in the common case, and for
+   any banner whose real ratio doesn't quite match 16:9 it shows the
+   whole image with a sliver of empty bar rather than cropping content
+   away -- letterboxing, never cropping, is the deliberate trade-off. */
 .banner-slide {
   position: absolute;
   inset: 0;
@@ -592,19 +602,10 @@ body:has(.app-shell[data-theme='christmas'])::-webkit-scrollbar-thumb:hover {
 .banner-slide img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
-/* Desktop/tablet (matches Tailwind's md: breakpoint exactly): lock the
-   banner to its native ~16:9 aspect ratio instead of a viewport-height-
-   based box. Without this, a wide/ultrawide monitor pairs a huge width
-   with a capped vh height, forcing object-fit: cover to scale the image
-   up hugely to fill the width and crop away most of its vertical extent.
-   Locking the container's own shape to the image's shape means it scales
-   proportionally in both directions at any width. */
-@media (min-width: 768px) {
-  .banner-box {
-    aspect-ratio: 16 / 9;
-  }
+.banner-box {
+  aspect-ratio: 16 / 9;
 }
 
 /* Admin form inputs */
