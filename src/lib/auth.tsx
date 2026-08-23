@@ -28,25 +28,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const loadProfile = async (userId: string, appMetaRole?: string) => {
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', userId)
         .maybeSingle();
 
-      console.log('[auth] loadProfile — profile:', profile, 'error:', profileError);
-
       if (!mounted) return;
 
       const isAdmin = profile?.role === 'admin' || appMetaRole === 'admin';
       setAdminRole(isAdmin ? 'admin' : 'user');
-      console.log('[auth] loadProfile — isAdmin:', isAdmin);
       setLoading(false);
     };
 
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
-      console.log('[auth] getSession — session:', !!data.session, 'user id:', data.session?.user?.id);
       setUser(data.session?.user ?? null);
       if (data.session?.user) {
         loadProfile(data.session.user.id, data.session.user.app_metadata?.role);
@@ -57,8 +53,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[auth] onAuthStateChange — event:', event, 'session:', !!session, 'user id:', session?.user?.id);
-
       if (event === 'SIGNED_OUT' || !session?.user) {
         setUser(null);
         setAdminRole(null);
@@ -81,20 +75,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (username: string, password: string) => {
-    console.log('[auth] Login started — username:', username);
     const email = ADMIN_EMAIL_MAP[username.trim().toLowerCase()];
     if (!email) {
-      console.log('[auth] No email mapping for username:', username);
       return { error: 'Невалидно потребителско име.' };
     }
 
-    console.log('[auth] Calling signInWithPassword with email:', email);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      console.log('[auth] signInWithPassword error:', error.message);
       return { error: 'Грешно потребителско име или парола.' };
     }
-    console.log('[auth] Login success — signInWithPassword resolved');
 
     // onAuthStateChange will fire SIGNED_IN and load the profile + set loading=false.
     // Wait for loading to settle so callers know the auth state is fully resolved.
