@@ -54,8 +54,11 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
       </div>
 
-      {/* Categories from DB metadata */}
-      <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 2xl:max-w-[2184px]">
+      {/* Categories from DB metadata. Same mx-auto w-full max-w-[1920px]
+          wrapper as the banner (no horizontal padding) so this section's
+          left/right edges land on the exact same x as the banner's,
+          instead of the narrower max-w-7xl column it used to sit in. */}
+      <section className="relative z-10 mx-auto w-full max-w-[1920px] py-16 sm:py-24">
         <div className="flex items-center justify-center gap-2.5 sm:gap-3">
           <Sparkles
             size={18}
@@ -82,8 +85,12 @@ export default function HomePage() {
 
       <NewArrivalsRibbon />
 
-      {/* CTA */}
-      <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 2xl:max-w-[1680px]">
+      {/* CTA — same mx-auto w-full max-w-[1920px] wrapper (no horizontal
+          padding) as the banner/categories above, for the same
+          shared-edge reason. The glass panel keeps its own p-8/sm:p-14
+          padding so its text doesn't sit flush against the section's
+          now-wider edges. */}
+      <section className="relative z-10 mx-auto w-full max-w-[1920px] py-16 sm:py-20">
         <div className="glass relative overflow-hidden rounded-3xl p-8 text-center sm:p-14">
           <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold-400/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-moss-500/20 blur-3xl" />

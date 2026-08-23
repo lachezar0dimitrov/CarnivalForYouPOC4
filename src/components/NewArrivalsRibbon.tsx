@@ -66,7 +66,11 @@ export default function NewArrivalsRibbon() {
   const track = [...products, ...products];
 
   return (
-    <section className="relative z-10 mx-auto max-w-7xl px-4 pb-4 pt-16 sm:px-6 sm:pt-20 2xl:max-w-[1680px]">
+    // Same mx-auto w-full max-w-[1920px] wrapper (no horizontal padding)
+    // as the banner/other homepage sections, so this ribbon's left/right
+    // edges land on the same shared x line instead of the narrower
+    // max-w-7xl column it used to sit in.
+    <section className="relative z-10 mx-auto w-full max-w-[1920px] pb-4 pt-16 sm:pt-20">
       <SectionHeading title={t('home.newArrivalsTitle')} />
 
       <div className="marquee-mask relative mt-10 overflow-hidden">
