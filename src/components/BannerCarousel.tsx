@@ -93,31 +93,26 @@ export default function BannerCarousel() {
 
   return (
     <section className="banner-box relative w-full overflow-hidden">
-      {/* Crossfade slides */}
+      {/* Crossfade slides — one photo at every width. The separate
+          auto-cropped "mobile" image (still generated on upload, still
+          stored on the banner) is intentionally not used here: it kept
+          only a center width-slice of the photo to fill a portrait phone
+          screen without letterboxing, which meant cropping out whichever
+          people/props weren't dead-center. .banner-box is now a fixed
+          16:9 box at every width with object-fit: contain (index.css), so
+          the full photo is always visible, scaled down and letterboxed on
+          narrow screens rather than cropped. */}
       <div className="absolute inset-0">
         {banners.map((banner, i) => (
           <div
             key={banner.id}
             className={`banner-slide ${i === current ? 'active' : ''}`}
           >
-            <picture>
-              {banner.mobileImageUrl && (
-                <source media="(max-width: 639px)" srcSet={banner.mobileImageUrl} />
-              )}
-              <img
-                src={banner.imageUrl}
-                alt={lang === 'bg' ? banner.titleBg : banner.titleEn}
-                loading={i === 0 ? 'eager' : 'lazy'}
-                // The auto-cropped mobile source is already framed to fit a
-                // phone screen, so it should fill the box (cover) with no
-                // letterboxing. A banner with no mobile crop yet (legacy
-                // data, or a failed crop) falls back to the wide desktop
-                // photo below 640px — object-contain there avoids cropping
-                // its sides down to nothing, at the cost of some letterbox
-                // bars, which is the lesser evil for that fallback case only.
-                className={banner.mobileImageUrl ? 'object-cover' : 'object-contain sm:object-cover'}
-              />
-            </picture>
+            <img
+              src={banner.imageUrl}
+              alt={lang === 'bg' ? banner.titleBg : banner.titleEn}
+              loading={i === 0 ? 'eager' : 'lazy'}
+            />
           </div>
         ))}
       </div>
@@ -138,8 +133,11 @@ export default function BannerCarousel() {
 
       {/* Slide content overlay — each slide inside is absolutely positioned
           (see bottom-[clamp...] below), so this wrapper only needs to size
-          the stacking context; it does not itself control text position. */}
-      <div className="pointer-events-none relative z-20 min-h-[50vh] px-4 text-center md:min-h-0 md:h-full">
+          the stacking context; it does not itself control text position.
+          h-full (not the old min-h-[50vh] mobile fallback) since .banner-box
+          is now a fixed 16:9 box at every width — a min-height taller than
+          that box just overflowed it and got clipped by overflow-hidden. */}
+      <div className="pointer-events-none relative z-20 h-full px-4 text-center">
         {banners.map((banner, i) => (
           <div
             key={banner.id}
