@@ -24,3 +24,6 @@ dist-ssr
 
 # Personal notes on feedback from company owners, not project content
 client_requests.txt
+
+# Supabase CLI scratch
+supabase/.temp/
