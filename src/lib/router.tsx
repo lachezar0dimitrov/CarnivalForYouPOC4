@@ -30,17 +30,18 @@ const validRoutes: Route[] = [
   'home', 'products', 'product-detail', 'about', 'services', 'news', 'contacts', 'terms', 'admin',
 ];
 
-// Parse hash like "#/products?category=2" or "#/product-detail/123"
-function parseHash(): { route: Route; productId: string | null; queryParams: Record<string, string> } {
-  const raw = window.location.hash.replace('#/', '').replace('#', '');
-  const [pathPart, queryPart] = raw.split('?');
+// Parse a real path like "/products?category=2" or "/product-detail/123".
+// Real (non-hash) paths so crawlers and Cloudflare Pages Functions can see
+// which page is being requested — a hash fragment never reaches the server,
+// which made per-product OpenGraph previews impossible under the old
+// hash-routing scheme.
+function parseLocation(): { route: Route; productId: string | null; queryParams: Record<string, string> } {
+  const pathPart = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
 
   const queryParams: Record<string, string> = {};
-  if (queryPart) {
-    new URLSearchParams(queryPart).forEach((value, key) => {
-      queryParams[key] = value;
-    });
-  }
+  new URLSearchParams(window.location.search).forEach((value, key) => {
+    queryParams[key] = value;
+  });
 
   if (pathPart.startsWith('product-detail/')) {
     return { route: 'product-detail', productId: pathPart.split('/')[1] ?? null, queryParams };
@@ -52,14 +53,14 @@ function parseHash(): { route: Route; productId: string | null; queryParams: Rec
 export function RouterProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState(() =>
     typeof window !== 'undefined'
-      ? parseHash()
+      ? parseLocation()
       : { route: 'home' as Route, productId: null, queryParams: {} }
   );
 
   useEffect(() => {
-    const onHashChange = () => setState(parseHash());
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    const onPopState = () => setState(parseLocation());
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   const navigate = (
@@ -67,21 +68,21 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     idOrParams?: string | Record<string, string>,
     params?: Record<string, string>
   ) => {
-    let hash = '';
+    let path = '';
 
     if (next === 'product-detail' && typeof idOrParams === 'string') {
-      hash = `/product-detail/${idOrParams}`;
+      path = `/product-detail/${idOrParams}`;
     } else {
-      hash = `/${next}`;
+      path = next === 'home' ? '/' : `/${next}`;
     }
 
     const query = params ?? (idOrParams && typeof idOrParams === 'object' ? idOrParams : null);
     if (query && Object.keys(query).length > 0) {
       const searchParams = new URLSearchParams(query);
-      hash += `?${searchParams.toString()}`;
+      path += `?${searchParams.toString()}`;
     }
 
-    window.location.hash = hash;
+    window.history.pushState({}, '', path);
     setState({
       route: next,
       productId: typeof idOrParams === 'string' ? idOrParams : null,
