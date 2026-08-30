@@ -26,7 +26,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.services': 'Услуги',
     'nav.news': 'Новини',
     'nav.contacts': 'Контакти',
-    'nav.terms': 'Общи условия',
+    'nav.terms': 'Условия и въпроси',
 
     // common
     'common.costumesRent': 'Костюми под наем · София',
@@ -207,11 +207,11 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // terms
     'terms.eyebrow': 'Правила и условия',
-    'terms.title': 'Общи условия',
+    'terms.title': 'Условия и въпроси',
     'terms.subtitle':
       'Условията под наем на костюми в CarnivalForYou. Моля, прочетете ги внимателно преди резервация.',
-    'terms.footer':
-      'Имате въпроси относно условията? Свържете се с нас чрез страницата Контакти.',
+    'terms.footerPrefix': 'Имате въпроси относно условията? Свържете се с нас чрез страницата',
+    'terms.footerSuffix': '.',
 
     // cookie
     'cookie.title': 'Бисквитки и поверителност',
@@ -236,7 +236,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.services': 'Services',
     'nav.news': 'News',
     'nav.contacts': 'Contacts',
-    'nav.terms': 'Terms',
+    'nav.terms': 'Terms & FAQ',
 
     // common
     'common.costumesRent': 'Costume Rentals · Sofia',
@@ -415,11 +415,11 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // terms
     'terms.eyebrow': 'Rules & conditions',
-    'terms.title': 'Terms & conditions',
+    'terms.title': 'Terms & FAQ',
     'terms.subtitle':
       'Rental terms for costumes at CarnivalForYou. Please read carefully before reserving.',
-    'terms.footer':
-      'Questions about the terms? Contact us through the Contacts page.',
+    'terms.footerPrefix': 'Questions about the terms? Contact us through the',
+    'terms.footerSuffix': ' page.',
 
     // cookie
     'cookie.title': 'Cookies & privacy',

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, FileText } from 'lucide-react';
+import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
 import SectionHeading from '@/components/SectionHeading';
@@ -11,6 +12,7 @@ type TermsBlock = { title: string; items: string[] };
 
 export default function TermsPage() {
   const { t, lang } = useI18n();
+  const { navigate } = useRouter();
   const [openKey, setOpenKey] = useState<string | null>('0-0');
 
   useSEO({
@@ -430,7 +432,16 @@ export default function TermsPage() {
       </div>
 
       <div className="mt-10 rounded-2xl border border-gold-400/15 bg-gold-400/5 p-5 text-center">
-        <p className="text-sm text-gray-400">{t('terms.footer')}</p>
+        <p className="text-sm text-gray-400">
+          {t('terms.footerPrefix')}{' '}
+          <button
+            onClick={() => navigate('contacts')}
+            className="font-medium text-gold-300 underline underline-offset-2 transition hover:text-gold-200"
+          >
+            {t('nav.contacts')}
+          </button>
+          {t('terms.footerSuffix')}
+        </p>
       </div>
     </div>
   );
