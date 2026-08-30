@@ -1,5 +1,5 @@
 import { Sparkles, Clock, Heart, Users, PartyPopper } from 'lucide-react';
-import { aboutImage, forestImage } from '@/data/catalog';
+import { forestImage } from '@/data/catalog';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
@@ -55,7 +55,7 @@ export default function AboutPage() {
       <div className="mt-12 grid gap-8 md:grid-cols-2 md:items-center">
         <div className="relative overflow-hidden rounded-3xl border border-gold-400/15 shadow-card">
           <img
-            src={aboutImage}
+            src="/images/shop.jpg"
             alt={lang === 'bg' ? 'Магазин за костюми' : 'Costume store'}
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
