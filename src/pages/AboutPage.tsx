@@ -42,11 +42,13 @@ export default function AboutPage() {
 
   return (
     <div className="relative z-10 mx-auto max-w-5xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
-      <SectionHeading
-        eyebrow={t('about.eyebrow')}
-        title={t('about.title')}
-        subtitle={t('about.subtitle')}
-      />
+      <div className="mx-auto max-w-2xl">
+        <SectionHeading
+          eyebrow={t('about.eyebrow')}
+          title={t('about.title')}
+          subtitle={t('about.subtitle')}
+        />
+      </div>
 
       <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-relaxed text-gray-400 sm:text-base">
         {t('about.hookBody')}
@@ -55,8 +57,8 @@ export default function AboutPage() {
       <div className="mt-12 grid gap-8 md:grid-cols-2 md:items-center">
         <div className="relative overflow-hidden rounded-3xl border border-gold-400/15 shadow-card">
           <img
-            src="/images/shop.jpg"
-            alt={lang === 'bg' ? 'Магазин за костюми' : 'Costume store'}
+            src="/images/shop2.jpg"
+            alt={lang === 'bg' ? 'Изложение с костюми в магазина' : 'Costume showroom display'}
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
           />
@@ -76,25 +78,37 @@ export default function AboutPage() {
         </div>
       </div>
 
-      <div className="mt-16 glass rounded-2xl p-6 sm:p-8">
-        <h3 className="font-display text-xl font-semibold text-gold-100 sm:text-2xl">
-          {t('about.heroListTitle')}
-        </h3>
-        <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-          {heroList.map((item) => (
-            <li
-              key={item}
-              className="flex items-start gap-3 text-sm leading-relaxed text-gray-300 sm:text-base"
-            >
-              <Sparkles size={16} className="mt-1 shrink-0 text-gold-300" />
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
+      <div className="mt-16 grid gap-8 md:grid-cols-2 md:items-center">
+        <div className="glass rounded-2xl p-6 sm:p-8 md:order-1">
+          <h3 className="font-display text-xl font-semibold text-gold-100 sm:text-2xl">
+            {t('about.heroListTitle')}
+          </h3>
+          <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+            {heroList.map((item) => (
+              <li
+                key={item}
+                className="flex items-start gap-3 text-sm leading-relaxed text-gray-300 sm:text-base"
+              >
+                <Sparkles size={16} className="mt-1 shrink-0 text-gold-300" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="relative overflow-hidden rounded-3xl border border-gold-400/15 shadow-card md:order-2">
+          <img
+            src="/images/shop.jpg"
+            alt={lang === 'bg' ? 'Магазин за костюми' : 'Costume store'}
+            className="h-72 w-full object-cover sm:h-96"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        </div>
       </div>
 
       <div className="mt-16 space-y-4 text-center">
-        <h3 className="font-display text-2xl font-semibold text-gold-100">
+        <h3 className="mx-auto max-w-2xl font-display text-2xl font-semibold text-gold-100">
           {t('about.offerTitle')}
         </h3>
         <p className="mx-auto max-w-2xl text-sm leading-relaxed text-gray-300 sm:text-base">
@@ -103,6 +117,16 @@ export default function AboutPage() {
         <p className="mx-auto max-w-2xl text-sm leading-relaxed text-gray-400">
           {t('about.addonsBody')}
         </p>
+
+        <div className="relative mt-8 overflow-hidden rounded-3xl border border-gold-400/15 shadow-card">
+          <img
+            src="/images/shop3.jpg"
+            alt={lang === 'bg' ? 'Пробна със огледала' : 'Fitting room with mirrors'}
+            className="h-72 w-full object-cover sm:h-96"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        </div>
       </div>
 
       <div className="mt-16 grid gap-5 sm:grid-cols-3">
