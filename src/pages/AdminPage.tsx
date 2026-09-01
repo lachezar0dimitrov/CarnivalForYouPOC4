@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import {
   LogOut,
   ArrowLeft,
@@ -21,6 +21,7 @@ import {
   Tag,
   Palette,
   SlidersHorizontal,
+  ChevronDown,
 } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
@@ -99,7 +100,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-7xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
+    <div className="mx-auto min-h-screen max-w-[1900px] px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold text-gold-100">
@@ -743,12 +744,85 @@ function ProductManager() {
   const [filterPrimary, setFilterPrimary] = useState<number[]>([]);
   const [filterTheme, setFilterTheme] = useState<number[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [dirtyIds, setDirtyIds] = useState<Set<number>>(new Set());
+  const [savingIds, setSavingIds] = useState<Set<number>>(new Set());
+  const [expandedCategoryRow, setExpandedCategoryRow] = useState<number | null>(null);
   const pageSize = 20;
   const { broken, checking } = useBrokenImages(products);
   const brokenProducts = products.filter((p) => broken.has(p.id));
   const { primaryCategories: filterPrimaryOptions, themeCategories: filterThemeOptions } =
     classifyCategories(categories);
+  const primaryIdSet = new Set(filterPrimaryOptions.map((c) => c.id));
   const activeFilterCount = filterPrimary.length + filterTheme.length;
+
+  const markDirty = (id: number) => {
+    setDirtyIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  };
+
+  const updateProductField = (id: number, patch: Partial<AdminProduct>) => {
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    markDirty(id);
+  };
+
+  const setRowPriceEur = (id: number, eur: number) => {
+    const bgn = eurToBgn(eur);
+    updateProductField(id, { price: bgn, rawPrice: bgn });
+  };
+
+  const setRowPrimaryCategory = (id: number, catId: number) => {
+    setProducts((prev) => prev.map((p) => {
+      if (p.id !== id) return p;
+      const themeIds = p.categoryIds.filter((cid) => !primaryIdSet.has(cid));
+      return { ...p, categoryId: catId, categoryIds: [catId, ...themeIds] };
+    }));
+    markDirty(id);
+  };
+
+  const toggleRowTheme = (id: number, catId: number) => {
+    setProducts((prev) => prev.map((p) => {
+      if (p.id !== id) return p;
+      const exists = p.categoryIds.includes(catId);
+      const categoryIds = exists ? p.categoryIds.filter((c) => c !== catId) : [...p.categoryIds, catId];
+      return { ...p, categoryIds };
+    }));
+    markDirty(id);
+  };
+
+  const handleRowSave = async (p: AdminProduct) => {
+    setSavingIds((prev) => new Set(prev).add(p.id));
+    try {
+      const payload = {
+        name_bg: p.nameBg || null,
+        name_en: p.nameEn || null,
+        description_bg: p.descriptionBg || null,
+        description_en: p.descriptionEn || null,
+        category_id: p.categoryId,
+        category_ids: p.categoryIds,
+        price: p.price,
+      };
+      const { error } = await supabase.from('products').update(payload).eq('id', p.id);
+      if (error) throw error;
+      notify('success', lang === 'bg' ? 'Промените са запазени.' : 'Changes saved.');
+      setDirtyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(p.id);
+        return next;
+      });
+      setExpandedCategoryRow((cur) => (cur === p.id ? null : cur));
+    } catch {
+      notify('error', lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+    } finally {
+      setSavingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(p.id);
+        return next;
+      });
+    }
+  };
 
   const toggleFilterPrimary = (id: number) => {
     setFilterPrimary((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -968,15 +1042,26 @@ function ProductManager() {
           )}
 
           <div className="overflow-x-auto rounded-xl border border-gold-400/15">
-            <table className="w-full text-left text-sm">
+            <table className="w-full table-fixed text-left text-sm">
+              <colgroup>
+                <col style={{ width: '7%' }} />
+                <col style={{ width: '9%' }} />
+                <col style={{ width: '13%' }} />
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '18%' }} />
+                <col style={{ width: '13%' }} />
+                <col style={{ width: '9%' }} />
+                <col style={{ width: '13%' }} />
+              </colgroup>
               <thead className="sticky top-0 z-10 bg-ink-800/95 text-gray-400 backdrop-blur">
                 <tr>
-                  <th className="px-4 py-3 font-medium">ID</th>
+                  <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Каталожен №' : 'Catalog №'}</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Снимка' : 'Image'}</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Име' : 'Name'}</th>
+                  <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Описание (БГ)' : 'Description (BG)'}</th>
+                  <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Описание (EN)' : 'Description (EN)'}</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Категории' : 'Categories'}</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Цена' : 'Price'}</th>
-                  <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Активен' : 'Active'}</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Действия' : 'Actions'}</th>
                 </tr>
               </thead>
@@ -987,53 +1072,173 @@ function ProductManager() {
                     .filter(Boolean)
                     .map((cat) => (lang === 'bg' ? cat?.nameBg : cat?.nameEn))
                     .join(', ');
+                  const isDirty = dirtyIds.has(p.id);
+                  const isSaving = savingIds.has(p.id);
+                  const isCategoryOpen = expandedCategoryRow === p.id;
 
                   return (
-                    <tr key={p.id} className="border-t border-gold-400/10 transition hover:bg-gold-400/5">
-                      <td className="px-4 py-4 text-gray-500">{p.id}</td>
-                      <td className="px-4 py-4">
-                        <div className="relative">
-                          <AdminImage src={p.imageUrl} alt="" className="h-[80px] w-[80px] rounded-lg object-cover border border-gold-400/10" />
-                          {broken.has(p.id) && (
-                            <span
-                              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-ink-800 bg-warning text-ink-900"
-                              title={lang === 'bg' ? 'Липсваща снимка' : 'Missing image'}
-                            >
-                              <AlertCircle size={12} />
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-gray-200">
-                        {lang === 'bg' ? p.nameBg : p.nameEn}
-                        {p.tags.length > 0 && (
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {p.tags.slice(0, 3).map((tag) => (
-                              <span key={tag} className="rounded bg-gold-400/10 px-1.5 py-0.5 text-xs text-gold-300/80">
-                                {tag}
+                    <Fragment key={p.id}>
+                      <tr className="border-t border-gold-400/10 transition hover:bg-gold-400/5">
+                        <td className="px-4 py-4 text-gray-500 align-top">{p.oldCatalogNumber || '—'}</td>
+                        <td className="px-4 py-4 align-top">
+                          <div className="relative">
+                            <AdminImage src={p.imageUrl} alt="" className="h-[80px] w-[80px] rounded-lg object-cover border border-gold-400/10" />
+                            {broken.has(p.id) && (
+                              <span
+                                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-ink-800 bg-warning text-ink-900"
+                                title={lang === 'bg' ? 'Липсваща снимка' : 'Missing image'}
+                              >
+                                <AlertCircle size={12} />
                               </span>
-                            ))}
+                            )}
                           </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-gray-400">
-                        {catNames || '—'}
-                      </td>
-                      <td className="px-4 py-4 text-gold-200">{bgnToEur(p.price).toFixed(0)} €</td>
-                      <td className="px-4 py-4">
-                        {p.isActive ? <Check size={18} className="text-moss-400" /> : <X size={18} className="text-gray-600" />}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex gap-2">
-                          <button onClick={() => { setEditing(p); setShowForm(true); }} className="rounded-lg p-2 text-gold-200 transition hover:bg-gold-400/10" aria-label="Edit">
-                            <Edit3 size={18} />
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <div className="flex flex-col gap-1.5">
+                            <input
+                              type="text"
+                              value={p.nameBg ?? ''}
+                              onChange={(e) => updateProductField(p.id, { nameBg: e.target.value })}
+                              placeholder={lang === 'bg' ? 'Име (БГ)' : 'Name (BG)'}
+                              className="form-input !py-1.5 !text-xs"
+                            />
+                            <input
+                              type="text"
+                              value={p.nameEn ?? ''}
+                              onChange={(e) => updateProductField(p.id, { nameEn: e.target.value })}
+                              placeholder={lang === 'bg' ? 'Име (EN)' : 'Name (EN)'}
+                              className="form-input !py-1.5 !text-xs"
+                            />
+                            {p.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {p.tags.slice(0, 3).map((tag) => (
+                                  <span key={tag} className="rounded bg-gold-400/10 px-1.5 py-0.5 text-xs text-gold-300/80">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <textarea
+                            value={p.descriptionBg ?? ''}
+                            onChange={(e) => updateProductField(p.id, { descriptionBg: e.target.value })}
+                            placeholder={lang === 'bg' ? 'Описание (БГ)' : 'Description (BG)'}
+                            rows={4}
+                            className="form-input !py-1.5 !text-xs resize-y"
+                          />
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <textarea
+                            value={p.descriptionEn ?? ''}
+                            onChange={(e) => updateProductField(p.id, { descriptionEn: e.target.value })}
+                            placeholder={lang === 'bg' ? 'Описание (EN)' : 'Description (EN)'}
+                            rows={4}
+                            className="form-input !py-1.5 !text-xs resize-y"
+                          />
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedCategoryRow((cur) => (cur === p.id ? null : p.id))}
+                            className={`flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-left text-xs transition ${
+                              isCategoryOpen
+                                ? 'border-gold-400/60 text-gold-200'
+                                : 'border-gold-400/20 text-gray-400 hover:border-gold-400/40 hover:text-gold-200'
+                            }`}
+                          >
+                            <span className="min-w-0 truncate">{catNames || '—'}</span>
+                            <ChevronDown size={14} className={`shrink-0 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
                           </button>
-                          <button onClick={() => handleDelete(p.id)} className="rounded-lg p-2 text-error transition hover:bg-error/10" aria-label="Delete">
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              step="1"
+                              value={bgnToEur(p.price)}
+                              onChange={(e) => setRowPriceEur(p.id, Number(e.target.value))}
+                              className="form-input min-w-0 !py-1.5 !text-xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                            <span className="text-gold-200">€</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleRowSave(p)}
+                              disabled={!isDirty || isSaving}
+                              className={`rounded-lg p-2 transition ${
+                                isDirty
+                                  ? 'bg-gold-400/20 text-gold-200 hover:bg-gold-400/30'
+                                  : 'text-gray-600 cursor-not-allowed'
+                              }`}
+                              aria-label={lang === 'bg' ? 'Потвърди промените' : 'Confirm changes'}
+                              title={lang === 'bg' ? 'Потвърди промените' : 'Confirm changes'}
+                            >
+                              {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+                            </button>
+                            <button onClick={() => { setEditing(p); setShowForm(true); }} className="rounded-lg p-2 text-gold-200 transition hover:bg-gold-400/10" aria-label="Edit">
+                              <Edit3 size={18} />
+                            </button>
+                            <button onClick={() => handleDelete(p.id)} className="rounded-lg p-2 text-error transition hover:bg-error/10" aria-label="Delete">
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {isCategoryOpen && (
+                        <tr className="border-t border-gold-400/10 bg-ink-900">
+                          <td colSpan={8} className="px-4 py-4">
+                            <div className="flex flex-col gap-4">
+                              <div>
+                                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                                  {lang === 'bg' ? 'Основна категория' : 'Primary category'}
+                                </p>
+                                <select
+                                  value={p.categoryId ?? ''}
+                                  onChange={(e) => setRowPrimaryCategory(p.id, Number(e.target.value))}
+                                  className="form-input max-w-xs"
+                                >
+                                  <optgroup label={lang === 'bg' ? 'Пол/възраст' : 'Demographic'}>
+                                    {filterPrimaryOptions.filter((c) => c.group === 'main').map((cat) => (
+                                      <option key={cat.id} value={cat.id}>{lang === 'bg' ? cat.nameBg : cat.nameEn}</option>
+                                    ))}
+                                  </optgroup>
+                                  <optgroup label={lang === 'bg' ? 'Аксесоари' : 'Accessories'}>
+                                    {filterPrimaryOptions.filter((c) => !c.isActive).map((cat) => (
+                                      <option key={cat.id} value={cat.id}>{lang === 'bg' ? cat.nameBg : cat.nameEn}</option>
+                                    ))}
+                                  </optgroup>
+                                </select>
+                              </div>
+                              <div>
+                                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                                  {lang === 'bg' ? 'Подкатегории' : 'Subcategories'}
+                                </p>
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6">
+                                  {filterThemeOptions.map((cat) => {
+                                    const checked = p.categoryIds.includes(cat.id);
+                                    return (
+                                      <label key={cat.id} className="flex items-center gap-2 rounded p-1 text-sm text-gray-300 hover:bg-gold-400/5 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={checked}
+                                          onChange={() => toggleRowTheme(p.id, cat.id)}
+                                          className="h-4 w-4 rounded border-gold-400/30 bg-ink-700 text-gold-400"
+                                        />
+                                        <span>{lang === 'bg' ? cat.nameBg : cat.nameEn}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })}
               </tbody>
