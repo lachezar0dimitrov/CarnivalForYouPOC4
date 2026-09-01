@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   Tag,
   Ruler,
   Coins,
@@ -17,6 +19,7 @@ import { useSEO } from '@/lib/useSEO';
 import {
   fetchProductById,
   fetchSimilarProducts,
+  getAdjacentProductIds,
   productName,
   productDescription,
   productFallbackDescription,
@@ -25,21 +28,27 @@ import {
   productSizes,
   categoryName,
   type Product,
+  type AdjacentProducts,
 } from '@/lib/products';
 import ProductCard from '@/components/ProductCard';
 import ImageLightbox from '@/components/ImageLightbox';
 
 export default function ProductDetailPage() {
-  const { productId, navigate } = useRouter();
+  const { productId, navigate, goBack } = useRouter();
   const { t, lang } = useI18n();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [similar, setSimilar] = useState<Product[]>([]);
+  const [adjacent, setAdjacent] = useState<AdjacentProducts>({ prevId: null, nextId: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [showDepositInfo, setShowDepositInfo] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const depositRef = useRef<HTMLDivElement>(null);
+
+  const backCategoryId = product ? product.categoryId ?? product.categoryIds[0] : undefined;
+  const backToCategoryParams = backCategoryId != null ? { category: String(backCategoryId) } : undefined;
+  const handleBack = () => goBack('products', backToCategoryParams);
 
   useEffect(() => {
     if (!showDepositInfo) return;
@@ -62,6 +71,8 @@ export default function ProductDetailPage() {
     let cancelled = false;
     setLoading(true);
     setError(false);
+    setSimilar([]);
+    setAdjacent({ prevId: null, nextId: null });
 
     fetchProductById(numericId)
       .then(async (p) => {
@@ -78,6 +89,13 @@ export default function ProductDetailPage() {
           if (!cancelled) setSimilar(sim);
         } catch {
           // similar products are non-critical
+        }
+
+        try {
+          const adj = await getAdjacentProductIds(p);
+          if (!cancelled) setAdjacent(adj);
+        } catch {
+          // prev/next navigation is non-critical
         }
       })
       .catch(() => {
@@ -135,11 +153,11 @@ export default function ProductDetailPage() {
         <AlertCircle size={32} className="text-error" />
         <p className="text-sm">{t('common.error')}</p>
         <button
-          onClick={() => navigate('products')}
+          onClick={handleBack}
           className="btn-gold mt-2 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm"
         >
           <ArrowLeft size={16} />
-          {t('common.backToCatalog')}
+          {t('common.backToCategory')}
         </button>
       </div>
     );
@@ -153,11 +171,11 @@ export default function ProductDetailPage() {
         </p>
         <p className="mt-2 text-sm text-gray-400">{t('common.notFoundBody')}</p>
         <button
-          onClick={() => navigate('products')}
+          onClick={handleBack}
           className="btn-gold mt-6 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm"
         >
           <ArrowLeft size={16} />
-          {t('common.backToCatalog')}
+          {t('common.backToCategory')}
         </button>
       </div>
     );
@@ -171,13 +189,36 @@ export default function ProductDetailPage() {
 
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-24 sm:px-6 sm:pt-28">
-      <button
-        onClick={() => navigate('products')}
-        className="mb-6 inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-gold-200"
-      >
-        <ArrowLeft size={16} />
-        {t('common.backToCatalog')}
-      </button>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <button
+          onClick={handleBack}
+          className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-gold-200"
+        >
+          <ArrowLeft size={16} />
+          {t('common.backToCategory')}
+        </button>
+
+        {(adjacent.prevId != null || adjacent.nextId != null) && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => adjacent.prevId != null && navigate('product-detail', String(adjacent.prevId))}
+              disabled={adjacent.prevId == null}
+              className="inline-flex items-center gap-1.5 rounded-full border border-gold-400/25 px-3.5 py-2 text-sm text-gray-300 transition hover:border-gold-400/50 hover:text-gold-200 disabled:pointer-events-none disabled:opacity-30"
+            >
+              <ChevronLeft size={16} />
+              {t('common.previousProduct')}
+            </button>
+            <button
+              onClick={() => adjacent.nextId != null && navigate('product-detail', String(adjacent.nextId))}
+              disabled={adjacent.nextId == null}
+              className="inline-flex items-center gap-1.5 rounded-full border border-gold-400/25 px-3.5 py-2 text-sm text-gray-300 transition hover:border-gold-400/50 hover:text-gold-200 disabled:pointer-events-none disabled:opacity-30"
+            >
+              {t('common.nextProduct')}
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Main detail — stacks on mobile: image on top, details below */}
       <div className="grid gap-8 lg:grid-cols-2">
