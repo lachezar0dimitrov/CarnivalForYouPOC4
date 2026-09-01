@@ -26,6 +26,7 @@ import {
   type Product,
 } from '@/lib/products';
 import ProductCard from '@/components/ProductCard';
+import ImageLightbox from '@/components/ImageLightbox';
 
 export default function ProductDetailPage() {
   const { productId, navigate } = useRouter();
@@ -36,6 +37,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [showDepositInfo, setShowDepositInfo] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const depositRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -172,8 +174,9 @@ export default function ProductDetailPage() {
             <img
               src={product.imageUrl ?? ''}
               alt={name}
-              className="pointer-events-none h-full w-full select-none object-contain object-center"
+              className="h-full w-full cursor-zoom-in select-none object-contain object-center"
               loading="eager"
+              onClick={() => setLightboxOpen(true)}
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.opacity = '0.2';
               }}
@@ -186,6 +189,14 @@ export default function ProductDetailPage() {
             </span>
           )}
         </div>
+
+        {lightboxOpen && (
+          <ImageLightbox
+            src={product.imageUrl ?? ''}
+            alt={name}
+            onClosed={() => setLightboxOpen(false)}
+          />
+        )}
 
         {/* Details */}
         <div className="flex flex-col">
