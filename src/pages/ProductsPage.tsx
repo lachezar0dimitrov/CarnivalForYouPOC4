@@ -158,7 +158,7 @@ function FilterFields({
 
 export default function ProductsPage() {
   const { t, lang } = useI18n();
-  const { queryParams } = useRouter();
+  const { queryParams, updateQuery } = useRouter();
   const isChristmas = getCurrentSeason() === 'christmas';
 
   const [primaryCategories, setPrimaryCategories] = useState<number[]>(() =>
@@ -221,6 +221,30 @@ export default function ProductsPage() {
       scrollToResults();
     }
   }, [queryParams.category]);
+
+  // Mirror the active filters into the URL (replacing, not pushing, so
+  // toggling chips doesn't spam browser history). This is what lets a
+  // product opened from here remember exactly which category/theme/size
+  // filters were active — see the router's origin tracking — instead of
+  // only the category the page happened to load with.
+  useEffect(() => {
+    const categoryIds = [
+      ...primaryCategories,
+      ...secondaryCategories.filter((id) => SEASONAL_CATEGORY_IDS.has(id)),
+    ];
+    const themeIds = secondaryCategories.filter((id) => !SEASONAL_CATEGORY_IDS.has(id));
+
+    const params: Record<string, string> = {};
+    if (categoryIds.length > 0) params.category = categoryIds.join(',');
+    if (themeIds.length > 0) params.themes = themeIds.join(',');
+    if (sizeFilters.length > 0) params.size = sizeFilters.join(',');
+
+    updateQuery(params);
+    // updateQuery is intentionally omitted — it's a fresh closure every
+    // router render, and including it would re-fire this effect on every
+    // call to itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [primaryCategories, secondaryCategories, sizeFilters]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);

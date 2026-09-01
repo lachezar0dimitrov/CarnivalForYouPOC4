@@ -17,18 +17,31 @@ export type Route =
   | 'terms'
   | 'admin';
 
+// The page a product-detail view was opened from — its route plus the exact
+// filters/category that were active at that moment (e.g. /products with
+// category=3 for "Мъжки", or category=10 for "Хелоуин"). Captured once on
+// entering the product-detail flow and carried unchanged through any number
+// of Prev/Next or "similar suggestions" hops, so "Back" always returns to
+// that same filtered view — not just the last product that happened to be
+// visited before it.
+type Origin = {
+  route: Route;
+  queryParams: Record<string, string>;
+};
+
 type RouterContextType = {
   route: Route;
   productId: string | null;
   queryParams: Record<string, string>;
   navigate: (route: Route, idOrParams?: string | Record<string, string>, params?: Record<string, string>) => void;
-  // True once at least one in-app navigation has happened, i.e. there is a
-  // page in *our* history (not the outside site the user arrived from) that
-  // window.history.back() would land on.
-  canGoBack: boolean;
-  // Returns to the page the user actually came from (via browser history)
-  // when one exists; otherwise falls back to an explicit route/params, for
-  // entry points with no in-app history (a direct link, a page refresh).
+  // Updates the current page's query string in place (history.replaceState,
+  // no new entry) — used by pages whose filters live in local state to keep
+  // the URL mirroring them, so it's accurate whenever a product-detail
+  // origin is captured from it.
+  updateQuery: (params: Record<string, string>) => void;
+  // Returns to the tracked origin (see Origin above) when one exists;
+  // otherwise falls back to an explicit route/params, for entry points with
+  // no origin (a direct link, a page refresh).
   goBack: (fallbackRoute: Route, fallbackIdOrParams?: string | Record<string, string>) => void;
 };
 
@@ -58,32 +71,27 @@ function parseLocation(): { route: Route; productId: string | null; queryParams:
   return { route: r, productId: null, queryParams };
 }
 
-// Depth of in-app navigation, persisted on each history entry's state so it
-// survives back/forward. The entry the user landed on from outside the app
-// (a fresh load, a shared link) has no depth of ours, hence 0 — that's what
-// tells goBack() there's nothing of ours left to pop to.
-function readDepth(historyState: unknown): number {
-  const depth = (historyState as { depth?: number } | null)?.depth;
-  return typeof depth === 'number' ? depth : 0;
-}
+type State = {
+  route: Route;
+  productId: string | null;
+  queryParams: Record<string, string>;
+  origin: Origin | null;
+};
 
 export function RouterProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState(() => {
-    if (typeof window === 'undefined') {
-      return { route: 'home' as Route, productId: null, queryParams: {}, depth: 0 };
-    }
-    if (window.history.state == null) {
-      // Stamp the entry page too, so a same-page reload after some in-app
-      // navigation doesn't lose its place in the depth count.
-      window.history.replaceState({ depth: 0 }, '', window.location.href);
-    }
-    return { ...parseLocation(), depth: readDepth(window.history.state) };
-  });
+  const [state, setState] = useState<State>(() =>
+    typeof window !== 'undefined'
+      ? { ...parseLocation(), origin: null }
+      : { route: 'home', productId: null, queryParams: {}, origin: null }
+  );
 
   useEffect(() => {
-    const onPopState = (e: PopStateEvent) => {
-      setState({ ...parseLocation(), depth: readDepth(e.state) });
-    };
+    // A real browser back/forward can land anywhere — the tracked origin
+    // was only ever valid for the in-app navigation chain that built it, so
+    // it's dropped here rather than carried into a history state we don't
+    // control. goBack() falls back to the current product's own category in
+    // that case (see ProductDetailPage).
+    const onPopState = () => setState({ ...parseLocation(), origin: null });
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
@@ -107,13 +115,25 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       path += `?${searchParams.toString()}`;
     }
 
-    const depth = state.depth + 1;
-    window.history.pushState({ depth }, '', path);
-    setState({
-      route: next,
-      productId: typeof idOrParams === 'string' ? idOrParams : null,
-      queryParams: query ?? {},
-      depth,
+    window.history.pushState({}, '', path);
+    setState((prev) => {
+      // Entering the product-detail flow from elsewhere records that page
+      // (and its exact filters) as the origin. Moving between products
+      // while already inside the flow keeps the existing origin instead of
+      // overwriting it with the product just left.
+      const origin: Origin | null =
+        next === 'product-detail'
+          ? prev.route === 'product-detail'
+            ? prev.origin
+            : { route: prev.route, queryParams: prev.queryParams }
+          : null;
+
+      return {
+        route: next,
+        productId: typeof idOrParams === 'string' ? idOrParams : null,
+        queryParams: query ?? {},
+        origin,
+      };
     });
     // Scroll reset happens in a useLayoutEffect keyed to the actual rendered
     // route (see App.tsx), not here. Firing window.scrollTo() at this point
@@ -124,12 +144,19 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     // real mobile Safari).
   };
 
+  const updateQuery = (params: Record<string, string>) => {
+    const path = window.location.pathname;
+    const search = Object.keys(params).length > 0 ? `?${new URLSearchParams(params).toString()}` : '';
+    window.history.replaceState({}, '', path + search);
+    setState((prev) => ({ ...prev, queryParams: params }));
+  };
+
   const goBack = (
     fallbackRoute: Route,
     fallbackIdOrParams?: string | Record<string, string>
   ) => {
-    if (state.depth > 0) {
-      window.history.back();
+    if (state.origin) {
+      navigate(state.origin.route, state.origin.queryParams);
     } else {
       navigate(fallbackRoute, fallbackIdOrParams);
     }
@@ -142,7 +169,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
         productId: state.productId,
         queryParams: state.queryParams,
         navigate,
-        canGoBack: state.depth > 0,
+        updateQuery,
         goBack,
       }}
     >

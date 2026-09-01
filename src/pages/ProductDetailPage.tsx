@@ -189,36 +189,13 @@ export default function ProductDetailPage() {
 
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-24 sm:px-6 sm:pt-28">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <button
-          onClick={handleBack}
-          className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-gold-200"
-        >
-          <ArrowLeft size={16} />
-          {t('common.backToCategory')}
-        </button>
-
-        {(adjacent.prevId != null || adjacent.nextId != null) && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => adjacent.prevId != null && navigate('product-detail', String(adjacent.prevId))}
-              disabled={adjacent.prevId == null}
-              className="inline-flex items-center gap-1.5 rounded-full border border-gold-400/25 px-3.5 py-2 text-sm text-gray-300 transition hover:border-gold-400/50 hover:text-gold-200 disabled:pointer-events-none disabled:opacity-30"
-            >
-              <ChevronLeft size={16} />
-              {t('common.previousProduct')}
-            </button>
-            <button
-              onClick={() => adjacent.nextId != null && navigate('product-detail', String(adjacent.nextId))}
-              disabled={adjacent.nextId == null}
-              className="inline-flex items-center gap-1.5 rounded-full border border-gold-400/25 px-3.5 py-2 text-sm text-gray-300 transition hover:border-gold-400/50 hover:text-gold-200 disabled:pointer-events-none disabled:opacity-30"
-            >
-              {t('common.nextProduct')}
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-      </div>
+      <button
+        onClick={handleBack}
+        className="mb-6 inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-gold-200"
+      >
+        <ArrowLeft size={16} />
+        {t('common.backToCategory')}
+      </button>
 
       {/* Main detail — stacks on mobile: image on top, details below */}
       <div className="grid gap-8 lg:grid-cols-2">
@@ -241,6 +218,30 @@ export default function ProductDetailPage() {
               }}
             />
           </div>
+
+          {/* Prev/Next — overlaid low on the photo, like a gallery control */}
+          {(adjacent.prevId != null || adjacent.nextId != null) && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex items-center justify-center gap-4">
+              <button
+                onClick={() => adjacent.prevId != null && navigate('product-detail', String(adjacent.prevId))}
+                disabled={adjacent.prevId == null}
+                aria-label={t('common.previousProduct')}
+                title={t('common.previousProduct')}
+                className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-gold-400/50 bg-black/70 text-[#f7e9b8] shadow-glow-sm backdrop-blur-sm transition hover:bg-black/85 disabled:pointer-events-none disabled:opacity-0"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={() => adjacent.nextId != null && navigate('product-detail', String(adjacent.nextId))}
+                disabled={adjacent.nextId == null}
+                aria-label={t('common.nextProduct')}
+                title={t('common.nextProduct')}
+                className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-gold-400/50 bg-black/70 text-[#f7e9b8] shadow-glow-sm backdrop-blur-sm transition hover:bg-black/85 disabled:pointer-events-none disabled:opacity-0"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
 
           {product.oldPrice != null && product.oldPrice > product.price && (
             <span className="absolute right-4 top-4 z-20 rounded-full bg-error/90 px-3 py-1 text-xs font-bold text-white shadow-glow-sm">
