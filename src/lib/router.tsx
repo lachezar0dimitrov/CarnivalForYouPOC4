@@ -17,16 +17,18 @@ export type Route =
   | 'terms'
   | 'admin';
 
-// The page a product-detail view was opened from — its route plus the exact
+// The page a product-detail view was opened from — its route, the exact
 // filters/category that were active at that moment (e.g. /products with
-// category=3 for "Мъжки", or category=10 for "Хелоуин"). Captured once on
-// entering the product-detail flow and carried unchanged through any number
-// of Prev/Next or "similar suggestions" hops, so "Back" always returns to
-// that same filtered view — not just the last product that happened to be
+// category=3 for "Мъжки", or category=10 for "Хелоуин"), and how far down
+// that page was scrolled. Captured once on entering the product-detail flow
+// and carried unchanged through any number of Prev/Next or "similar
+// suggestions" hops, so "Back" always returns to that same filtered view (at
+// the same scroll position) — not just the last product that happened to be
 // visited before it.
 type Origin = {
   route: Route;
   queryParams: Record<string, string>;
+  scrollY: number;
 };
 
 type RouterContextType = {
@@ -43,6 +45,12 @@ type RouterContextType = {
   // otherwise falls back to an explicit route/params, for entry points with
   // no origin (a direct link, a page refresh).
   goBack: (fallbackRoute: Route, fallbackIdOrParams?: string | Record<string, string>) => void;
+  // Set to the origin's saved scrollY right after a goBack() that used a
+  // tracked origin, so the destination page can restore it once its content
+  // has loaded (rather than the default reset-to-top). The destination page
+  // must call clearScrollRestore() once it has consumed it.
+  pendingScrollRestore: number | null;
+  clearScrollRestore: () => void;
 };
 
 const RouterContext = createContext<RouterContextType | null>(null);
@@ -76,13 +84,22 @@ type State = {
   productId: string | null;
   queryParams: Record<string, string>;
   origin: Origin | null;
+  pendingScrollRestore: number | null;
 };
+
+function buildPath(route: Route, params?: Record<string, string> | null): string {
+  let path = route === 'home' ? '/' : `/${route}`;
+  if (params && Object.keys(params).length > 0) {
+    path += `?${new URLSearchParams(params).toString()}`;
+  }
+  return path;
+}
 
 export function RouterProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(() =>
     typeof window !== 'undefined'
-      ? { ...parseLocation(), origin: null }
-      : { route: 'home', productId: null, queryParams: {}, origin: null }
+      ? { ...parseLocation(), origin: null, pendingScrollRestore: null }
+      : { route: 'home', productId: null, queryParams: {}, origin: null, pendingScrollRestore: null }
   );
 
   useEffect(() => {
@@ -91,7 +108,8 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     // it's dropped here rather than carried into a history state we don't
     // control. goBack() falls back to the current product's own category in
     // that case (see ProductDetailPage).
-    const onPopState = () => setState({ ...parseLocation(), origin: null });
+    const onPopState = () =>
+      setState({ ...parseLocation(), origin: null, pendingScrollRestore: null });
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
@@ -118,14 +136,14 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     window.history.pushState({}, '', path);
     setState((prev) => {
       // Entering the product-detail flow from elsewhere records that page
-      // (and its exact filters) as the origin. Moving between products
-      // while already inside the flow keeps the existing origin instead of
-      // overwriting it with the product just left.
+      // (and its exact filters + scroll position) as the origin. Moving
+      // between products while already inside the flow keeps the existing
+      // origin instead of overwriting it with the product just left.
       const origin: Origin | null =
         next === 'product-detail'
           ? prev.route === 'product-detail'
             ? prev.origin
-            : { route: prev.route, queryParams: prev.queryParams }
+            : { route: prev.route, queryParams: prev.queryParams, scrollY: window.scrollY }
           : null;
 
       return {
@@ -133,6 +151,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
         productId: typeof idOrParams === 'string' ? idOrParams : null,
         queryParams: query ?? {},
         origin,
+        pendingScrollRestore: null,
       };
     });
     // Scroll reset happens in a useLayoutEffect keyed to the actual rendered
@@ -156,10 +175,22 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     fallbackIdOrParams?: string | Record<string, string>
   ) => {
     if (state.origin) {
-      navigate(state.origin.route, state.origin.queryParams);
+      const { route, queryParams, scrollY } = state.origin;
+      window.history.pushState({}, '', buildPath(route, queryParams));
+      setState({
+        route,
+        productId: null,
+        queryParams,
+        origin: null,
+        pendingScrollRestore: scrollY,
+      });
     } else {
       navigate(fallbackRoute, fallbackIdOrParams);
     }
+  };
+
+  const clearScrollRestore = () => {
+    setState((prev) => (prev.pendingScrollRestore == null ? prev : { ...prev, pendingScrollRestore: null }));
   };
 
   return (
@@ -171,6 +202,8 @@ export function RouterProvider({ children }: { children: ReactNode }) {
         navigate,
         updateQuery,
         goBack,
+        pendingScrollRestore: state.pendingScrollRestore,
+        clearScrollRestore,
       }}
     >
       {children}

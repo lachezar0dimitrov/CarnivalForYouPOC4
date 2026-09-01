@@ -158,7 +158,7 @@ function FilterFields({
 
 export default function ProductsPage() {
   const { t, lang } = useI18n();
-  const { queryParams, updateQuery } = useRouter();
+  const { queryParams, updateQuery, pendingScrollRestore, clearScrollRestore } = useRouter();
   const isChristmas = getCurrentSeason() === 'christmas';
 
   const [primaryCategories, setPrimaryCategories] = useState<number[]>(() =>
@@ -177,7 +177,10 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState<number>(() => {
+    const p = Number(queryParams.page);
+    return Number.isFinite(p) && p > 0 ? p - 1 : 0;
+  });
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [dbCats, setDbCats] = useState<CategoryMeta[]>(categoryMeta);
@@ -198,11 +201,29 @@ export default function ProductsPage() {
   useEffect(() => {
     if (!loading && needsScrollRef.current) {
       needsScrollRef.current = false;
-      setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 50);
+      // A pending exact-position restore (see below) takes priority over
+      // just scrolling to the top of the results section.
+      if (pendingScrollRestore == null) {
+        setTimeout(() => {
+          resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
+      }
     }
-  }, [loading]);
+  }, [loading, pendingScrollRestore]);
+
+  // Restores the exact scroll position the user was at when they opened a
+  // product from here (see the router's origin/pendingScrollRestore), once
+  // the (possibly re-paginated, re-filtered) product grid has loaded —
+  // rather than the default reset-to-top a normal navigation gets.
+  useEffect(() => {
+    if (!loading && pendingScrollRestore != null) {
+      window.scrollTo(0, pendingScrollRestore);
+      clearScrollRestore();
+    }
+    // clearScrollRestore intentionally omitted — see the identical note on
+    // the URL-mirroring effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, pendingScrollRestore]);
 
   useEffect(() => {
     if (queryParams.category == null) return;
@@ -238,13 +259,14 @@ export default function ProductsPage() {
     if (categoryIds.length > 0) params.category = categoryIds.join(',');
     if (themeIds.length > 0) params.themes = themeIds.join(',');
     if (sizeFilters.length > 0) params.size = sizeFilters.join(',');
+    if (page > 0) params.page = String(page + 1);
 
     updateQuery(params);
     // updateQuery is intentionally omitted — it's a fresh closure every
     // router render, and including it would re-fire this effect on every
     // call to itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [primaryCategories, secondaryCategories, sizeFilters]);
+  }, [primaryCategories, secondaryCategories, sizeFilters, page]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
@@ -314,8 +336,21 @@ export default function ProductsPage() {
     };
   }, [primaryCategories, secondaryCategories, sizeFilters, page, debouncedSearch]);
 
+  // Resets to page 0 only when the filters actually *change* from what they
+  // previously were — compared by value, not "have I run before", since a
+  // simple first-run latch gets defeated by React StrictMode's dev-mode
+  // double-invocation of effects (the latch flips on the first simulated
+  // pass, then the second pass resets the page for real). On mount this
+  // just records the starting signature without resetting, so a page
+  // restored from the URL (e.g. via goBack()) survives; any later filter
+  // change still jumps back to page 0 as before.
+  const filterSignatureRef = useRef<string | null>(null);
   useEffect(() => {
-    setPage(0);
+    const signature = JSON.stringify([primaryCategories, secondaryCategories, sizeFilters, debouncedSearch]);
+    if (filterSignatureRef.current !== null && filterSignatureRef.current !== signature) {
+      setPage(0);
+    }
+    filterSignatureRef.current = signature;
   }, [primaryCategories, secondaryCategories, sizeFilters, debouncedSearch]);
 
   const scrollToResults = () => {
