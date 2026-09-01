@@ -19,6 +19,7 @@ import {
   fetchSimilarProducts,
   productName,
   productDescription,
+  productFallbackDescription,
   productSeoTitle,
   productSeoDescription,
   productSizes,
@@ -100,6 +101,23 @@ export default function ProductDetailPage() {
     description: product ? productSeoDescription(product, lang) : t('seo.homeDesc'),
     image: product?.imageUrl ?? undefined,
     type: 'product',
+    structuredData: product
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name,
+          image: product.imageUrl ? [product.imageUrl] : undefined,
+          description: productSeoDescription(product, lang),
+          sku: product.oldCatalogNumber ?? String(product.id),
+          offers: {
+            '@type': 'Offer',
+            url: typeof window !== 'undefined' ? window.location.href : undefined,
+            priceCurrency: 'EUR',
+            price: product.price.toFixed(2),
+            availability: 'https://schema.org/InStock',
+          },
+        }
+      : undefined,
   });
 
   if (loading) {
@@ -146,7 +164,7 @@ export default function ProductDetailPage() {
   }
 
   const sizes = productSizes(product);
-  const description = productDescription(product, lang);
+  const description = productDescription(product, lang) || productFallbackDescription(product, lang);
   const categoriesList = product.categoryIds && product.categoryIds.length > 0
     ? product.categoryIds
     : [product.categoryId].filter((id): id is number => id !== null);

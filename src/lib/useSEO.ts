@@ -6,10 +6,16 @@ type SEOParams = {
   image?: string;
   url?: string;
   type?: string;
+  // Arbitrary Schema.org JSON-LD object(s) for this page (e.g. Product).
+  // Injected as a single <script type="application/ld+json"> and removed
+  // again when absent, so a page type without structured data (or a route
+  // change away from one that had it) never leaves stale schema behind.
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
 };
 
 const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
 const defaultImage = `${siteUrl}/og-default.jpg`;
+const JSON_LD_ID = 'seo-json-ld';
 
 function setMeta(attr: 'name' | 'property', key: string, content: string) {
   let el = document.head.querySelector(
@@ -23,9 +29,23 @@ function setMeta(attr: 'name' | 'property', key: string, content: string) {
   el.setAttribute('content', content);
 }
 
+function setStructuredData(data: Record<string, unknown> | Record<string, unknown>[] | undefined) {
+  const existing = document.getElementById(JSON_LD_ID);
+  if (!data) {
+    existing?.remove();
+    return;
+  }
+  const el = (existing as HTMLScriptElement | null) ?? document.createElement('script');
+  el.id = JSON_LD_ID;
+  el.setAttribute('type', 'application/ld+json');
+  el.textContent = JSON.stringify(data);
+  if (!existing) document.head.appendChild(el);
+}
+
 // Dynamic SEO + OpenGraph head management. Updates <title>, meta description,
-// and OG tags on route/language changes for proper social sharing.
-export function useSEO({ title, description, image, url, type }: SEOParams) {
+// OG tags and (optionally) JSON-LD structured data on route/language changes
+// for proper social sharing and search rich results.
+export function useSEO({ title, description, image, url, type, structuredData }: SEOParams) {
   useEffect(() => {
     document.title = title;
     const finalUrl = url ?? window.location.href;
@@ -42,5 +62,13 @@ export function useSEO({ title, description, image, url, type }: SEOParams) {
     setMeta('name', 'twitter:title', title);
     setMeta('name', 'twitter:description', description);
     setMeta('name', 'twitter:image', finalImage);
-  }, [title, description, image, url, type]);
+    setStructuredData(structuredData);
+
+    return () => {
+      // Only this page's own structured data should be torn down on
+      // unmount — otherwise a fast route change could clear the next
+      // page's freshly-set schema instead of this one's.
+      if (structuredData) setStructuredData(undefined);
+    };
+  }, [title, description, image, url, type, structuredData]);
 }

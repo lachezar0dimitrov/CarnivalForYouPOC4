@@ -331,6 +331,25 @@ export function productSeoDescription(p: Product, lang: Lang): string {
   return clampWords(parts.join(' '), SEO_MAX_DESC);
 }
 
+// Visible on-page fallback for the ~28% of active products with no catalogue
+// description at all (see productSeoDescription for the <meta> equivalent).
+// Deliberately shorter than the meta description — it skips price and the
+// "collect in store" line since those already appear in the info tiles and
+// CTA buttons elsewhere on the same page, so repeating them here would just
+// be noise rather than filling genuinely thin content.
+export function productFallbackDescription(p: Product, lang: Lang): string {
+  const name = productName(p, lang);
+  // productSizes() passes through whatever placeholder is in the DB —
+  // ~456 active products literally have "-" as their sizes value, which
+  // would otherwise print as the meaningless "Sizes: -." here.
+  const sizes = productSizes(p).filter((s) => s !== '-');
+  const parts = [`${name} — ${seoQualifier(p, lang)}.`];
+  if (sizes.length > 0) {
+    parts.push(lang === 'bg' ? `Размери: ${sizes.join(', ')}.` : `Sizes: ${sizes.join(', ')}.`);
+  }
+  return parts.join(' ');
+}
+
 const SIZE_NORMALIZE: Record<string, string> = {
   STD: 'STD',
   STANDARD: 'STD',
