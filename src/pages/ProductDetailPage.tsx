@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   Tag,
   Ruler,
   Coins,
@@ -17,6 +19,7 @@ import { useSEO } from '@/lib/useSEO';
 import {
   fetchProductById,
   fetchSimilarProducts,
+  getAdjacentProductIds,
   productName,
   productDescription,
   productFallbackDescription,
@@ -25,21 +28,27 @@ import {
   productSizes,
   categoryName,
   type Product,
+  type AdjacentProducts,
 } from '@/lib/products';
 import ProductCard from '@/components/ProductCard';
 import ImageLightbox from '@/components/ImageLightbox';
 
 export default function ProductDetailPage() {
-  const { productId, navigate } = useRouter();
+  const { productId, navigate, goBack } = useRouter();
   const { t, lang } = useI18n();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [similar, setSimilar] = useState<Product[]>([]);
+  const [adjacent, setAdjacent] = useState<AdjacentProducts>({ prevId: null, nextId: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [showDepositInfo, setShowDepositInfo] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const depositRef = useRef<HTMLDivElement>(null);
+
+  const backCategoryId = product ? product.categoryId ?? product.categoryIds[0] : undefined;
+  const backToCategoryParams = backCategoryId != null ? { category: String(backCategoryId) } : undefined;
+  const handleBack = () => goBack('products', backToCategoryParams);
 
   useEffect(() => {
     if (!showDepositInfo) return;
@@ -62,6 +71,8 @@ export default function ProductDetailPage() {
     let cancelled = false;
     setLoading(true);
     setError(false);
+    setSimilar([]);
+    setAdjacent({ prevId: null, nextId: null });
 
     fetchProductById(numericId)
       .then(async (p) => {
@@ -78,6 +89,13 @@ export default function ProductDetailPage() {
           if (!cancelled) setSimilar(sim);
         } catch {
           // similar products are non-critical
+        }
+
+        try {
+          const adj = await getAdjacentProductIds(p);
+          if (!cancelled) setAdjacent(adj);
+        } catch {
+          // prev/next navigation is non-critical
         }
       })
       .catch(() => {
@@ -135,11 +153,11 @@ export default function ProductDetailPage() {
         <AlertCircle size={32} className="text-error" />
         <p className="text-sm">{t('common.error')}</p>
         <button
-          onClick={() => navigate('products')}
+          onClick={handleBack}
           className="btn-gold mt-2 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm"
         >
           <ArrowLeft size={16} />
-          {t('common.backToCatalog')}
+          {t('common.backToCategory')}
         </button>
       </div>
     );
@@ -153,11 +171,11 @@ export default function ProductDetailPage() {
         </p>
         <p className="mt-2 text-sm text-gray-400">{t('common.notFoundBody')}</p>
         <button
-          onClick={() => navigate('products')}
+          onClick={handleBack}
           className="btn-gold mt-6 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm"
         >
           <ArrowLeft size={16} />
-          {t('common.backToCatalog')}
+          {t('common.backToCategory')}
         </button>
       </div>
     );
@@ -172,11 +190,11 @@ export default function ProductDetailPage() {
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-24 sm:px-6 sm:pt-28">
       <button
-        onClick={() => navigate('products')}
+        onClick={handleBack}
         className="mb-6 inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-gold-200"
       >
         <ArrowLeft size={16} />
-        {t('common.backToCatalog')}
+        {t('common.backToCategory')}
       </button>
 
       {/* Main detail — stacks on mobile: image on top, details below */}
@@ -200,6 +218,30 @@ export default function ProductDetailPage() {
               }}
             />
           </div>
+
+          {/* Prev/Next — overlaid low on the photo, like a gallery control */}
+          {(adjacent.prevId != null || adjacent.nextId != null) && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex items-center justify-center gap-4">
+              <button
+                onClick={() => adjacent.prevId != null && navigate('product-detail', String(adjacent.prevId))}
+                disabled={adjacent.prevId == null}
+                aria-label={t('common.previousProduct')}
+                title={t('common.previousProduct')}
+                className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-gold-400/50 bg-black/70 text-[#f7e9b8] shadow-glow-sm backdrop-blur-sm transition hover:bg-black/85 disabled:pointer-events-none disabled:opacity-0"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={() => adjacent.nextId != null && navigate('product-detail', String(adjacent.nextId))}
+                disabled={adjacent.nextId == null}
+                aria-label={t('common.nextProduct')}
+                title={t('common.nextProduct')}
+                className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-gold-400/50 bg-black/70 text-[#f7e9b8] shadow-glow-sm backdrop-blur-sm transition hover:bg-black/85 disabled:pointer-events-none disabled:opacity-0"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
 
           {product.oldPrice != null && product.oldPrice > product.price && (
             <span className="absolute right-4 top-4 z-20 rounded-full bg-error/90 px-3 py-1 text-xs font-bold text-white shadow-glow-sm">

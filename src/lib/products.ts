@@ -641,6 +641,32 @@ export async function fetchProducts(
   };
 }
 
+export type AdjacentProducts = {
+  prevId: number | null;
+  nextId: number | null;
+};
+
+// Previous/next within the product's own primary category, in the same
+// order the catalog/category listing shows them (seasonal weighting, then
+// priority, then id — see getFilteredAndSortedIds). Deliberately scoped to
+// the product's own category rather than whatever filters happened to be
+// active on the page the user arrived from, so the buttons behave the same
+// regardless of entry point (a direct link, a search result, a "similar
+// suggestions" click).
+export async function getAdjacentProductIds(product: Product): Promise<AdjacentProducts> {
+  const categoryId = product.categoryId ?? product.categoryIds[0] ?? null;
+  if (categoryId == null) return { prevId: null, nextId: null };
+
+  const ids = await getFilteredAndSortedIds([categoryId], null, null);
+  const index = ids.indexOf(product.id);
+  if (index === -1) return { prevId: null, nextId: null };
+
+  return {
+    prevId: index > 0 ? ids[index - 1] : null,
+    nextId: index < ids.length - 1 ? ids[index + 1] : null,
+  };
+}
+
 export async function fetchProductById(id: number): Promise<Product | null> {
   const { data, error } = await supabase
     .from('products')

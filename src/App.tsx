@@ -21,16 +21,24 @@ import TermsPage from '@/pages/TermsPage';
 import AdminPage from '@/pages/AdminPage';
 
 function CurrentPage() {
-  const { route, productId } = useRouter();
+  const { route, productId, pendingScrollRestore } = useRouter();
 
   // Runs synchronously right after the new route's DOM commits, before the
   // browser paints — scrolling relative to what's actually about to be shown
   // instead of whatever page we're navigating away from. Keyed on productId
   // too, since navigating between two product-detail pages (e.g. clicking a
   // "similar product") keeps route === 'product-detail' but should still
-  // reset scroll.
+  // reset scroll. Skipped when a goBack() left a scroll position to restore
+  // (see the router's pendingScrollRestore) — that page restores it itself
+  // once its content has loaded, instead of snapping to the top first.
   useLayoutEffect(() => {
-    window.scrollTo(0, 0);
+    if (pendingScrollRestore == null) {
+      window.scrollTo(0, 0);
+    }
+    // pendingScrollRestore intentionally omitted — only route/productId
+    // changing should re-run this; re-checking it if it later clears would
+    // undo the restoring page's own scroll.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route, productId]);
 
   switch (route) {
