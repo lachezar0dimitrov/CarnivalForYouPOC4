@@ -9,6 +9,7 @@ export type SiteSettings = {
   hoursEn: { day: string; time: string }[];
   mapsQuery: string;
   themeOverride: ThemeOverride;
+  splashVideoEnabled: boolean;
 };
 
 type SettingsRow = {
@@ -20,6 +21,7 @@ type SettingsRow = {
   hours_en: { day: string; time: string }[];
   maps_query: string;
   theme_override: ThemeOverride;
+  splash_video_enabled: boolean;
 };
 
 function mapRow(r: SettingsRow): SiteSettings {
@@ -31,6 +33,7 @@ function mapRow(r: SettingsRow): SiteSettings {
     hoursEn: r.hours_en ?? [],
     mapsQuery: r.maps_query ?? '',
     themeOverride: r.theme_override ?? 'auto',
+    splashVideoEnabled: r.splash_video_enabled ?? true,
   };
 }
 
@@ -57,6 +60,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
       hours_en: settings.hoursEn,
       maps_query: settings.mapsQuery,
       theme_override: settings.themeOverride,
+      splash_video_enabled: settings.splashVideoEnabled,
       updated_at: new Date().toISOString(),
     })
     .eq('id', 1);
