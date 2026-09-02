@@ -10,6 +10,8 @@ import Fireflies from '@/components/Fireflies';
 import Butterflies from '@/components/Butterflies';
 import Snowflakes from '@/components/Snowflakes';
 import CookieConsent from '@/components/CookieConsent';
+import SplashVideo from '@/components/SplashVideo';
+import { SplashActiveProvider, useSplashState } from '@/lib/splash';
 import HomePage from '@/pages/HomePage';
 import ProductsPage from '@/pages/ProductsPage';
 import ProductDetailPage from '@/pages/ProductDetailPage';
@@ -88,6 +90,11 @@ function AppShell() {
     loadThemeOverride().then(() => setThemeLoaded(true));
   }, []);
 
+  // Called unconditionally (before the admin-route early return below) so
+  // hook order stays stable across renders — the admin panel just never
+  // renders <SplashVideo>, so the fetch/state it holds sits unused there.
+  const splash = useSplashState();
+
   if (route === 'admin') {
     return (
       <div className="fixed inset-0 overflow-y-auto bg-[#0b0d0b] text-gray-100">
@@ -104,24 +111,36 @@ function AppShell() {
       className="app-shell relative min-h-screen overflow-hidden"
       data-theme={isChristmas ? 'christmas' : undefined}
     >
-      <div className="site-background pointer-events-none fixed inset-0 z-0" />
-      {!isChristmas && (
-        <>
-          <Fireflies count={26} />
-          <Butterflies count={5} />
-        </>
-      )}
+      <SplashVideo
+        show={splash.show}
+        fadingOut={splash.fadingOut}
+        onDismiss={splash.dismiss}
+        fallbackTimeoutMs={splash.fallbackTimeoutMs}
+      />
+      {/* Components under here (e.g. BannerCarousel) can read this to freeze
+          their own auto-advance timers while the splash covers them, so
+          whatever was showing underneath is still at its starting position
+          once the splash fades away instead of having silently rotated on. */}
+      <SplashActiveProvider value={splash.show}>
+        <div className="site-background pointer-events-none fixed inset-0 z-0" />
+        {!isChristmas && (
+          <>
+            <Fireflies count={26} />
+            <Butterflies count={5} />
+          </>
+        )}
 
-      <Header />
-      <main className="site-main relative z-10">
-        <CurrentPage />
-      </main>
-      <Footer />
-      <CookieConsent />
-      {/* Rendered last (and highest z-index) so falling snow drifts over the
-          whole site — header, hero, cards — like real snowfall, not just in
-          the .site-background layer's negative space. */}
-      {isChristmas && <Snowflakes count={50} />}
+        <Header />
+        <main className="site-main relative z-10">
+          <CurrentPage />
+        </main>
+        <Footer />
+        <CookieConsent />
+        {/* Rendered last (and highest z-index) so falling snow drifts over the
+            whole site — header, hero, cards — like real snowfall, not just in
+            the .site-background layer's negative space. */}
+        {isChristmas && <Snowflakes count={50} />}
+      </SplashActiveProvider>
     </div>
   );
 }

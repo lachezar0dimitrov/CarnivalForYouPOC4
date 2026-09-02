@@ -3,11 +3,13 @@ import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { fetchActiveBanners, type Banner } from '@/lib/banners';
 import { getCurrentSeason } from '@/lib/season';
+import { useSplashActive } from '@/lib/splash';
 import HeroFireflies from '@/components/HeroFireflies';
 
 export default function BannerCarousel() {
   const { t, lang } = useI18n();
   const { navigate } = useRouter();
+  const splashActive = useSplashActive();
   // Christmas skips the gold/green hero sparkles — the page-wide falling-snow
   // overlay (Snowflakes.tsx, rendered above everything in App.tsx) covers the
   // hero too, so a second hero-local particle layer would be redundant.
@@ -40,12 +42,15 @@ export default function BannerCarousel() {
     setCurrent((c) => (c - 1 + banners.length) % Math.max(banners.length, 1));
   };
 
-  // Auto-advance every 6 seconds
+  // Auto-advance every 6 seconds — paused while the splash video is covering
+  // the page, so the carousel doesn't silently rotate past slide 1 behind it
+  // (it resumes fresh, still on whichever slide was current, once the splash
+  // dismisses and this effect re-runs).
   useEffect(() => {
-    if (banners.length <= 1) return;
+    if (banners.length <= 1 || splashActive) return;
     const timer = setInterval(next, 6000);
     return () => clearInterval(timer);
-  }, [banners.length]);
+  }, [banners.length, splashActive]);
 
   // Fallback: if no banners loaded, show the static forest background
   if (!loaded || banners.length === 0) {

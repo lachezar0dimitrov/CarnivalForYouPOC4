@@ -1725,6 +1725,7 @@ function ContactsManager() {
           phone: '',
           email: '',
           themeOverride: 'auto',
+          splashVideoEnabled: true,
           hoursBg: [],
           hoursEn: [],
           mapsQuery: '',
@@ -2014,6 +2015,7 @@ function ThemeManager() {
             hoursEn: [],
             mapsQuery: '',
             themeOverride: 'auto',
+            splashVideoEnabled: true,
           }
         );
         setLoading(false);
@@ -2033,6 +2035,23 @@ function ThemeManager() {
       notify('success', lang === 'bg' ? 'Темата е сменена.' : 'Theme switched.');
     } catch {
       setSettings({ ...next, themeOverride: previous });
+      notify('error', lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleSplash = async () => {
+    if (!settings || saving) return;
+    const previous = settings.splashVideoEnabled;
+    const next = { ...settings, splashVideoEnabled: !previous };
+    setSettings(next);
+    setSaving(true);
+    try {
+      await saveSiteSettings(next);
+      notify('success', lang === 'bg' ? 'Запазено.' : 'Saved.');
+    } catch {
+      setSettings({ ...next, splashVideoEnabled: previous });
       notify('error', lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
     } finally {
       setSaving(false);
@@ -2089,6 +2108,32 @@ function ThemeManager() {
             </button>
           );
         })}
+      </div>
+
+      <div className="mt-6 border-t border-gold-400/15 pt-6">
+        <label
+          className={`flex items-start gap-3 rounded-xl border p-4 transition ${
+            saving ? 'opacity-60' : 'cursor-pointer hover:border-gold-400/35 hover:bg-gold-400/5'
+          } border-gold-400/15`}
+        >
+          <input
+            type="checkbox"
+            checked={settings.splashVideoEnabled}
+            onChange={toggleSplash}
+            disabled={saving}
+            className="mt-0.5 h-4 w-4 rounded border-gold-400/30 bg-ink-700"
+          />
+          <span>
+            <span className="block font-display text-sm font-semibold text-gold-100">
+              {lang === 'bg' ? 'Видео при първо посещение' : 'First-visit intro video'}
+            </span>
+            <span className="mt-1 block text-xs leading-relaxed text-gray-400">
+              {lang === 'bg'
+                ? 'Показва трансформационното видео на новите посетители еднократно, преди началната страница. Изключи, за да спреш видеото за всички.'
+                : 'Shows the transformation video to new visitors once, before the homepage. Turn off to stop it for everyone.'}
+            </span>
+          </span>
+        </label>
       </div>
     </div>
   );
