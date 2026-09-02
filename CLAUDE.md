@@ -97,3 +97,4 @@ A full QA pass (category data integrity, mobile/tablet/desktop responsiveness, c
 - Original Supabase Storage files were kept as a rollback fallback and not yet deleted — don't assume they're gone, but also don't rely on them; new code should only ever write to R2.
 - Supabase migrations live in `supabase/migrations/`; check there before altering table shape assumptions.
 - This is a Bolt.new-originated project (see `.bolt/config.json`, `.bolt/prompt`) — some code may reflect Bolt scaffolding conventions rather than hand-authored patterns.
+- Disaster recovery (git history mirror + nightly Supabase data backup, in a separate private repo) is documented in [BackupsAndDR.md](BackupsAndDR.md).
