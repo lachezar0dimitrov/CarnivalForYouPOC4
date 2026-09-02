@@ -127,14 +127,14 @@ export default function ContactsPage() {
             </div>
             <p className="mt-1 text-sm text-gray-400">
               {lang === 'bg'
-                ? 'Ориентир за входа на магазина и звънеца'
-                : 'Guide to the store entrance and doorbell'}
+                ? 'Ориентир за входа на карнавалната къща и звънеца'
+                : 'Guide to the carnival house entrance and doorbell'}
             </p>
 
             <div className="mt-4 overflow-hidden rounded-xl border border-gold-400/20 bg-black/40">
               <img
                 src="/images/entrance.jpg"
-                alt="Вход на магазина CarnivalForYou"
+                alt="Вход на карнавалната къща CarnivalForYou"
                 className="mx-auto h-auto max-h-[600px] w-full rounded-xl object-contain"
                 loading="lazy"
               />

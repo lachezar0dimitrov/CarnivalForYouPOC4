@@ -58,7 +58,7 @@ export default function AboutPage() {
         <div className="relative overflow-hidden rounded-3xl border border-gold-400/15 shadow-card">
           <img
             src="/images/shop2.jpg"
-            alt={lang === 'bg' ? 'Изложение с костюми в магазина' : 'Costume showroom display'}
+            alt={lang === 'bg' ? 'Изложение с костюми в карнавалната къща' : 'Costume showroom display'}
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
           />
@@ -99,7 +99,7 @@ export default function AboutPage() {
         <div className="relative overflow-hidden rounded-3xl border border-gold-400/15 shadow-card md:order-2">
           <img
             src="/images/shop.jpg"
-            alt={lang === 'bg' ? 'Магазин за костюми' : 'Costume store'}
+            alt={lang === 'bg' ? 'Карнавална къща за костюми' : 'Costume carnival house'}
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
           />

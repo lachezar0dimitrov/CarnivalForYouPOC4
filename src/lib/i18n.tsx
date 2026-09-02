@@ -34,7 +34,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'common.reserveInStore': 'Запази на място',
     'common.contactUs': 'Свържете се с нас',
     'common.all': 'Всички',
-    'common.perDay': '/ ден',
+    'common.perDay': '/ 48 часа',
     'common.loading': 'Зареждане…',
     'common.error': 'Възникна грешка. Моля, опитайте отново.',
     'common.backToCategory': 'Обратно',
@@ -60,9 +60,9 @@ const translations: Record<Lang, Record<string, string>> = {
     'home.heroTitle1': 'Всичко за вашето',
     'home.heroTitle2': 'уникално парти.',
     'home.heroBody':
-      'От венециански маски до фантастични същества — открийте перфектния костюм за вашия бал, парти или събитие. Резервирайте на място в нашия магазин.',
+      'От венециански маски до фантастични същества — открийте перфектния костюм за вашия бал, парти или събитие. Резервирайте на място в нашата карнавална къща.',
     'home.findLook': 'Намери своя образ',
-    'home.aboutStore': 'За магазина',
+    'home.aboutStore': 'За карнавалната къща',
     'home.categoriesEyebrow': 'Категории',
     'home.viewLooks': 'Виж образи',
     'home.newArrivalsTitle': 'Нашите най-нови образи',
@@ -73,14 +73,14 @@ const translations: Record<Lang, Record<string, string>> = {
     'home.quote': '„Всеки костюм е портал към друга история — изберете своята."',
     'home.ctaTitle': 'Готови ли сте за трансформация?',
     'home.ctaBody':
-      'Заповядайте в нашия магазин в София, за да изберете и резервирате своя костюм на място с помощта на нашия екип.',
+      'Заповядайте в нашата карнавална къща в София, за да изберете и резервирате своя костюм на място с помощта на нашия екип.',
     'home.ctaButton': 'Намерете ни на картата',
 
     // products
     'products.eyebrow': 'Каталог',
     'products.title': 'Нашите костюми',
     'products.subtitle':
-      'Разгледайте наличните костюми под наем. Цените са на ден. За резервация посетете магазина ни или се свържете с нас.',
+      'Разгледайте наличните костюми под наем. Цените са на 48 часа. За резервация посетете нашата карнавална къща или се свържете с нас.',
     'products.categories': 'Основни раздели',
     'products.allCategories': 'Всички категории',
     'products.filterCategory': 'Категория',
@@ -104,7 +104,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'contacts.eyebrow': 'Свържете се с нас',
     'contacts.title': 'Контакти',
     'contacts.subtitle':
-      'Имате въпрос или искате да резервирате костюм? Посетете ни в магазина или ни пишете.',
+      'Имате въпрос или искате да резервирате костюм? Посетете ни в нашата карнавална къща или ни пишете.',
     'contacts.address': 'Адрес',
     'contacts.phone': 'Телефон',
     'contacts.email': 'Имейл',
@@ -138,12 +138,12 @@ const translations: Record<Lang, Record<string, string>> = {
     'about.eyebrow': 'Историята ни',
     'about.title': 'За нас',
     'about.subtitle':
-      'Понякога е хубаво да бъдеш някой друг, поне за малко. CarnivalForYou е семеен магазин за костюми под наем в София, където всеки може да открие своя герой.',
+      'Понякога е хубаво да бъдеш някой друг, поне за малко. CarnivalForYou е семейна карнавална къща за костюми под наем в София, където всеки може да открие своя герой.',
     'about.hookBody':
       'Всеки ден имаме своята роля — родители, деца, съпрузи, приятели, професионалисти. Правим едни и същи неща, срещаме едни и същи хора, следваме познатия ритъм. Но някъде дълбоко в нас навярно все още живее детето, което е мечтало да бъде принц или принцеса, пират, фея, супергерой, крал или кралица. Ами ако за един ден можем да бъдем точно този герой?',
     'about.storyTitle': 'От малка идея до магически свят',
     'about.story1':
-      'CarnivalForYou започна като малка работилница с една мечта — да помогне на всеки човек да се превърне в героя, за когото мечтае. Днес сме уютен магазин в София, който подбира костюми и венециански маски от най-добрите карнавални работилници по света.',
+      'CarnivalForYou започна като малка работилница с една мечта — да помогне на всеки човек да се превърне в героя, за когото мечтае. Днес сме уютна карнавална къща в София, която подбира костюми и венециански маски от най-добрите карнавални работилници по света.',
     'about.story2':
       'Вярваме, че костюмът е не само дреха — това е портал към друга история. Затова подбираме всеки образ с внимание към детайла и страст към занаята.',
     'about.heroListTitle': 'Може би ще бъдете:',
@@ -196,7 +196,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'services.step1D': 'Разгледайте каталога и изберете своя костюм.',
     'services.step2T': 'Запазете на място',
     'services.step2D':
-      'Посетете магазина ни, за да потвърдим наличност и размер.',
+      'Посетете нашата карнавална къща, за да потвърдим наличност и размер.',
     'services.step3T': 'Вземете и се преобразете',
     'services.step3D': 'Вземете костюма си и се насладете на събитието.',
 
@@ -228,7 +228,7 @@ const translations: Record<Lang, Record<string, string>> = {
       'Магически костюми под наем в София. Венециански маски, фантастични образи, Хелоуин и детски костюми. Резервирайте на място.',
     'seo.productsTitle': 'Каталог костюми под наем | CarnivalForYou',
     'seo.productsDesc':
-      'Разгледайте наличните костюми под наем — венециански, фантастични, Хелоуин и детски. Цени на ден, резервация на място в София.',
+      'Разгледайте наличните костюми под наем — венециански, фантастични, Хелоуин и детски. Цени на 48 часа, резервация на място в София.',
   },
   en: {
     // nav
@@ -243,10 +243,10 @@ const translations: Record<Lang, Record<string, string>> = {
     // common
     'common.costumesRent': 'Costume Rentals · Sofia',
     'common.viewDetails': 'View details',
-    'common.reserveInStore': 'Reserve in store',
+    'common.reserveInStore': 'Reserve at the carnival house',
     'common.contactUs': 'Contact us',
     'common.all': 'All',
-    'common.perDay': '/ day',
+    'common.perDay': '/ 48 hours',
     'common.loading': 'Loading…',
     'common.error': 'An error occurred. Please try again.',
     'common.backToCategory': 'Back',
@@ -272,9 +272,9 @@ const translations: Record<Lang, Record<string, string>> = {
     'home.heroTitle1': 'Everything for your',
     'home.heroTitle2': 'unique party.',
     'home.heroBody':
-      'From Venetian masks to fantasy creatures — find the perfect costume for your ball, party or event. Reserve in store.',
+      'From Venetian masks to fantasy creatures — find the perfect costume for your ball, party or event. Reserve at the carnival house.',
     'home.findLook': 'Find your look',
-    'home.aboutStore': 'About the store',
+    'home.aboutStore': 'About the carnival house',
     'home.categoriesEyebrow': 'Categories',
     'home.viewLooks': 'View looks',
     'home.newArrivalsTitle': 'Our newest looks',
@@ -285,14 +285,14 @@ const translations: Record<Lang, Record<string, string>> = {
     'home.quote': '“Every costume is a portal to another story — choose yours."',
     'home.ctaTitle': 'Ready for a transformation?',
     'home.ctaBody':
-      'Visit our store in Sofia to choose and reserve your costume on the spot with the help of our team.',
+      'Visit our carnival house in Sofia to choose and reserve your costume on the spot with the help of our team.',
     'home.ctaButton': 'Find us on the map',
 
     // products
     'products.eyebrow': 'Catalog',
     'products.title': 'Our costumes',
     'products.subtitle':
-      'Browse available costumes for rent. Prices are per day. To reserve, visit our store or contact us.',
+      'Browse available costumes for rent. Prices are per 48 hours. To reserve, visit our carnival house or contact us.',
     'products.categories': 'Main categories',
     'products.allCategories': 'All categories',
     'products.filterCategory': 'Category',
@@ -316,7 +316,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'contacts.eyebrow': 'Get in touch',
     'contacts.title': 'Contacts',
     'contacts.subtitle':
-      'Have a question or want to reserve a costume? Visit our store or write to us.',
+      'Have a question or want to reserve a costume? Visit our carnival house or write to us.',
     'contacts.address': 'Address',
     'contacts.phone': 'Phone',
     'contacts.email': 'Email',
@@ -350,12 +350,12 @@ const translations: Record<Lang, Record<string, string>> = {
     'about.eyebrow': 'Our story',
     'about.title': 'About us',
     'about.subtitle':
-      "Sometimes it's nice to be someone else, if only for a little while. CarnivalForYou is a family-run costume rental store in Sofia, where everyone can discover their inner hero.",
+      "Sometimes it's nice to be someone else, if only for a little while. CarnivalForYou is a family-run carnival house for costume rentals in Sofia, where everyone can discover their inner hero.",
     'about.hookBody':
       'Every day we play our roles — parents, children, partners, friends, professionals. We do the same things, meet the same people, follow the same familiar rhythm. But somewhere deep down, the child who once dreamed of being a prince or princess, a pirate, a fairy, a superhero, a king or queen is probably still there. What if, for one day, we could be that hero?',
     'about.storyTitle': 'From a small idea to a magical world',
     'about.story1':
-      'CarnivalForYou started as a small workshop with one dream — to help everyone become the hero they imagine. Today we are a cozy store in Sofia, curating costumes and Venetian masks from the best carnival costume workshops around the world.',
+      'CarnivalForYou started as a small workshop with one dream — to help everyone become the hero they imagine. Today we are a cozy carnival house in Sofia, curating costumes and Venetian masks from the best carnival costume workshops around the world.',
     'about.story2':
       'We believe a costume is not just clothing — it is a portal to another story. That is why we curate every look with attention to detail and a passion for the craft.',
     'about.heroListTitle': 'You might become:',
@@ -405,8 +405,8 @@ const translations: Record<Lang, Record<string, string>> = {
     'services.processTitle': 'How reservation works',
     'services.step1T': 'Choose a look',
     'services.step1D': 'Browse the catalog and choose your costume.',
-    'services.step2T': 'Reserve in store',
-    'services.step2D': 'Visit our store to confirm availability and size.',
+    'services.step2T': 'Reserve at the carnival house',
+    'services.step2D': 'Visit our carnival house to confirm availability and size.',
     'services.step3T': 'Pick up and transform',
     'services.step3D': 'Take your costume and enjoy the event.',
 
@@ -435,10 +435,10 @@ const translations: Record<Lang, Record<string, string>> = {
     // seo
     'seo.homeTitle': 'CarnivalForYou — Magical Costume Rentals',
     'seo.homeDesc':
-      'Magical costume rentals in Sofia. Venetian masks, fantasy looks, Halloween and kids costumes. Reserve in store.',
+      'Magical costume rentals in Sofia. Venetian masks, fantasy looks, Halloween and kids costumes. Reserve at the carnival house.',
     'seo.productsTitle': 'Costume Rental Catalog | CarnivalForYou',
     'seo.productsDesc':
-      'Browse available costumes for rent — Venetian, fantasy, Halloween and kids. Daily prices, in-store reservation in Sofia.',
+      'Browse available costumes for rent — Venetian, fantasy, Halloween and kids. Prices per 48 hours, reserve at our carnival house in Sofia.',
   },
 };
 

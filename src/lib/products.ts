@@ -324,9 +324,9 @@ export function productSeoDescription(p: Product, lang: Lang): string {
     parts.push(lang === 'bg' ? `Размери: ${sizes.join(', ')}.` : `Sizes: ${sizes.join(', ')}.`);
   }
   if (price) {
-    parts.push(lang === 'bg' ? `Наем от ${price}/ден.` : `Rental from ${price}/day.`);
+    parts.push(lang === 'bg' ? `Наем от ${price}/48 часа.` : `Rental from ${price}/48 hours.`);
   }
-  parts.push(lang === 'bg' ? 'Вземете от магазина в София.' : 'Collect in store in Sofia.');
+  parts.push(lang === 'bg' ? 'Вземете от нашата карнавална къща в София.' : 'Collect from our carnival house in Sofia.');
 
   return clampWords(parts.join(' '), SEO_MAX_DESC);
 }

@@ -30,7 +30,7 @@ export default function TermsPage() {
         {
           q: '1. Как мога да наема костюм?',
           a: [
-            'Обадете ни се по телефона, за да уточним посещението ви в магазина.',
+            'Обадете ни се по телефона, за да уточним посещението ви в нашата карнавална къща.',
             'Можете предварително да изберете костюм от сайта или да разгледате моделите в нашите каталози. Ако не сте сигурни какво търсите, нашите консултанти с удоволствие ще ви помогнат да изберете подходящ костюм и аксесоари.',
             'След избора можете да пробвате костюма и да го резервирате за желаната от вас дата, като заплатите наема.',
             'При получаване на костюма се заплаща депозит, който се възстановява при връщането му, ако костюмът е в нормален за използване вид – без скъсвания, изгаряния, трайни петна и други подобни повреди.',
@@ -47,7 +47,7 @@ export default function TermsPage() {
           q: '3. За колко време е наемът?',
           a: [
             'Стандартният срок на наема е 48 часа.',
-            'Неработните дни на магазина не се включват в срока на наема и за тях не се заплаща допълнително.',
+            'Неработните дни на карнавалната къща не се включват в срока на наема и за тях не се заплаща допълнително.',
           ],
         },
         {
@@ -70,7 +70,7 @@ export default function TermsPage() {
         },
         {
           q: '6. Мога ли да запазя костюм по телефона?',
-          a: ['Не. Костюми се резервират само на място в магазина.'],
+          a: ['Не. Костюми се резервират само на място в нашата карнавална къща.'],
         },
         {
           q: '7. Мога ли да запазя костюм с доставка?',
@@ -97,7 +97,7 @@ export default function TermsPage() {
         },
         {
           q: '10. Какво се случва при забавяне на връщането?',
-          a: ['За всеки просрочен ден, с изключение на неработните дни на магазина, се начислява такса от 10 € на ден.'],
+          a: ['За всеки просрочен ден, с изключение на неработните дни на карнавалната къща, се начислява такса от 10 € на ден.'],
         },
         {
           q: '11. Трябва ли да почиствам костюма?',
@@ -118,7 +118,7 @@ export default function TermsPage() {
             'При желание за проба на допълнителни модели всеки следващ костюм се заплаща по 3 €.',
             'Пробите са предназначени за клиенти, които търсят костюм за наемане.',
             'В нормални дни, когато няма други чакащи клиенти, наш консултант може да отдели допълнително време за избора и комбинирането на костюма и аксесоарите.',
-            'В периоди на голямо натоварване, когато има чакащи клиенти, магазинът си запазва правото да ограничи броя на пробваните костюми, за да може да обслужи всички посетители. Молим ви в тези дни да се съобразите с останалите чакащи клиенти.',
+            'В периоди на голямо натоварване, когато има чакащи клиенти, карнавалната къща си запазва правото да ограничи броя на пробваните костюми, за да може да обслужи всички посетители. Молим ви в тези дни да се съобразите с останалите чакащи клиенти.',
           ],
         },
         {
@@ -133,7 +133,7 @@ export default function TermsPage() {
         {
           q: '1. How can I rent a costume?',
           a: [
-            'Call us by phone so we can arrange your visit to the store.',
+            'Call us by phone so we can arrange your visit to the carnival house.',
             'You can pre-select a costume from the site or browse the models in our catalogs. If you’re not sure what you’re looking for, our consultants will be happy to help you choose a suitable costume and accessories.',
             'After choosing, you can try on the costume and reserve it for your desired date by paying the rental fee.',
             'A deposit is paid when you pick up the costume; it is refunded when you return it in normal, usable condition – without tears, burns, permanent stains or similar damage.',
@@ -150,7 +150,7 @@ export default function TermsPage() {
           q: '3. How long is the rental period?',
           a: [
             'The standard rental period is 48 hours.',
-            'The store’s non-working days are not counted toward the rental period and are not charged for.',
+            'The carnival house’s non-working days are not counted toward the rental period and are not charged for.',
           ],
         },
         {
@@ -173,7 +173,7 @@ export default function TermsPage() {
         },
         {
           q: '6. Can I reserve a costume by phone?',
-          a: ['No. Costumes can only be reserved in person, in store.'],
+          a: ['No. Costumes can only be reserved in person, at our carnival house.'],
         },
         {
           q: '7. Can I reserve a costume with delivery?',
@@ -200,7 +200,7 @@ export default function TermsPage() {
         },
         {
           q: '10. What happens if the return is late?',
-          a: ['A fee of €10 per day is charged for each overdue day, excluding the store’s non-working days.'],
+          a: ['A fee of €10 per day is charged for each overdue day, excluding the carnival house’s non-working days.'],
         },
         {
           q: '11. Do I need to clean the costume?',
@@ -221,7 +221,7 @@ export default function TermsPage() {
             'If you’d like to try additional models, each further costume costs €3.',
             'Fittings are intended for customers who are looking to rent a costume.',
             'On normal days, when there are no other waiting customers, our consultant can spend extra time helping you choose and put together the costume and accessories.',
-            'During busy periods, when there are customers waiting, the store reserves the right to limit the number of costumes tried on so that everyone can be served. On those days, please be considerate of other waiting customers.',
+            'During busy periods, when there are customers waiting, the carnival house reserves the right to limit the number of costumes tried on so that everyone can be served. On those days, please be considerate of other waiting customers.',
           ],
         },
         {
