@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export type ImageBucket = 'product-images' | 'banner-images' | 'category-images';
+export type ImageBucket = 'product-images' | 'banner-images' | 'category-images' | 'content-images';
 
 const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/r2-media`;
 

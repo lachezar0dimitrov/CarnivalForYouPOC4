@@ -1,44 +1,37 @@
-import { Sparkles, Clock, Heart, Users, PartyPopper } from 'lucide-react';
-import { forestImage } from '@/data/catalog';
+import { useEffect, useState } from 'react';
+import { Sparkles, Clock, Heart, Users, PartyPopper, type LucideIcon } from 'lucide-react';
+import { fetchAboutContent, type AboutContent } from '@/lib/aboutContent';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
 import SectionHeading from '@/components/SectionHeading';
 
+const valueIconMap: Record<string, LucideIcon> = { Sparkles, Clock, Heart };
+
 export default function AboutPage() {
   const { navigate } = useRouter();
   const { t, lang } = useI18n();
+  const [content, setContent] = useState<AboutContent | null>(null);
 
   useSEO({
     title: `${t('about.title')} | CarnivalForYou`,
     description: t('about.subtitle'),
   });
 
-  const values = [
-    { icon: Sparkles, title: t('about.v1Title'), text: t('about.v1Body') },
-    { icon: Clock, title: t('about.v2Title'), text: t('about.v2Body') },
-    { icon: Heart, title: t('about.v3Title'), text: t('about.v3Body') },
-  ];
+  useEffect(() => {
+    fetchAboutContent().then(setContent).catch(() => setContent(null));
+  }, []);
 
-  const heroList = [
-    t('about.hero1'),
-    t('about.hero2'),
-    t('about.hero3'),
-    t('about.hero4'),
-    t('about.hero5'),
-  ];
+  if (!content) return null;
 
-  const occasions = [
-    t('about.occasion1'),
-    t('about.occasion2'),
-    t('about.occasion3'),
-    t('about.occasion4'),
-    t('about.occasion5'),
-    t('about.occasion6'),
-    t('about.occasion7'),
-    t('about.occasion8'),
-    t('about.occasion9'),
-  ];
+  const bg = lang === 'bg';
+  const values = content.valuesList.map((v) => ({
+    icon: valueIconMap[v.icon] ?? Sparkles,
+    title: bg ? v.titleBg : v.titleEn,
+    text: bg ? v.bodyBg : v.bodyEn,
+  }));
+  const heroList = content.heroList.map((item) => (bg ? item.bg : item.en));
+  const occasions = content.occasions.map((item) => (bg ? item.bg : item.en));
 
   return (
     <div className="relative z-10 mx-auto max-w-5xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
@@ -51,14 +44,14 @@ export default function AboutPage() {
       </div>
 
       <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-relaxed text-gray-400 sm:text-base">
-        {t('about.hookBody')}
+        {bg ? content.hookBodyBg : content.hookBodyEn}
       </p>
 
       <div className="mt-12 grid gap-8 md:grid-cols-2 md:items-center">
         <div className="relative overflow-hidden rounded-3xl border border-gold-400/15 shadow-card">
           <img
-            src="/images/shop2.jpg"
-            alt={lang === 'bg' ? 'Изложение с костюми в карнавалната къща' : 'Costume showroom display'}
+            src={content.storyImageUrl}
+            alt={bg ? 'Изложение с костюми в карнавалната къща' : 'Costume showroom display'}
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
           />
@@ -67,13 +60,13 @@ export default function AboutPage() {
 
         <div className="space-y-4">
           <h3 className="font-display text-2xl font-semibold text-gold-100">
-            {t('about.storyTitle')}
+            {bg ? content.storyTitleBg : content.storyTitleEn}
           </h3>
           <p className="text-sm leading-relaxed text-gray-300 sm:text-base">
-            {t('about.story1')}
+            {bg ? content.story1Bg : content.story1En}
           </p>
           <p className="text-sm leading-relaxed text-gray-400">
-            {t('about.story2')}
+            {bg ? content.story2Bg : content.story2En}
           </p>
         </div>
       </div>
@@ -81,7 +74,7 @@ export default function AboutPage() {
       <div className="mt-16 grid gap-8 md:grid-cols-2 md:items-center">
         <div className="glass rounded-2xl p-6 sm:p-8 md:order-1">
           <h3 className="font-display text-xl font-semibold text-gold-100 sm:text-2xl">
-            {t('about.heroListTitle')}
+            {bg ? content.heroListTitleBg : content.heroListTitleEn}
           </h3>
           <ul className="mt-5 grid gap-3 sm:grid-cols-2">
             {heroList.map((item) => (
@@ -98,8 +91,8 @@ export default function AboutPage() {
 
         <div className="relative overflow-hidden rounded-3xl border border-gold-400/15 shadow-card md:order-2">
           <img
-            src="/images/shop.jpg"
-            alt={lang === 'bg' ? 'Карнавална къща за костюми' : 'Costume carnival house'}
+            src={content.heroImageUrl}
+            alt={bg ? 'Карнавална къща за костюми' : 'Costume carnival house'}
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
           />
@@ -109,19 +102,19 @@ export default function AboutPage() {
 
       <div className="mt-16 space-y-4 text-center">
         <h3 className="mx-auto max-w-2xl font-display text-2xl font-semibold text-gold-100">
-          {t('about.offerTitle')}
+          {bg ? content.offerTitleBg : content.offerTitleEn}
         </h3>
         <p className="mx-auto max-w-2xl text-sm leading-relaxed text-gray-300 sm:text-base">
-          {t('about.offerBody')}
+          {bg ? content.offerBodyBg : content.offerBodyEn}
         </p>
         <p className="mx-auto max-w-2xl text-sm leading-relaxed text-gray-400">
-          {t('about.addonsBody')}
+          {bg ? content.addonsBodyBg : content.addonsBodyEn}
         </p>
 
         <div className="relative mt-8 overflow-hidden rounded-3xl border border-gold-400/15 shadow-card">
           <img
-            src="/images/shop3.jpg"
-            alt={lang === 'bg' ? 'Пробна със огледала' : 'Fitting room with mirrors'}
+            src={content.offerImageUrl}
+            alt={bg ? 'Пробна със огледала' : 'Fitting room with mirrors'}
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
           />
@@ -149,17 +142,17 @@ export default function AboutPage() {
             <Users size={24} />
           </div>
           <h3 className="font-display text-2xl font-semibold text-gold-100">
-            {t('about.originTitle')}
+            {bg ? content.originTitleBg : content.originTitleEn}
           </h3>
           <p className="text-sm leading-relaxed text-gray-300 sm:text-base">
-            {t('about.originBody')}
+            {bg ? content.originBodyBg : content.originBodyEn}
           </p>
         </div>
         <div className="glass rounded-2xl p-6 sm:p-8 md:order-1">
           <div className="mb-4 inline-flex items-center gap-2 text-gold-300">
             <PartyPopper size={20} />
             <h4 className="font-display text-lg font-semibold text-gray-100">
-              {t('about.occasionsTitle')}
+              {bg ? content.occasionsTitleBg : content.occasionsTitleEn}
             </h4>
           </div>
           <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -173,20 +166,20 @@ export default function AboutPage() {
       </div>
 
       <p className="mx-auto mt-16 max-w-xl text-center text-sm leading-relaxed text-gray-400 sm:text-base">
-        {t('about.closingBody')}
+        {bg ? content.closingBodyBg : content.closingBodyEn}
       </p>
 
       <div className="relative mt-8 overflow-hidden rounded-3xl">
         <img
-          src={forestImage}
-          alt={lang === 'bg' ? 'Магическа гора' : 'Magical forest'}
+          src={content.forestImageUrl}
+          alt={bg ? 'Магическа гора' : 'Magical forest'}
           className="h-64 w-full object-cover sm:h-80"
           loading="lazy"
         />
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute inset-0 flex items-center justify-center p-6">
           <p className="max-w-xl text-center font-serif text-xl italic leading-relaxed text-gold-100 sm:text-2xl">
-            {t('about.quote')}
+            {bg ? content.quoteBg : content.quoteEn}
           </p>
         </div>
       </div>

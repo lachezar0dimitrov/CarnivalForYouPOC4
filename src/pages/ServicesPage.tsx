@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   Scissors,
   Brush,
@@ -5,7 +6,8 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
-import { services } from '@/data/catalog';
+import { fetchActiveServices, type Service } from '@/lib/services';
+import { fetchSiteSettings } from '@/lib/siteSettings';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
@@ -20,12 +22,22 @@ const iconMap: Record<string, LucideIcon> = {
 
 export default function ServicesPage() {
   const { navigate } = useRouter();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const [services, setServices] = useState<Service[]>([]);
 
   useSEO({
     title: `${t('services.title')} | CarnivalForYou`,
     description: t('services.subtitle'),
   });
+
+  useEffect(() => {
+    fetchActiveServices().then(setServices).catch(() => setServices([]));
+    fetchSiteSettings()
+      .then((s) => {
+        if (s && !s.servicesPageEnabled) navigate('home');
+      })
+      .catch(() => {});
+  }, [navigate]);
 
   const steps = [
     { n: '01', t: t('services.step1T'), d: t('services.step1D') },
@@ -44,6 +56,8 @@ export default function ServicesPage() {
       <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {services.map((s) => {
           const Icon = iconMap[s.icon] ?? Sparkles;
+          const title = lang === 'bg' ? s.titleBg : s.titleEn;
+          const description = lang === 'bg' ? s.descriptionBg : s.descriptionEn;
           return (
             <article
               key={s.id}
@@ -51,8 +65,8 @@ export default function ServicesPage() {
             >
               <div className="relative h-44 overflow-hidden">
                 <img
-                  src={s.image}
-                  alt={s.title}
+                  src={s.imageUrl}
+                  alt={title}
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   loading="lazy"
                 />
@@ -63,10 +77,10 @@ export default function ServicesPage() {
               </div>
               <div className="flex flex-1 flex-col p-5">
                 <h3 className="font-display text-lg font-semibold text-gold-100">
-                  {s.title}
+                  {title}
                 </h3>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-gray-400">
-                  {s.description}
+                  {description}
                 </p>
                 <button
                   onClick={() => navigate('contacts')}

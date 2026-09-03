@@ -20,23 +20,6 @@ export type Costume = {
   tags: string[];
 };
 
-export type Service = {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  image: string;
-};
-
-export type NewsPost = {
-  id: string;
-  title: string;
-  excerpt: string;
-  date: string;
-  category: string;
-  image: string;
-};
-
 export const categories: Category[] = [
   {
     id: 'venetian',
@@ -227,88 +210,6 @@ export const costumes: Costume[] = [
   },
 ];
 
-export const services: Service[] = [
-  {
-    id: 's1',
-    title: 'Персонално шиене',
-    description:
-      'Изработка на костюми по мярка — за перфектна посадка и уникален образ по ваша идея.',
-    icon: 'Scissors',
-    image:
-      'https://images.pexels.com/photos/6461076/pexels-photo-6461076.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-  {
-    id: 's2',
-    title: 'Професионален грим',
-    description:
-      'Сценичен и карнавален грим от опитни гримьори — превърнете се във вашия герой напълно.',
-    icon: 'Brush',
-    image:
-      'https://images.pexels.com/photos/324656/pexels-photo-324656.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-  {
-    id: 's3',
-    title: 'Консултация по образ',
-    description:
-      'Помагаме ви да изберете перфектния костюм, аксесоари и грим за вашето събитие.',
-    icon: 'Sparkles',
-    image:
-      'https://images.pexels.com/photos/4721513/pexels-photo-4721513.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-  {
-    id: 's4',
-    title: 'Групови резервации',
-    description:
-      'Отстъпки за групи — за театри, студия, училища и тематични партита с общ образ.',
-    icon: 'Users',
-    image:
-      'https://images.pexels.com/photos/3858268/pexels-photo-3858268.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-];
-
-export const newsPosts: NewsPost[] = [
-  {
-    id: 'n1',
-    title: 'Нова колекция венециански маски вече в карнавалната къща',
-    excerpt:
-      'Току-що получихме нова пратка от ръчно изработени венециански маски. Заповядайте при нас, за да ги изберете на живо.',
-    date: '15 октомври 2025',
-    category: 'Нови поступления',
-    image:
-      'https://images.pexels.com/photos/15587740/pexels-photo-15587740.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-  {
-    id: 'n2',
-    title: 'Подгответе се за Хелоуин — резервациите започнаха',
-    excerpt:
-      'Местата за най-търсените страшни костюми се изчерпват бързо. Резервирайте своя образ още днес, за да не изпускате.',
-    date: '1 октомври 2025',
-    category: 'Сезонни',
-    image:
-      'https://images.pexels.com/photos/14202548/pexels-photo-14202548.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-  {
-    id: 'n3',
-    title: 'Групов пакет за балове и абитуриенти',
-    excerpt:
-      'Специална оферта за групови резервации — отстъпки и безплатна консултация по образ за вашата компания.',
-    date: '20 септември 2025',
-    category: 'Оферти',
-    image:
-      'https://images.pexels.com/photos/18457620/pexels-photo-18457620.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-  {
-    id: 'n4',
-    title: 'Майсторски клас по сценичен грим',
-    excerpt:
-      'Научете тайните на професионалния карнавален грим от нашите гримьори. Запишете се за следващия клас.',
-    date: '5 септември 2025',
-    category: 'Събития',
-    image:
-      'https://images.pexels.com/photos/324656/pexels-photo-324656.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  },
-];
-
 export const storeInfo = {
   name: 'CarnivalForYou',
   address: 'ж.к. Младост 4, бл. 426А, вх. В, ет. 1, София',
@@ -332,5 +233,3 @@ export const heroImage =
   'https://images.pexels.com/photos/38188604/pexels-photo-38188604.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
 export const aboutImage =
   'https://images.pexels.com/photos/374677/pexels-photo-374677.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
-export const forestImage =
-  'https://images.pexels.com/photos/1996042/pexels-photo-1996042.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';

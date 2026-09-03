@@ -10,6 +10,8 @@ export type SiteSettings = {
   mapsQuery: string;
   themeOverride: ThemeOverride;
   splashVideoEnabled: boolean;
+  servicesPageEnabled: boolean;
+  newsPageEnabled: boolean;
 };
 
 type SettingsRow = {
@@ -22,6 +24,8 @@ type SettingsRow = {
   maps_query: string;
   theme_override: ThemeOverride;
   splash_video_enabled: boolean;
+  services_page_enabled: boolean;
+  news_page_enabled: boolean;
 };
 
 function mapRow(r: SettingsRow): SiteSettings {
@@ -34,6 +38,8 @@ function mapRow(r: SettingsRow): SiteSettings {
     mapsQuery: r.maps_query ?? '',
     themeOverride: r.theme_override ?? 'auto',
     splashVideoEnabled: r.splash_video_enabled ?? true,
+    servicesPageEnabled: r.services_page_enabled ?? true,
+    newsPageEnabled: r.news_page_enabled ?? true,
   };
 }
 
@@ -61,6 +67,8 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
       maps_query: settings.mapsQuery,
       theme_override: settings.themeOverride,
       splash_video_enabled: settings.splashVideoEnabled,
+      services_page_enabled: settings.servicesPageEnabled,
+      news_page_enabled: settings.newsPageEnabled,
       updated_at: new Date().toISOString(),
     })
     .eq('id', 1);

@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Calendar, ArrowRight } from 'lucide-react';
-import { newsPosts } from '@/data/catalog';
+import { fetchActiveNewsPosts, type NewsPostRecord } from '@/lib/newsPosts';
+import { fetchSiteSettings } from '@/lib/siteSettings';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
@@ -7,11 +9,27 @@ import SectionHeading from '@/components/SectionHeading';
 
 export default function NewsPage() {
   const { navigate } = useRouter();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const [newsPosts, setNewsPosts] = useState<NewsPostRecord[]>([]);
 
   useSEO({
     title: `${t('news.title')} | CarnivalForYou`,
     description: t('news.subtitle'),
+  });
+
+  useEffect(() => {
+    fetchActiveNewsPosts().then(setNewsPosts).catch(() => setNewsPosts([]));
+    fetchSiteSettings()
+      .then((s) => {
+        if (s && !s.newsPageEnabled) navigate('home');
+      })
+      .catch(() => {});
+  }, [navigate]);
+
+  const dateFormatter = new Intl.DateTimeFormat(lang === 'bg' ? 'bg-BG' : 'en-US', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   });
 
   return (
@@ -23,34 +41,38 @@ export default function NewsPage() {
       />
 
       <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-        {newsPosts.map((post) => (
+        {newsPosts.map((post) => {
+          const title = lang === 'bg' ? post.titleBg : post.titleEn;
+          const excerpt = lang === 'bg' ? post.excerptBg : post.excerptEn;
+          const category = lang === 'bg' ? post.categoryBg : post.categoryEn;
+          return (
           <article
             key={post.id}
             className="glass glass-hover group flex flex-col overflow-hidden rounded-2xl sm:flex-row"
           >
             <div className="relative h-52 shrink-0 overflow-hidden sm:h-auto sm:w-2/5">
               <img
-                src={post.image}
-                alt={post.title}
+                src={post.imageUrl}
+                alt={title}
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent sm:bg-gradient-to-r" />
               <span className="absolute left-3 top-3 rounded-full bg-gold-400/90 px-3 py-1 text-xs font-semibold text-stone-950">
-                {post.category}
+                {category}
               </span>
             </div>
 
             <div className="flex flex-1 flex-col p-5">
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <Calendar size={14} className="text-gold-300" />
-                {post.date}
+                {dateFormatter.format(new Date(post.postDate))}
               </div>
               <h3 className="mt-2 font-display text-lg font-semibold text-gold-100 clamp-2">
-                {post.title}
+                {title}
               </h3>
               <p className="mt-2 flex-1 text-sm leading-relaxed text-gray-400 clamp-3">
-                {post.excerpt}
+                {excerpt}
               </p>
               <button
                 onClick={() => navigate('contacts')}
@@ -61,7 +83,8 @@ export default function NewsPage() {
               </button>
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

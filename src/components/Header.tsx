@@ -2,6 +2,7 @@ import { Menu, X, Globe } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, type Route } from '@/lib/router';
 import { useI18n, type Lang } from '@/lib/i18n';
+import { fetchSiteSettings } from '@/lib/siteSettings';
 import Logo from '@/components/Logo';
 
 export default function Header() {
@@ -9,6 +10,15 @@ export default function Header() {
   const { t, lang, setLang } = useI18n();
   const [open, setOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
+  const [pageVisibility, setPageVisibility] = useState({ services: true, news: true });
+
+  useEffect(() => {
+    fetchSiteSettings()
+      .then((s) => {
+        if (s) setPageVisibility({ services: s.servicesPageEnabled, news: s.newsPageEnabled });
+      })
+      .catch(() => {});
+  }, []);
 
   const activeId: Route = route === 'product-detail' ? 'products' : route;
 
@@ -16,8 +26,8 @@ export default function Header() {
     { id: 'home', label: t('nav.home') },
     { id: 'products', label: t('nav.products') },
     { id: 'about', label: t('nav.about') },
-    { id: 'services', label: t('nav.services') },
-    { id: 'news', label: t('nav.news') },
+    ...(pageVisibility.services ? [{ id: 'services' as Route, label: t('nav.services') }] : []),
+    ...(pageVisibility.news ? [{ id: 'news' as Route, label: t('nav.news') }] : []),
     { id: 'contacts', label: t('nav.contacts') },
     { id: 'terms', label: t('nav.terms') },
   ];

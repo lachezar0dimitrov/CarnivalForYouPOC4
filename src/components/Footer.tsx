@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Instagram, Facebook, Phone, Mail, MapPin } from 'lucide-react';
 import { useRouter, type Route } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
+import { fetchSiteSettings } from '@/lib/siteSettings';
 import { storeInfo } from '@/data/catalog';
 import Logo from '@/components/Logo';
 import HalloweenCountdown from '@/components/HalloweenCountdown';
@@ -8,13 +10,22 @@ import HalloweenCountdown from '@/components/HalloweenCountdown';
 export default function Footer() {
   const { navigate } = useRouter();
   const { t, lang } = useI18n();
+  const [pageVisibility, setPageVisibility] = useState({ services: true, news: true });
+
+  useEffect(() => {
+    fetchSiteSettings()
+      .then((s) => {
+        if (s) setPageVisibility({ services: s.servicesPageEnabled, news: s.newsPageEnabled });
+      })
+      .catch(() => {});
+  }, []);
 
   const footerNav: { id: Route; label: string }[] = [
     { id: 'home', label: t('nav.home') },
     { id: 'products', label: t('nav.products') },
     { id: 'about', label: t('nav.about') },
-    { id: 'services', label: t('nav.services') },
-    { id: 'news', label: t('nav.news') },
+    ...(pageVisibility.services ? [{ id: 'services' as Route, label: t('nav.services') }] : []),
+    ...(pageVisibility.news ? [{ id: 'news' as Route, label: t('nav.news') }] : []),
     { id: 'contacts', label: t('nav.contacts') },
     { id: 'terms', label: t('nav.terms') },
   ];

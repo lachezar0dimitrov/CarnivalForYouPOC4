@@ -22,6 +22,10 @@ import {
   Palette,
   SlidersHorizontal,
   ChevronDown,
+  Wrench,
+  Newspaper,
+  Info,
+  HelpCircle,
 } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
@@ -46,11 +50,36 @@ import {
   deleteCategory,
   type Category,
 } from '@/lib/categories';
+import {
+  fetchAllServices,
+  saveService,
+  deleteService,
+  type Service,
+} from '@/lib/services';
+import {
+  fetchAllNewsPosts,
+  saveNewsPost,
+  deleteNewsPost,
+  type NewsPostRecord,
+} from '@/lib/newsPosts';
+import {
+  fetchAboutContent,
+  saveAboutContent,
+  type AboutContent,
+  type BilingualItem,
+  type AboutValue,
+} from '@/lib/aboutContent';
+import {
+  fetchTermsContent,
+  saveTermsContent,
+  type TermsContent,
+  type FaqItem as TermsFaqItem,
+} from '@/lib/termsContent';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/components/Toast';
 import carouselImages from 'virtual:carousel-images';
 
-type Tab = 'banners' | 'products' | 'contacts' | 'categories' | 'theme';
+type Tab = 'banners' | 'products' | 'categories' | 'services' | 'news' | 'about' | 'terms' | 'contacts' | 'theme';
 
 const NO_IMAGE = '/no-image.svg';
 
@@ -135,6 +164,18 @@ export default function AdminPage() {
         <TabButton active={tab === 'categories'} onClick={() => setTab('categories')} icon={Tag}>
           {lang === 'bg' ? 'Категории' : 'Categories'}
         </TabButton>
+        <TabButton active={tab === 'services'} onClick={() => setTab('services')} icon={Wrench}>
+          {lang === 'bg' ? 'Услуги' : 'Services'}
+        </TabButton>
+        <TabButton active={tab === 'news'} onClick={() => setTab('news')} icon={Newspaper}>
+          {lang === 'bg' ? 'Новини' : 'News'}
+        </TabButton>
+        <TabButton active={tab === 'about'} onClick={() => setTab('about')} icon={Info}>
+          {lang === 'bg' ? 'За нас' : 'About'}
+        </TabButton>
+        <TabButton active={tab === 'terms'} onClick={() => setTab('terms')} icon={HelpCircle}>
+          {lang === 'bg' ? 'Условия и въпроси' : 'Terms & FAQ'}
+        </TabButton>
         <TabButton active={tab === 'contacts'} onClick={() => setTab('contacts')} icon={Phone}>
           {lang === 'bg' ? 'Контакти' : 'Contacts'}
         </TabButton>
@@ -146,6 +187,10 @@ export default function AdminPage() {
       {tab === 'banners' && <BannerManager />}
       {tab === 'products' && <ProductManager />}
       {tab === 'categories' && <CategoryManager />}
+      {tab === 'services' && <ServicesManager />}
+      {tab === 'news' && <NewsManager />}
+      {tab === 'about' && <AboutManager />}
+      {tab === 'terms' && <TermsManager />}
       {tab === 'contacts' && <ContactsManager />}
       {tab === 'theme' && <ThemeManager />}
     </div>
@@ -584,6 +629,527 @@ function BannerForm({
           <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
             <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
             {lang === 'bg' ? 'Активен' : 'Active'}
+          </label>
+          <FormField label={lang === 'bg' ? 'Ред' : 'Sort order'} inline>
+            <input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} className="form-input w-24" />
+          </FormField>
+        </div>
+
+        {error && <ErrorBox>{error}</ErrorBox>}
+
+        <FormActions saving={saving} onCancel={onClose} label={lang === 'bg' ? 'Запази' : 'Save'} />
+      </form>
+    </Modal>
+  );
+}
+
+// ============================================================
+// SERVICES MANAGER
+// ============================================================
+const SERVICE_ICONS = ['Scissors', 'Brush', 'Sparkles', 'Users'] as const;
+
+// Shared "show this whole page on the site" switch for Services/News —
+// reads/writes site_settings directly (like the splash-video toggle in
+// ThemeManager) and saves immediately on change, since these list managers
+// have no overall form/Save button of their own.
+function PageVisibilityToggle({
+  field,
+  labelBg,
+  labelEn,
+  descBg,
+  descEn,
+}: {
+  field: 'servicesPageEnabled' | 'newsPageEnabled';
+  labelBg: string;
+  labelEn: string;
+  descBg: string;
+  descEn: string;
+}) {
+  const { lang } = useI18n();
+  const { notify } = useToast();
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchSiteSettings().then(setSettings).catch(() => {});
+  }, []);
+
+  const toggle = async () => {
+    if (!settings || saving) return;
+    const previous = settings[field];
+    const next = { ...settings, [field]: !previous };
+    setSettings(next);
+    setSaving(true);
+    try {
+      await saveSiteSettings(next);
+      notify('success', lang === 'bg' ? 'Запазено.' : 'Saved.');
+    } catch {
+      setSettings({ ...next, [field]: previous });
+      notify('error', lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!settings) return null;
+
+  return (
+    <label
+      className={`mb-4 flex items-start gap-3 rounded-xl border p-4 transition ${
+        saving ? 'opacity-60' : 'cursor-pointer hover:border-gold-400/35 hover:bg-gold-400/5'
+      } border-gold-400/15`}
+    >
+      <input
+        type="checkbox"
+        checked={settings[field]}
+        onChange={toggle}
+        disabled={saving}
+        className="mt-0.5 h-4 w-4 rounded border-gold-400/30 bg-ink-700"
+      />
+      <span>
+        <span className="block font-display text-sm font-semibold text-gold-100">
+          {lang === 'bg' ? labelBg : labelEn}
+        </span>
+        <span className="mt-1 block text-xs leading-relaxed text-gray-400">
+          {lang === 'bg' ? descBg : descEn}
+        </span>
+      </span>
+    </label>
+  );
+}
+
+function ServicesManager() {
+  const { lang } = useI18n();
+  const { notify } = useToast();
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Service | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    fetchAllServices()
+      .then(setServices)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm(lang === 'bg' ? 'Изтрий тази услуга?' : 'Delete this service?')) return;
+    try {
+      await deleteService(id);
+      notify('success', lang === 'bg' ? 'Услугата е изтрита.' : 'Service deleted.');
+      load();
+    } catch {
+      notify('error', lang === 'bg' ? 'Грешка при изтриване.' : 'Error deleting.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 size={28} className="animate-spin text-gold-300" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <PageVisibilityToggle
+        field="servicesPageEnabled"
+        labelBg="Показвай страница „Услуги“ в менюто"
+        labelEn="Show the Services page in the menu"
+        descBg="Изключи, за да скриеш напълно страницата и линка в менюто за посетителите."
+        descEn="Turn off to completely hide the page and its menu link from visitors."
+      />
+
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-sm text-gray-400">
+          {services.length} {lang === 'bg' ? 'услуги' : 'services'}
+        </p>
+        <button
+          onClick={() => { setEditing(null); setShowForm(true); }}
+          className="btn-gold flex items-center gap-2 rounded-lg px-4 py-2 text-sm"
+        >
+          <Plus size={16} />
+          {lang === 'bg' ? 'Нова услуга' : 'New service'}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {services.map((s) => (
+          <div key={s.id} className="glass overflow-hidden rounded-xl border border-gold-400/15">
+            <div className="relative aspect-video">
+              <AdminImage src={s.imageUrl} alt="" className="h-full w-full object-cover" />
+              <span
+                className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-xs font-medium ${
+                  s.isActive ? 'bg-moss-500/80 text-white' : 'bg-ink-900/80 text-gray-400'
+                }`}
+              >
+                {s.isActive ? (lang === 'bg' ? 'Активна' : 'Active') : (lang === 'bg' ? 'Изкл.' : 'Off')}
+              </span>
+            </div>
+            <div className="p-4">
+              <h3 className="text-sm font-semibold text-gray-100">
+                {lang === 'bg' ? s.titleBg : s.titleEn}
+              </h3>
+              <p className="mt-1 text-xs text-gray-500 line-clamp-2">
+                {lang === 'bg' ? s.descriptionBg : s.descriptionEn}
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => { setEditing(s); setShowForm(true); }}
+                  className="flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-1.5 text-xs text-gold-200 transition hover:bg-gold-400/10"
+                >
+                  <Edit3 size={14} />
+                  {lang === 'bg' ? 'Редактирай' : 'Edit'}
+                </button>
+                <button
+                  onClick={() => handleDelete(s.id)}
+                  className="flex items-center gap-1 rounded-lg border border-error/25 px-3 py-1.5 text-xs text-error transition hover:bg-error/10"
+                >
+                  <Trash2 size={14} />
+                  {lang === 'bg' ? 'Изтрий' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showForm && (
+        <ServiceForm
+          service={editing}
+          onClose={() => setShowForm(false)}
+          onSaved={() => { setShowForm(false); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ServiceForm({
+  service,
+  onClose,
+  onSaved,
+}: {
+  service: Service | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { lang } = useI18n();
+  const { notify } = useToast();
+  const [form, setForm] = useState({
+    titleBg: service?.titleBg ?? '',
+    titleEn: service?.titleEn ?? '',
+    descriptionBg: service?.descriptionBg ?? '',
+    descriptionEn: service?.descriptionEn ?? '',
+    icon: service?.icon ?? 'Sparkles',
+    imageUrl: service?.imageUrl ?? '',
+    isActive: service?.isActive ?? true,
+    sortOrder: service?.sortOrder ?? 0,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      await saveService({ ...form, id: service?.id });
+      notify('success', lang === 'bg' ? 'Услугата е запазена.' : 'Service saved.');
+      onSaved();
+    } catch {
+      setError(lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+      notify('error', lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal onClose={onClose} title={service ? (lang === 'bg' ? 'Редакция услуга' : 'Edit service') : (lang === 'bg' ? 'Нова услуга' : 'New service')}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
+        <FormField label={lang === 'bg' ? 'Снимка' : 'Image'}>
+          <div className="flex flex-col gap-2">
+            <ImageUploadButton
+              bucket="content-images"
+              onUploaded={(url) => setForm({ ...form, imageUrl: url })}
+              label={lang === 'bg' ? 'Качи снимка от файла' : 'Upload from file'}
+            />
+            <input
+              type="text"
+              value={form.imageUrl}
+              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+              className="form-input"
+              placeholder="https://... или качете файл"
+            />
+          </div>
+        </FormField>
+
+        <AdminImage
+          src={form.imageUrl}
+          alt=""
+          className="aspect-video w-full rounded-xl border border-gold-400/15 object-cover"
+        />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Заглавие (БГ)' : 'Title (BG)'}>
+            <input type="text" value={form.titleBg} onChange={(e) => setForm({ ...form, titleBg: e.target.value })} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Заглавие (EN)' : 'Title (EN)'}>
+            <input type="text" value={form.titleEn} onChange={(e) => setForm({ ...form, titleEn: e.target.value })} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Описание (БГ)' : 'Description (BG)'}>
+            <textarea value={form.descriptionBg} onChange={(e) => setForm({ ...form, descriptionBg: e.target.value })} className="form-input min-h-24" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Описание (EN)' : 'Description (EN)'}>
+            <textarea value={form.descriptionEn} onChange={(e) => setForm({ ...form, descriptionEn: e.target.value })} className="form-input min-h-24" />
+          </FormField>
+        </div>
+
+        <FormField label={lang === 'bg' ? 'Икона' : 'Icon'}>
+          <select value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} className="form-input">
+            {SERVICE_ICONS.map((icon) => (
+              <option key={icon} value={icon}>{icon}</option>
+            ))}
+          </select>
+        </FormField>
+
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
+            {lang === 'bg' ? 'Активна' : 'Active'}
+          </label>
+          <FormField label={lang === 'bg' ? 'Ред' : 'Sort order'} inline>
+            <input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} className="form-input w-24" />
+          </FormField>
+        </div>
+
+        {error && <ErrorBox>{error}</ErrorBox>}
+
+        <FormActions saving={saving} onCancel={onClose} label={lang === 'bg' ? 'Запази' : 'Save'} />
+      </form>
+    </Modal>
+  );
+}
+
+// ============================================================
+// NEWS MANAGER
+// ============================================================
+function NewsManager() {
+  const { lang } = useI18n();
+  const { notify } = useToast();
+  const [posts, setPosts] = useState<NewsPostRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<NewsPostRecord | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    fetchAllNewsPosts()
+      .then(setPosts)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm(lang === 'bg' ? 'Изтрий тази новина?' : 'Delete this post?')) return;
+    try {
+      await deleteNewsPost(id);
+      notify('success', lang === 'bg' ? 'Новината е изтрита.' : 'Post deleted.');
+      load();
+    } catch {
+      notify('error', lang === 'bg' ? 'Грешка при изтриване.' : 'Error deleting.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 size={28} className="animate-spin text-gold-300" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <PageVisibilityToggle
+        field="newsPageEnabled"
+        labelBg="Показвай страница „Новини“ в менюто"
+        labelEn="Show the News page in the menu"
+        descBg="Изключи, за да скриеш напълно страницата и линка в менюто за посетителите."
+        descEn="Turn off to completely hide the page and its menu link from visitors."
+      />
+
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-sm text-gray-400">
+          {posts.length} {lang === 'bg' ? 'новини' : 'posts'}
+        </p>
+        <button
+          onClick={() => { setEditing(null); setShowForm(true); }}
+          className="btn-gold flex items-center gap-2 rounded-lg px-4 py-2 text-sm"
+        >
+          <Plus size={16} />
+          {lang === 'bg' ? 'Нова новина' : 'New post'}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {posts.map((p) => (
+          <div key={p.id} className="glass overflow-hidden rounded-xl border border-gold-400/15">
+            <div className="relative aspect-video">
+              <AdminImage src={p.imageUrl} alt="" className="h-full w-full object-cover" />
+              <span
+                className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-xs font-medium ${
+                  p.isActive ? 'bg-moss-500/80 text-white' : 'bg-ink-900/80 text-gray-400'
+                }`}
+              >
+                {p.isActive ? (lang === 'bg' ? 'Активна' : 'Active') : (lang === 'bg' ? 'Изкл.' : 'Off')}
+              </span>
+            </div>
+            <div className="p-4">
+              <p className="text-xs text-gray-500">{p.postDate}</p>
+              <h3 className="mt-1 text-sm font-semibold text-gray-100">
+                {lang === 'bg' ? p.titleBg : p.titleEn}
+              </h3>
+              <p className="mt-1 text-xs text-gray-500 line-clamp-2">
+                {lang === 'bg' ? p.excerptBg : p.excerptEn}
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => { setEditing(p); setShowForm(true); }}
+                  className="flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-1.5 text-xs text-gold-200 transition hover:bg-gold-400/10"
+                >
+                  <Edit3 size={14} />
+                  {lang === 'bg' ? 'Редактирай' : 'Edit'}
+                </button>
+                <button
+                  onClick={() => handleDelete(p.id)}
+                  className="flex items-center gap-1 rounded-lg border border-error/25 px-3 py-1.5 text-xs text-error transition hover:bg-error/10"
+                >
+                  <Trash2 size={14} />
+                  {lang === 'bg' ? 'Изтрий' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showForm && (
+        <NewsForm
+          post={editing}
+          onClose={() => setShowForm(false)}
+          onSaved={() => { setShowForm(false); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function NewsForm({
+  post,
+  onClose,
+  onSaved,
+}: {
+  post: NewsPostRecord | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { lang } = useI18n();
+  const { notify } = useToast();
+  const [form, setForm] = useState({
+    titleBg: post?.titleBg ?? '',
+    titleEn: post?.titleEn ?? '',
+    excerptBg: post?.excerptBg ?? '',
+    excerptEn: post?.excerptEn ?? '',
+    categoryBg: post?.categoryBg ?? '',
+    categoryEn: post?.categoryEn ?? '',
+    postDate: post?.postDate ?? new Date().toISOString().slice(0, 10),
+    imageUrl: post?.imageUrl ?? '',
+    isActive: post?.isActive ?? true,
+    sortOrder: post?.sortOrder ?? 0,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      await saveNewsPost({ ...form, id: post?.id });
+      notify('success', lang === 'bg' ? 'Новината е запазена.' : 'Post saved.');
+      onSaved();
+    } catch {
+      setError(lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+      notify('error', lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal onClose={onClose} title={post ? (lang === 'bg' ? 'Редакция новина' : 'Edit post') : (lang === 'bg' ? 'Нова новина' : 'New post')}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
+        <FormField label={lang === 'bg' ? 'Снимка' : 'Image'}>
+          <div className="flex flex-col gap-2">
+            <ImageUploadButton
+              bucket="content-images"
+              onUploaded={(url) => setForm({ ...form, imageUrl: url })}
+              label={lang === 'bg' ? 'Качи снимка от файла' : 'Upload from file'}
+            />
+            <input
+              type="text"
+              value={form.imageUrl}
+              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+              className="form-input"
+              placeholder="https://... или качете файл"
+            />
+          </div>
+        </FormField>
+
+        <AdminImage
+          src={form.imageUrl}
+          alt=""
+          className="aspect-video w-full rounded-xl border border-gold-400/15 object-cover"
+        />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Заглавие (БГ)' : 'Title (BG)'}>
+            <input type="text" value={form.titleBg} onChange={(e) => setForm({ ...form, titleBg: e.target.value })} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Заглавие (EN)' : 'Title (EN)'}>
+            <input type="text" value={form.titleEn} onChange={(e) => setForm({ ...form, titleEn: e.target.value })} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Резюме (БГ)' : 'Excerpt (BG)'}>
+            <textarea value={form.excerptBg} onChange={(e) => setForm({ ...form, excerptBg: e.target.value })} className="form-input min-h-24" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Резюме (EN)' : 'Excerpt (EN)'}>
+            <textarea value={form.excerptEn} onChange={(e) => setForm({ ...form, excerptEn: e.target.value })} className="form-input min-h-24" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Категория (БГ)' : 'Category (BG)'}>
+            <input type="text" value={form.categoryBg} onChange={(e) => setForm({ ...form, categoryBg: e.target.value })} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Категория (EN)' : 'Category (EN)'}>
+            <input type="text" value={form.categoryEn} onChange={(e) => setForm({ ...form, categoryEn: e.target.value })} className="form-input" />
+          </FormField>
+        </div>
+
+        <FormField label={lang === 'bg' ? 'Дата' : 'Date'}>
+          <input type="date" value={form.postDate} onChange={(e) => setForm({ ...form, postDate: e.target.value })} className="form-input" />
+        </FormField>
+
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
+            {lang === 'bg' ? 'Активна' : 'Active'}
           </label>
           <FormField label={lang === 'bg' ? 'Ред' : 'Sort order'} inline>
             <input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} className="form-input w-24" />
@@ -1726,6 +2292,8 @@ function ContactsManager() {
           email: '',
           themeOverride: 'auto',
           splashVideoEnabled: true,
+          servicesPageEnabled: true,
+          newsPageEnabled: true,
           hoursBg: [],
           hoursEn: [],
           mapsQuery: '',
@@ -1961,6 +2529,673 @@ function ContactsManager() {
 }
 
 // ============================================================
+// ABOUT MANAGER
+// ============================================================
+const ABOUT_VALUE_ICONS = ['Sparkles', 'Clock', 'Heart'] as const;
+
+function AboutManager() {
+  const { lang } = useI18n();
+  const { notify } = useToast();
+  const [content, setContent] = useState<AboutContent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchAboutContent()
+      .then(setContent)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const updateBilingualItem = (key: 'heroList' | 'occasions', idx: number, field: 'bg' | 'en', value: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const list = [...prev[key]];
+      list[idx] = { ...list[idx], [field]: value };
+      return { ...prev, [key]: list };
+    });
+  };
+
+  const addBilingualItem = (key: 'heroList' | 'occasions') => {
+    setContent((prev) => (prev ? { ...prev, [key]: [...prev[key], { bg: '', en: '' } as BilingualItem] } : prev));
+  };
+
+  const removeBilingualItem = (key: 'heroList' | 'occasions', idx: number) => {
+    setContent((prev) => (prev ? { ...prev, [key]: prev[key].filter((_, i) => i !== idx) } : prev));
+  };
+
+  const updateValue = (idx: number, field: keyof AboutValue, value: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const list = [...prev.valuesList];
+      list[idx] = { ...list[idx], [field]: value };
+      return { ...prev, valuesList: list };
+    });
+  };
+
+  const addValue = () => {
+    setContent((prev) =>
+      prev
+        ? { ...prev, valuesList: [...prev.valuesList, { icon: 'Sparkles', titleBg: '', titleEn: '', bodyBg: '', bodyEn: '' }] }
+        : prev
+    );
+  };
+
+  const removeValue = (idx: number) => {
+    setContent((prev) => (prev ? { ...prev, valuesList: prev.valuesList.filter((_, i) => i !== idx) } : prev));
+  };
+
+  const handleSave = async () => {
+    if (!content) return;
+    setSaving(true);
+    setError(null);
+    setSaved(false);
+    try {
+      await saveAboutContent(content);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      notify('success', lang === 'bg' ? 'Съдържанието е запазено.' : 'Content saved.');
+    } catch {
+      setError(lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+      notify('error', lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 size={28} className="animate-spin text-gold-300" />
+      </div>
+    );
+  }
+
+  if (!content) {
+    return <p className="text-center text-gray-500">Error loading content.</p>;
+  }
+
+  const set = <K extends keyof AboutContent>(field: K, value: AboutContent[K]) =>
+    setContent({ ...content, [field]: value });
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="glass rounded-2xl p-6">
+        <h2 className="mb-4 font-display text-lg font-semibold text-gold-100">
+          {lang === 'bg' ? 'Въведение' : 'Intro'}
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Текст (БГ)' : 'Text (BG)'}>
+            <textarea value={content.hookBodyBg} onChange={(e) => set('hookBodyBg', e.target.value)} className="form-input min-h-28" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Текст (EN)' : 'Text (EN)'}>
+            <textarea value={content.hookBodyEn} onChange={(e) => set('hookBodyEn', e.target.value)} className="form-input min-h-28" />
+          </FormField>
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <h2 className="mb-4 font-display text-lg font-semibold text-gold-100">
+          {lang === 'bg' ? 'История' : 'Story'}
+        </h2>
+        <FormField label={lang === 'bg' ? 'Снимка' : 'Image'}>
+          <div className="flex flex-col gap-2">
+            <ImageUploadButton bucket="content-images" onUploaded={(url) => set('storyImageUrl', url)} label={lang === 'bg' ? 'Качи снимка' : 'Upload image'} />
+            <input type="text" value={content.storyImageUrl} onChange={(e) => set('storyImageUrl', e.target.value)} className="form-input" />
+          </div>
+        </FormField>
+        <AdminImage src={content.storyImageUrl} alt="" className="mt-2 aspect-video w-full rounded-xl border border-gold-400/15 object-cover" />
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Заглавие (БГ)' : 'Title (BG)'}>
+            <input type="text" value={content.storyTitleBg} onChange={(e) => set('storyTitleBg', e.target.value)} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Заглавие (EN)' : 'Title (EN)'}>
+            <input type="text" value={content.storyTitleEn} onChange={(e) => set('storyTitleEn', e.target.value)} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Параграф 1 (БГ)' : 'Paragraph 1 (BG)'}>
+            <textarea value={content.story1Bg} onChange={(e) => set('story1Bg', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Параграф 1 (EN)' : 'Paragraph 1 (EN)'}>
+            <textarea value={content.story1En} onChange={(e) => set('story1En', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Параграф 2 (БГ)' : 'Paragraph 2 (BG)'}>
+            <textarea value={content.story2Bg} onChange={(e) => set('story2Bg', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Параграф 2 (EN)' : 'Paragraph 2 (EN)'}>
+            <textarea value={content.story2En} onChange={(e) => set('story2En', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold text-gold-100">
+            {lang === 'bg' ? 'Списък „Може би ще бъдете"' : '"You might become" list'}
+          </h2>
+          <button onClick={() => addBilingualItem('heroList')} className="flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-1.5 text-xs text-gold-200 transition hover:bg-gold-400/10">
+            <Plus size={14} />
+            {lang === 'bg' ? 'Добави' : 'Add'}
+          </button>
+        </div>
+        <FormField label={lang === 'bg' ? 'Снимка' : 'Image'}>
+          <div className="flex flex-col gap-2">
+            <ImageUploadButton bucket="content-images" onUploaded={(url) => set('heroImageUrl', url)} label={lang === 'bg' ? 'Качи снимка' : 'Upload image'} />
+            <input type="text" value={content.heroImageUrl} onChange={(e) => set('heroImageUrl', e.target.value)} className="form-input" />
+          </div>
+        </FormField>
+        <AdminImage src={content.heroImageUrl} alt="" className="mt-2 aspect-video w-full rounded-xl border border-gold-400/15 object-cover" />
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Заглавие (БГ)' : 'Title (BG)'}>
+            <input type="text" value={content.heroListTitleBg} onChange={(e) => set('heroListTitleBg', e.target.value)} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Заглавие (EN)' : 'Title (EN)'}>
+            <input type="text" value={content.heroListTitleEn} onChange={(e) => set('heroListTitleEn', e.target.value)} className="form-input" />
+          </FormField>
+        </div>
+        <div className="mt-4 flex flex-col gap-2">
+          {content.heroList.map((item, idx) => (
+            <div key={idx} className="flex gap-2">
+              <input type="text" value={item.bg} onChange={(e) => updateBilingualItem('heroList', idx, 'bg', e.target.value)} className="form-input flex-1" placeholder="БГ" />
+              <input type="text" value={item.en} onChange={(e) => updateBilingualItem('heroList', idx, 'en', e.target.value)} className="form-input flex-1" placeholder="EN" />
+              <button onClick={() => removeBilingualItem('heroList', idx)} className="rounded p-2 text-error transition hover:bg-error/10" aria-label="Remove">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <h2 className="mb-4 font-display text-lg font-semibold text-gold-100">
+          {lang === 'bg' ? 'Предложение' : 'Offer'}
+        </h2>
+        <FormField label={lang === 'bg' ? 'Снимка' : 'Image'}>
+          <div className="flex flex-col gap-2">
+            <ImageUploadButton bucket="content-images" onUploaded={(url) => set('offerImageUrl', url)} label={lang === 'bg' ? 'Качи снимка' : 'Upload image'} />
+            <input type="text" value={content.offerImageUrl} onChange={(e) => set('offerImageUrl', e.target.value)} className="form-input" />
+          </div>
+        </FormField>
+        <AdminImage src={content.offerImageUrl} alt="" className="mt-2 aspect-video w-full rounded-xl border border-gold-400/15 object-cover" />
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Заглавие (БГ)' : 'Title (BG)'}>
+            <input type="text" value={content.offerTitleBg} onChange={(e) => set('offerTitleBg', e.target.value)} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Заглавие (EN)' : 'Title (EN)'}>
+            <input type="text" value={content.offerTitleEn} onChange={(e) => set('offerTitleEn', e.target.value)} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Текст (БГ)' : 'Text (BG)'}>
+            <textarea value={content.offerBodyBg} onChange={(e) => set('offerBodyBg', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Текст (EN)' : 'Text (EN)'}>
+            <textarea value={content.offerBodyEn} onChange={(e) => set('offerBodyEn', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Допълнения (БГ)' : 'Add-ons (BG)'}>
+            <textarea value={content.addonsBodyBg} onChange={(e) => set('addonsBodyBg', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Допълнения (EN)' : 'Add-ons (EN)'}>
+            <textarea value={content.addonsBodyEn} onChange={(e) => set('addonsBodyEn', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold text-gold-100">
+            {lang === 'bg' ? 'Предимства' : 'Values'}
+          </h2>
+          <button onClick={addValue} className="flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-1.5 text-xs text-gold-200 transition hover:bg-gold-400/10">
+            <Plus size={14} />
+            {lang === 'bg' ? 'Добави' : 'Add'}
+          </button>
+        </div>
+        <div className="flex flex-col gap-4">
+          {content.valuesList.map((v, idx) => (
+            <div key={idx} className="rounded-xl border border-gold-400/15 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <select value={v.icon} onChange={(e) => updateValue(idx, 'icon', e.target.value)} className="form-input w-40">
+                  {ABOUT_VALUE_ICONS.map((icon) => (
+                    <option key={icon} value={icon}>{icon}</option>
+                  ))}
+                </select>
+                <button onClick={() => removeValue(idx)} className="rounded p-2 text-error transition hover:bg-error/10" aria-label="Remove">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <input type="text" value={v.titleBg} onChange={(e) => updateValue(idx, 'titleBg', e.target.value)} className="form-input" placeholder={lang === 'bg' ? 'Заглавие (БГ)' : 'Title (BG)'} />
+                <input type="text" value={v.titleEn} onChange={(e) => updateValue(idx, 'titleEn', e.target.value)} className="form-input" placeholder={lang === 'bg' ? 'Заглавие (EN)' : 'Title (EN)'} />
+                <textarea value={v.bodyBg} onChange={(e) => updateValue(idx, 'bodyBg', e.target.value)} className="form-input" placeholder={lang === 'bg' ? 'Текст (БГ)' : 'Text (BG)'} />
+                <textarea value={v.bodyEn} onChange={(e) => updateValue(idx, 'bodyEn', e.target.value)} className="form-input" placeholder={lang === 'bg' ? 'Текст (EN)' : 'Text (EN)'} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <h2 className="mb-4 font-display text-lg font-semibold text-gold-100">
+          {lang === 'bg' ? 'Произход' : 'Origin'}
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Заглавие (БГ)' : 'Title (BG)'}>
+            <input type="text" value={content.originTitleBg} onChange={(e) => set('originTitleBg', e.target.value)} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Заглавие (EN)' : 'Title (EN)'}>
+            <input type="text" value={content.originTitleEn} onChange={(e) => set('originTitleEn', e.target.value)} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Текст (БГ)' : 'Text (BG)'}>
+            <textarea value={content.originBodyBg} onChange={(e) => set('originBodyBg', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Текст (EN)' : 'Text (EN)'}>
+            <textarea value={content.originBodyEn} onChange={(e) => set('originBodyEn', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold text-gold-100">
+            {lang === 'bg' ? 'За всеки повод' : 'For every occasion'}
+          </h2>
+          <button onClick={() => addBilingualItem('occasions')} className="flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-1.5 text-xs text-gold-200 transition hover:bg-gold-400/10">
+            <Plus size={14} />
+            {lang === 'bg' ? 'Добави' : 'Add'}
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Заглавие (БГ)' : 'Title (BG)'}>
+            <input type="text" value={content.occasionsTitleBg} onChange={(e) => set('occasionsTitleBg', e.target.value)} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Заглавие (EN)' : 'Title (EN)'}>
+            <input type="text" value={content.occasionsTitleEn} onChange={(e) => set('occasionsTitleEn', e.target.value)} className="form-input" />
+          </FormField>
+        </div>
+        <div className="mt-4 flex flex-col gap-2">
+          {content.occasions.map((item, idx) => (
+            <div key={idx} className="flex gap-2">
+              <input type="text" value={item.bg} onChange={(e) => updateBilingualItem('occasions', idx, 'bg', e.target.value)} className="form-input flex-1" placeholder="БГ" />
+              <input type="text" value={item.en} onChange={(e) => updateBilingualItem('occasions', idx, 'en', e.target.value)} className="form-input flex-1" placeholder="EN" />
+              <button onClick={() => removeBilingualItem('occasions', idx)} className="rounded p-2 text-error transition hover:bg-error/10" aria-label="Remove">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <h2 className="mb-4 font-display text-lg font-semibold text-gold-100">
+          {lang === 'bg' ? 'Цитат и заключение' : 'Quote & closing'}
+        </h2>
+        <FormField label={lang === 'bg' ? 'Снимка (фон)' : 'Background image'}>
+          <div className="flex flex-col gap-2">
+            <ImageUploadButton bucket="content-images" onUploaded={(url) => set('forestImageUrl', url)} label={lang === 'bg' ? 'Качи снимка' : 'Upload image'} />
+            <input type="text" value={content.forestImageUrl} onChange={(e) => set('forestImageUrl', e.target.value)} className="form-input" />
+          </div>
+        </FormField>
+        <AdminImage src={content.forestImageUrl} alt="" className="mt-2 aspect-video w-full rounded-xl border border-gold-400/15 object-cover" />
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Цитат (БГ)' : 'Quote (BG)'}>
+            <textarea value={content.quoteBg} onChange={(e) => set('quoteBg', e.target.value)} className="form-input min-h-20" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Цитат (EN)' : 'Quote (EN)'}>
+            <textarea value={content.quoteEn} onChange={(e) => set('quoteEn', e.target.value)} className="form-input min-h-20" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Заключение (БГ)' : 'Closing (BG)'}>
+            <textarea value={content.closingBodyBg} onChange={(e) => set('closingBodyBg', e.target.value)} className="form-input min-h-20" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Заключение (EN)' : 'Closing (EN)'}>
+            <textarea value={content.closingBodyEn} onChange={(e) => set('closingBodyEn', e.target.value)} className="form-input min-h-20" />
+          </FormField>
+        </div>
+      </div>
+
+      {error && <ErrorBox>{error}</ErrorBox>}
+
+      <div className="flex items-center gap-3">
+        <button onClick={handleSave} disabled={saving} className="btn-gold flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm disabled:opacity-50">
+          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          {lang === 'bg' ? 'Запази' : 'Save'}
+        </button>
+        {saved && (
+          <span className="flex items-center gap-1 text-sm text-moss-400">
+            <Check size={16} />
+            {lang === 'bg' ? 'Запазено!' : 'Saved!'}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// TERMS & FAQ MANAGER
+// ============================================================
+function TermsManager() {
+  const { lang } = useI18n();
+  const { notify } = useToast();
+  const [content, setContent] = useState<TermsContent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchTermsContent()
+      .then(setContent)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const updateGroupHeading = (gi: number, field: 'headingBg' | 'headingEn', value: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const groups = [...prev.faqGroups];
+      groups[gi] = { ...groups[gi], [field]: value || null };
+      return { ...prev, faqGroups: groups };
+    });
+  };
+
+  const updateItem = (gi: number, ii: number, field: keyof TermsFaqItem, value: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const groups = [...prev.faqGroups];
+      const items = [...groups[gi].items];
+      items[ii] = { ...items[ii], [field]: value };
+      groups[gi] = { ...groups[gi], items };
+      return { ...prev, faqGroups: groups };
+    });
+  };
+
+  const addItem = (gi: number) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const groups = [...prev.faqGroups];
+      groups[gi] = { ...groups[gi], items: [...groups[gi].items, { qBg: '', qEn: '', aBg: '', aEn: '' }] };
+      return { ...prev, faqGroups: groups };
+    });
+  };
+
+  const removeItem = (gi: number, ii: number) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const groups = [...prev.faqGroups];
+      groups[gi] = { ...groups[gi], items: groups[gi].items.filter((_, i) => i !== ii) };
+      return { ...prev, faqGroups: groups };
+    });
+  };
+
+  const addGroup = () => {
+    setContent((prev) =>
+      prev ? { ...prev, faqGroups: [...prev.faqGroups, { headingBg: '', headingEn: '', items: [] }] } : prev
+    );
+  };
+
+  const removeGroup = (gi: number) => {
+    setContent((prev) => (prev ? { ...prev, faqGroups: prev.faqGroups.filter((_, i) => i !== gi) } : prev));
+  };
+
+  const updateInfoItem = (idx: number, field: 'bg' | 'en', value: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const items = [...prev.infoBlock.items];
+      items[idx] = { ...items[idx], [field]: value };
+      return { ...prev, infoBlock: { ...prev.infoBlock, items } };
+    });
+  };
+
+  const addInfoItem = () => {
+    setContent((prev) => (prev ? { ...prev, infoBlock: { ...prev.infoBlock, items: [...prev.infoBlock.items, { bg: '', en: '' }] } } : prev));
+  };
+
+  const removeInfoItem = (idx: number) => {
+    setContent((prev) =>
+      prev ? { ...prev, infoBlock: { ...prev.infoBlock, items: prev.infoBlock.items.filter((_, i) => i !== idx) } } : prev
+    );
+  };
+
+  const updateBlockTitle = (bi: number, field: 'titleBg' | 'titleEn', value: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const blocks = [...prev.termsBlocks];
+      blocks[bi] = { ...blocks[bi], [field]: value };
+      return { ...prev, termsBlocks: blocks };
+    });
+  };
+
+  const updateBlockItem = (bi: number, idx: number, field: 'bg' | 'en', value: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const blocks = [...prev.termsBlocks];
+      const items = [...blocks[bi].items];
+      items[idx] = { ...items[idx], [field]: value };
+      blocks[bi] = { ...blocks[bi], items };
+      return { ...prev, termsBlocks: blocks };
+    });
+  };
+
+  const addBlockItem = (bi: number) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const blocks = [...prev.termsBlocks];
+      blocks[bi] = { ...blocks[bi], items: [...blocks[bi].items, { bg: '', en: '' }] };
+      return { ...prev, termsBlocks: blocks };
+    });
+  };
+
+  const removeBlockItem = (bi: number, idx: number) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const blocks = [...prev.termsBlocks];
+      blocks[bi] = { ...blocks[bi], items: blocks[bi].items.filter((_, i) => i !== idx) };
+      return { ...prev, termsBlocks: blocks };
+    });
+  };
+
+  const addBlock = () => {
+    setContent((prev) => (prev ? { ...prev, termsBlocks: [...prev.termsBlocks, { titleBg: '', titleEn: '', items: [] }] } : prev));
+  };
+
+  const removeBlock = (bi: number) => {
+    setContent((prev) => (prev ? { ...prev, termsBlocks: prev.termsBlocks.filter((_, i) => i !== bi) } : prev));
+  };
+
+  const handleSave = async () => {
+    if (!content) return;
+    setSaving(true);
+    setError(null);
+    setSaved(false);
+    try {
+      await saveTermsContent(content);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      notify('success', lang === 'bg' ? 'Съдържанието е запазено.' : 'Content saved.');
+    } catch {
+      setError(lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+      notify('error', lang === 'bg' ? 'Грешка при запазване.' : 'Error saving.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 size={28} className="animate-spin text-gold-300" />
+      </div>
+    );
+  }
+
+  if (!content) {
+    return <p className="text-center text-gray-500">Error loading content.</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="glass rounded-2xl p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold text-gold-100">FAQ</h2>
+          <button onClick={addGroup} className="flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-1.5 text-xs text-gold-200 transition hover:bg-gold-400/10">
+            <Plus size={14} />
+            {lang === 'bg' ? 'Нова група' : 'New group'}
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          {content.faqGroups.map((group, gi) => (
+            <div key={gi} className="rounded-xl border border-gold-400/15 p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
+                  <input
+                    type="text"
+                    value={group.headingBg ?? ''}
+                    onChange={(e) => updateGroupHeading(gi, 'headingBg', e.target.value)}
+                    className="form-input"
+                    placeholder={lang === 'bg' ? 'Заглавие на групата (БГ, по избор)' : 'Group heading (BG, optional)'}
+                  />
+                  <input
+                    type="text"
+                    value={group.headingEn ?? ''}
+                    onChange={(e) => updateGroupHeading(gi, 'headingEn', e.target.value)}
+                    className="form-input"
+                    placeholder={lang === 'bg' ? 'Заглавие на групата (EN, по избор)' : 'Group heading (EN, optional)'}
+                  />
+                </div>
+                <button onClick={() => removeGroup(gi)} className="rounded p-2 text-error transition hover:bg-error/10" aria-label="Remove group">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                {group.items.map((item, ii) => (
+                  <div key={ii} className="rounded-lg border border-gold-400/10 p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs text-gray-500">Q&A #{ii + 1}</span>
+                      <button onClick={() => removeItem(gi, ii)} className="rounded p-1.5 text-error transition hover:bg-error/10" aria-label="Remove item">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <input type="text" value={item.qBg} onChange={(e) => updateItem(gi, ii, 'qBg', e.target.value)} className="form-input" placeholder={lang === 'bg' ? 'Въпрос (БГ)' : 'Question (BG)'} />
+                      <input type="text" value={item.qEn} onChange={(e) => updateItem(gi, ii, 'qEn', e.target.value)} className="form-input" placeholder={lang === 'bg' ? 'Въпрос (EN)' : 'Question (EN)'} />
+                      <textarea value={item.aBg} onChange={(e) => updateItem(gi, ii, 'aBg', e.target.value)} className="form-input min-h-28" placeholder={lang === 'bg' ? 'Отговор (БГ) — нов ред = нов параграф' : 'Answer (BG) — blank line = new paragraph'} />
+                      <textarea value={item.aEn} onChange={(e) => updateItem(gi, ii, 'aEn', e.target.value)} className="form-input min-h-28" placeholder={lang === 'bg' ? 'Отговор (EN) — нов ред = нов параграф' : 'Answer (EN) — blank line = new paragraph'} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button onClick={() => addItem(gi)} className="mt-3 flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-1.5 text-xs text-gold-200 transition hover:bg-gold-400/10">
+                <Plus size={14} />
+                {lang === 'bg' ? 'Добави въпрос' : 'Add question'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold text-gold-100">
+            {lang === 'bg' ? 'Информационен блок' : 'Info block'}
+          </h2>
+          <button onClick={addInfoItem} className="flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-1.5 text-xs text-gold-200 transition hover:bg-gold-400/10">
+            <Plus size={14} />
+            {lang === 'bg' ? 'Добави' : 'Add'}
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <input
+            type="text"
+            value={content.infoBlock.titleBg}
+            onChange={(e) => setContent({ ...content, infoBlock: { ...content.infoBlock, titleBg: e.target.value } })}
+            className="form-input"
+            placeholder={lang === 'bg' ? 'Заглавие (БГ)' : 'Title (BG)'}
+          />
+          <input
+            type="text"
+            value={content.infoBlock.titleEn}
+            onChange={(e) => setContent({ ...content, infoBlock: { ...content.infoBlock, titleEn: e.target.value } })}
+            className="form-input"
+            placeholder={lang === 'bg' ? 'Заглавие (EN)' : 'Title (EN)'}
+          />
+        </div>
+        <div className="mt-4 flex flex-col gap-2">
+          {content.infoBlock.items.map((item, idx) => (
+            <div key={idx} className="flex gap-2">
+              <input type="text" value={item.bg} onChange={(e) => updateInfoItem(idx, 'bg', e.target.value)} className="form-input flex-1" placeholder="БГ" />
+              <input type="text" value={item.en} onChange={(e) => updateInfoItem(idx, 'en', e.target.value)} className="form-input flex-1" placeholder="EN" />
+              <button onClick={() => removeInfoItem(idx)} className="rounded p-2 text-error transition hover:bg-error/10" aria-label="Remove">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold text-gold-100">
+            {lang === 'bg' ? 'Условия' : 'Terms blocks'}
+          </h2>
+          <button onClick={addBlock} className="flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-1.5 text-xs text-gold-200 transition hover:bg-gold-400/10">
+            <Plus size={14} />
+            {lang === 'bg' ? 'Нов блок' : 'New block'}
+          </button>
+        </div>
+        <div className="flex flex-col gap-4">
+          {content.termsBlocks.map((block, bi) => (
+            <div key={bi} className="rounded-xl border border-gold-400/15 p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
+                  <input type="text" value={block.titleBg} onChange={(e) => updateBlockTitle(bi, 'titleBg', e.target.value)} className="form-input" placeholder={lang === 'bg' ? 'Заглавие (БГ)' : 'Title (BG)'} />
+                  <input type="text" value={block.titleEn} onChange={(e) => updateBlockTitle(bi, 'titleEn', e.target.value)} className="form-input" placeholder={lang === 'bg' ? 'Заглавие (EN)' : 'Title (EN)'} />
+                </div>
+                <button onClick={() => removeBlock(bi)} className="rounded p-2 text-error transition hover:bg-error/10" aria-label="Remove block">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {block.items.map((item, idx) => (
+                  <div key={idx} className="flex gap-2">
+                    <input type="text" value={item.bg} onChange={(e) => updateBlockItem(bi, idx, 'bg', e.target.value)} className="form-input flex-1" placeholder="БГ" />
+                    <input type="text" value={item.en} onChange={(e) => updateBlockItem(bi, idx, 'en', e.target.value)} className="form-input flex-1" placeholder="EN" />
+                    <button onClick={() => removeBlockItem(bi, idx)} className="rounded p-2 text-error transition hover:bg-error/10" aria-label="Remove">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => addBlockItem(bi)} className="mt-3 flex items-center gap-1 rounded-lg border border-gold-400/25 px-3 py-1.5 text-xs text-gold-200 transition hover:bg-gold-400/10">
+                <Plus size={14} />
+                {lang === 'bg' ? 'Добави ред' : 'Add row'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {error && <ErrorBox>{error}</ErrorBox>}
+
+      <div className="flex items-center gap-3">
+        <button onClick={handleSave} disabled={saving} className="btn-gold flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm disabled:opacity-50">
+          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          {lang === 'bg' ? 'Запази' : 'Save'}
+        </button>
+        {saved && (
+          <span className="flex items-center gap-1 text-sm text-moss-400">
+            <Check size={16} />
+            {lang === 'bg' ? 'Запазено!' : 'Saved!'}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // THEME MANAGER
 // ============================================================
 // Add a new entry here (and a matching value in the site_settings.theme_override
@@ -2016,6 +3251,8 @@ function ThemeManager() {
             mapsQuery: '',
             themeOverride: 'auto',
             splashVideoEnabled: true,
+            servicesPageEnabled: true,
+            newsPageEnabled: true,
           }
         );
         setLoading(false);
