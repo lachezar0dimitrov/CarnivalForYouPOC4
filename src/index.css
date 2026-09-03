@@ -60,7 +60,13 @@
 
 html {
   scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
+  /* text-size-adjust: 100% only sets the boost multiplier to zero but leaves
+     Chrome for Android's text-inflation algorithm active, which can still
+     kick in on absolutely-positioned text (e.g. the hero banner overlay in
+     BannerCarousel.tsx) even though iOS/WebKit never applies it at all.
+     `none` disables the algorithm outright instead of just zeroing it. */
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 body {
