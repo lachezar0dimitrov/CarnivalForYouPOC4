@@ -62,7 +62,11 @@ export default function ProductCard({ product }: { product: Product }) {
 
       {/* Product Info */}
       <div className="flex flex-1 flex-col p-3 sm:p-4">
-        <h3 className="clamp-2 font-display text-base font-semibold leading-snug text-gray-100">
+        {/* min-h reserves space for a full 2 lines (text-base * leading-snug
+            * 2) so a 1-line title doesn't leave the price sitting higher
+            than its neighbors in the same grid row — clamp-2 only caps the
+            max, it doesn't guarantee a minimum. */}
+        <h3 className="clamp-2 min-h-[2.75rem] font-display text-base font-semibold leading-snug text-gray-100">
           {name}
         </h3>
 

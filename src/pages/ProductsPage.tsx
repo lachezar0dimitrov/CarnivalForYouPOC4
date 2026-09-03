@@ -184,6 +184,22 @@ export default function ProductsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [dbCats, setDbCats] = useState<CategoryMeta[]>(categoryMeta);
+  // The grid is 2 columns below the `sm` breakpoint and 5 at `2xl` (see the
+  // grid-cols-* classes below) — 25 fills 2xl's rows exactly but leaves one
+  // item dangling alone on mobile's 2-column rows, so mobile pages by 24
+  // instead. matchMedia (not a resize listener) tracks just the query so
+  // this doesn't re-render on every pixel of a drag-resize.
+  const [pageSize, setPageSize] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches ? 24 : 25
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const update = () => setPageSize(mq.matches ? 24 : 25);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   const availableSizes = getAvailableSizes();
   const primaryCats = dbCats.filter((c) => c.showAsTile && !SEASONAL_CATEGORY_IDS.has(c.id));
@@ -315,7 +331,7 @@ export default function ProductsPage() {
     const sizes = sizeFilters.length > 0 ? sizeFilters : null;
     const search = debouncedSearch.trim() || null;
 
-    fetchProducts(primary, secondary, sizes, page, search)
+    fetchProducts(primary, secondary, sizes, page, search, pageSize)
       .then((result) => {
         if (!cancelled) {
           setProducts(result.products);
@@ -334,7 +350,20 @@ export default function ProductsPage() {
     return () => {
       cancelled = true;
     };
-  }, [primaryCategories, secondaryCategories, sizeFilters, page, debouncedSearch]);
+  }, [primaryCategories, secondaryCategories, sizeFilters, page, debouncedSearch, pageSize]);
+
+  // A pageSize change only happens by resizing a browser window across the
+  // 640px breakpoint (a real phone's rotation never crosses it), but page is
+  // an index into pages of the OLD size — without this it could point past
+  // the new totalPages, or land the viewer on a different slice of products
+  // than the page number implies.
+  const pageSizeRef = useRef(pageSize);
+  useEffect(() => {
+    if (pageSizeRef.current !== pageSize) {
+      pageSizeRef.current = pageSize;
+      setPage(0);
+    }
+  }, [pageSize]);
 
   // Resets to page 0 only when the filters actually *change* from what they
   // previously were — compared by value, not "have I run before", since a

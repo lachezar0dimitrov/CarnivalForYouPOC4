@@ -406,7 +406,11 @@ function hasCategory(row: any, targetId: number): boolean {
   return false;
 }
 
-const PAGE_SIZE = 25;
+// Desktop's widest grid (2xl breakpoint) is 5 columns, so 25 fills exactly 5
+// full rows. Mobile is a 2-column grid, where 25 leaves one item dangling
+// alone on its own row — callers on narrow viewports should pass 24 instead
+// (see ProductsPage.tsx's pageSize state) to keep every mobile row full.
+const DEFAULT_PAGE_SIZE = 25;
 
 export type FetchResult = {
   products: Product[];
@@ -596,16 +600,17 @@ export async function fetchProducts(
   secondaryCategoryIds: number[] | null,
   sizeFilters: string[] | null,
   page: number,
-  search: string | null = null
+  search: string | null = null,
+  pageSize: number = DEFAULT_PAGE_SIZE
 ): Promise<FetchResult> {
   // Get fully sorted and filtered IDs matching the query
   const allIds = await getFilteredAndSortedIds(primaryCategoryIds, secondaryCategoryIds, sizeFilters, search);
 
   const total = allIds.length;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const safePage = Math.min(Math.max(0, page), totalPages - 1);
-  const from = safePage * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const from = safePage * pageSize;
+  const to = from + pageSize - 1;
 
   // Slice only the IDs meant for the current page
   const pageIds = allIds.slice(from, to + 1);
