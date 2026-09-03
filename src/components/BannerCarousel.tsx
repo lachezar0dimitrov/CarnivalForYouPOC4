@@ -151,7 +151,15 @@ export default function BannerCarousel() {
             // button, but with that button gone the full-width mobile subtitle
             // now reaches down into their row. Desktop centres the text in a
             // narrower column, so it never reaches the dots there.
-            className={`absolute inset-x-4 bottom-[clamp(3rem,7vw,9rem)] flex flex-col items-center transition-all duration-1000 ${
+            //
+            // max-h-[1000000px]: Chrome for Android's text-inflation ("font
+            // boosting") algorithm only enlarges text inside blocks it sees
+            // as having a dynamic (auto/content-based) height — exactly what
+            // this absolutely-positioned block has. text-size-adjust:none
+            // (index.css) doesn't suppress it here; giving the block an
+            // effectively-unconstrained but explicit max-height does, per the
+            // well-known Chromium workaround, without touching real layout.
+            className={`absolute inset-x-4 bottom-[clamp(3rem,7vw,9rem)] flex max-h-[1000000px] flex-col items-center transition-all duration-1000 ${
               i === current
                 ? 'translate-y-0 opacity-100'
                 : 'pointer-events-none translate-y-4 opacity-0'
