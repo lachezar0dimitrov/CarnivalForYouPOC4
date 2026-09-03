@@ -406,7 +406,7 @@ function hasCategory(row: any, targetId: number): boolean {
   return false;
 }
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 25;
 
 export type FetchResult = {
   products: Product[];
