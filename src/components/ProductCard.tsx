@@ -66,12 +66,12 @@ export default function ProductCard({ product }: { product: Product }) {
           {name}
         </h3>
 
-        <div className="mt-2 flex items-baseline gap-1">
-          <span className="font-display text-lg font-semibold text-gold-200">
+        <div className="mt-2 flex flex-nowrap items-baseline gap-1 whitespace-nowrap">
+          <span className="font-display text-base font-semibold text-gold-200 sm:text-lg">
             {product.price.toFixed(0)} {t('common.eur')}
           </span>
 
-          <span className="text-xs text-gray-500">
+          <span className="text-[11px] text-gray-500 sm:text-xs">
             {t('common.perDay')}
           </span>
         </div>
