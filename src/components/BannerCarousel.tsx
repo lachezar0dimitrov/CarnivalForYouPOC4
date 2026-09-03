@@ -5,6 +5,7 @@ import { fetchActiveBanners, type Banner } from '@/lib/banners';
 import { getCurrentSeason } from '@/lib/season';
 import { useSplashActive } from '@/lib/splash';
 import HeroFireflies from '@/components/HeroFireflies';
+import { isAndroid } from '@/lib/platform';
 
 export default function BannerCarousel() {
   const { t, lang } = useI18n();
@@ -181,10 +182,29 @@ export default function BannerCarousel() {
                 scale was then dialled back (it plateaued at 5rem, which
                 overpowered the photography) while keeping that same
                 reach-the-cap-at-1920px shape. */}
-            <h1 className="font-display text-[clamp(1.125rem,2.25vw,2.75rem)] font-bold leading-tight text-[#f7e9b8] drop-shadow-lg">
+            {/* isAndroid: Chrome/Android renders this text much larger than
+                iOS at the same clamp() values, and neither of the two known
+                Chromium font-boosting fixes (text-size-adjust, max-height)
+                changed that — so instead of fighting the unidentified cause,
+                Android gets an explicit halved clamp so the rendered size
+                actually matches iOS. Revisit these numbers against a real
+                Android device; they're a first guess at the right ratio. */}
+            <h1
+              className={`font-display font-bold leading-tight text-[#f7e9b8] drop-shadow-lg ${
+                isAndroid
+                  ? 'text-[clamp(0.5625rem,1.125vw,1.375rem)]'
+                  : 'text-[clamp(1.125rem,2.25vw,2.75rem)]'
+              }`}
+            >
               {lang === 'bg' ? banner.titleBg : banner.titleEn}
             </h1>
-            <p className="mx-auto mt-2 max-w-2xl text-[clamp(0.875rem,1.25vw,1.5rem)] text-[#e5e7eb] drop-shadow">
+            <p
+              className={`mx-auto mt-2 max-w-2xl text-[#e5e7eb] drop-shadow ${
+                isAndroid
+                  ? 'text-[clamp(0.4375rem,0.625vw,0.75rem)]'
+                  : 'text-[clamp(0.875rem,1.25vw,1.5rem)]'
+              }`}
+            >
               {lang === 'bg' ? banner.subtitleBg : banner.subtitleEn}
             </p>
           </div>
