@@ -1369,6 +1369,7 @@ function ProductManager() {
         category_id: p.categoryId,
         category_ids: p.categoryIds,
         price: p.price,
+        is_active: p.isActive,
       };
       const { error } = await supabase.from('products').update(payload).eq('id', p.id);
       if (error) throw error;
@@ -1613,10 +1614,11 @@ function ProductManager() {
                 <col style={{ width: '7%' }} />
                 <col style={{ width: '9%' }} />
                 <col style={{ width: '13%' }} />
-                <col style={{ width: '18%' }} />
-                <col style={{ width: '18%' }} />
+                <col style={{ width: '15%' }} />
+                <col style={{ width: '15%' }} />
                 <col style={{ width: '13%' }} />
-                <col style={{ width: '9%' }} />
+                <col style={{ width: '8%' }} />
+                <col style={{ width: '7%' }} />
                 <col style={{ width: '13%' }} />
               </colgroup>
               <thead className="sticky top-0 z-10 bg-ink-800/95 text-gray-400 backdrop-blur">
@@ -1628,6 +1630,7 @@ function ProductManager() {
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Описание (EN)' : 'Description (EN)'}</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Категории' : 'Categories'}</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Цена' : 'Price'}</th>
+                  <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Активен' : 'Active'}</th>
                   <th className="px-4 py-3 font-medium">{lang === 'bg' ? 'Действия' : 'Actions'}</th>
                 </tr>
               </thead>
@@ -1731,6 +1734,16 @@ function ProductManager() {
                           </div>
                         </td>
                         <td className="px-4 py-4 align-top">
+                          <input
+                            type="checkbox"
+                            checked={p.isActive}
+                            onChange={(e) => updateProductField(p.id, { isActive: e.target.checked })}
+                            className="h-4 w-4 rounded border-gold-400/30 bg-ink-700 text-gold-400"
+                            aria-label={lang === 'bg' ? 'Активен' : 'Active'}
+                            title={lang === 'bg' ? 'Активен' : 'Active'}
+                          />
+                        </td>
+                        <td className="px-4 py-4 align-top">
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleRowSave(p)}
@@ -1756,7 +1769,7 @@ function ProductManager() {
                       </tr>
                       {isCategoryOpen && (
                         <tr className="border-t border-gold-400/10 bg-ink-900">
-                          <td colSpan={8} className="px-4 py-4">
+                          <td colSpan={9} className="px-4 py-4">
                             <div className="flex flex-col gap-4">
                               <div>
                                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
