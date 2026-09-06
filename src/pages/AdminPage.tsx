@@ -1305,6 +1305,7 @@ function ProductManager() {
   const [editing, setEditing] = useState<AdminProduct | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [page, setPage] = useState(0);
+  const [pageInput, setPageInput] = useState('1');
   const [total, setTotal] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
   const [filterPrimary, setFilterPrimary] = useState<number[]>([]);
@@ -1475,6 +1476,19 @@ function ProductManager() {
   };
 
   const totalPages = Math.ceil(total / pageSize);
+
+  useEffect(() => { setPageInput(String(page + 1)); }, [page]);
+
+  const goToPage = () => {
+    const parsed = Math.floor(Number(pageInput));
+    if (!Number.isFinite(parsed)) {
+      setPageInput(String(page + 1));
+      return;
+    }
+    const clamped = Math.min(Math.max(parsed, 1), Math.max(totalPages, 1));
+    setPage(clamped - 1);
+    setPageInput(String(clamped));
+  };
 
   return (
     <div>
@@ -1833,7 +1847,20 @@ function ProductManager() {
               >
                 {lang === 'bg' ? 'Предишна' : 'Prev'}
               </button>
-              <span className="text-sm text-gray-400">{page + 1} / {totalPages}</span>
+              <span className="flex items-center gap-1.5 text-sm text-gray-400">
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={pageInput}
+                  onChange={(e) => setPageInput(e.target.value)}
+                  onBlur={goToPage}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); goToPage(); } }}
+                  className="form-input w-14 !py-1 !text-center !text-xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  aria-label={lang === 'bg' ? 'Отиди на страница' : 'Go to page'}
+                />
+                <span>/ {totalPages}</span>
+              </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
