@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Instagram, Facebook, Phone, Mail, MapPin } from 'lucide-react';
 import { useRouter, type Route } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
-import { fetchSiteSettings } from '@/lib/siteSettings';
+import { fetchSiteSettings, type SiteSettings } from '@/lib/siteSettings';
 import { storeInfo } from '@/data/catalog';
 import Logo from '@/components/Logo';
 import HalloweenCountdown from '@/components/HalloweenCountdown';
@@ -11,14 +11,28 @@ export default function Footer() {
   const { navigate } = useRouter();
   const { t, lang } = useI18n();
   const [pageVisibility, setPageVisibility] = useState({ services: true, news: true });
+  // null while loading/on error — falls back to storeInfo.hours below, same
+  // fallback ContactsPage uses, so the two never show conflicting figures.
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
 
   useEffect(() => {
     fetchSiteSettings()
       .then((s) => {
-        if (s) setPageVisibility({ services: s.servicesPageEnabled, news: s.newsPageEnabled });
+        if (s) {
+          setPageVisibility({ services: s.servicesPageEnabled, news: s.newsPageEnabled });
+          setSettings(s);
+        }
       })
       .catch(() => {});
   }, []);
+
+  const hours = settings
+    ? lang === 'bg'
+      ? settings.hoursBg
+      : settings.hoursEn
+    : lang === 'bg'
+      ? storeInfo.hours
+      : storeInfo.hoursEn;
 
   const footerNav: { id: Route; label: string }[] = [
     { id: 'home', label: t('nav.home') },
@@ -122,7 +136,7 @@ export default function Footer() {
               {t('contacts.workingHours')}
             </h4>
             <ul className="mt-4 space-y-2.5 text-sm text-gray-400">
-              {(lang === 'bg' ? storeInfo.hours : storeInfo.hoursEn).map((h) => (
+              {hours.map((h) => (
                 <li key={h.day}>
                   <div className="text-gray-300">{h.day}</div>
                   <div className="text-gold-200/80">{h.time}</div>
