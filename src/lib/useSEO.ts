@@ -5,6 +5,12 @@ type SEOParams = {
   description: string;
   image?: string;
   url?: string;
+  // Canonical URL for this page. Defaults to the current path with no query
+  // string — right for most pages, since query params here are almost
+  // always filters/pagination/search rather than distinct content. Pages
+  // that DO want a query param to be part of the canonical identity (e.g.
+  // a single-category product listing) should pass it explicitly.
+  canonical?: string;
   type?: string;
   // Arbitrary Schema.org JSON-LD object(s) for this page (e.g. Product).
   // Injected as a single <script type="application/ld+json"> and removed
@@ -29,6 +35,16 @@ function setMeta(attr: 'name' | 'property', key: string, content: string) {
   el.setAttribute('content', content);
 }
 
+function setCanonical(href: string) {
+  let el = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+  if (!el) {
+    el = document.createElement('link');
+    el.setAttribute('rel', 'canonical');
+    document.head.appendChild(el);
+  }
+  el.setAttribute('href', href);
+}
+
 function setStructuredData(data: Record<string, unknown> | Record<string, unknown>[] | undefined) {
   const existing = document.getElementById(JSON_LD_ID);
   if (!data) {
@@ -45,12 +61,13 @@ function setStructuredData(data: Record<string, unknown> | Record<string, unknow
 // Dynamic SEO + OpenGraph head management. Updates <title>, meta description,
 // OG tags and (optionally) JSON-LD structured data on route/language changes
 // for proper social sharing and search rich results.
-export function useSEO({ title, description, image, url, type, structuredData }: SEOParams) {
+export function useSEO({ title, description, image, url, canonical, type, structuredData }: SEOParams) {
   useEffect(() => {
     document.title = title;
     const finalUrl = url ?? window.location.href;
     const finalImage = image ?? defaultImage;
 
+    setCanonical(canonical ?? `${siteUrl}${window.location.pathname}`);
     setMeta('name', 'description', description);
     setMeta('property', 'og:title', title);
     setMeta('property', 'og:description', description);
@@ -70,5 +87,5 @@ export function useSEO({ title, description, image, url, type, structuredData }:
       // page's freshly-set schema instead of this one's.
       if (structuredData) setStructuredData(undefined);
     };
-  }, [title, description, image, url, type, structuredData]);
+  }, [title, description, image, url, canonical, type, structuredData]);
 }

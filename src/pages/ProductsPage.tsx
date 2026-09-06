@@ -319,6 +319,11 @@ export default function ProductsPage() {
   useSEO({
     title: seoTitle,
     description: t('seo.productsDesc'),
+    // Search/pagination/size-filter variations of the same category are
+    // near-duplicate content — canonicalize them back to the single-category
+    // (or bare catalog) URL rather than letting every combination compete
+    // as its own indexed page.
+    canonical: `${window.location.origin}${seoCat ? `/products?category=${seoCat.id}` : '/products'}`,
   });
 
   useEffect(() => {
