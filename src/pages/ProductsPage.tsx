@@ -16,6 +16,7 @@ import {
 import { getCurrentSeason } from '@/lib/season';
 import ProductCard from '@/components/ProductCard';
 import CategoryGrid from '@/components/CategoryGrid';
+import ReservationSteps from '@/components/ReservationSteps';
 
 function parseIdList(raw: string | undefined): number[] {
   if (!raw) return [];
@@ -745,6 +746,10 @@ export default function ProductsPage() {
           )}
         </div>
       </div>
+      </div>
+
+      <div className="mt-16">
+        <ReservationSteps />
       </div>
     </div>
   );

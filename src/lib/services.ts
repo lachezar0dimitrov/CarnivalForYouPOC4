@@ -6,8 +6,11 @@ export type Service = {
   titleEn: string;
   descriptionBg: string;
   descriptionEn: string;
+  contentBg: string;
+  contentEn: string;
   icon: string;
   imageUrl: string;
+  galleryImages: string[];
   isActive: boolean;
   sortOrder: number;
 };
@@ -18,8 +21,11 @@ type ServiceRow = {
   title_en: string;
   description_bg: string;
   description_en: string;
+  content_bg: string;
+  content_en: string;
   icon: string;
   image_url: string;
+  gallery_images: string[] | null;
   is_active: boolean;
   sort_order: number;
 };
@@ -31,8 +37,11 @@ function mapRow(r: ServiceRow): Service {
     titleEn: r.title_en ?? '',
     descriptionBg: r.description_bg ?? '',
     descriptionEn: r.description_en ?? '',
+    contentBg: r.content_bg ?? '',
+    contentEn: r.content_en ?? '',
     icon: r.icon ?? 'Sparkles',
     imageUrl: r.image_url ?? '',
+    galleryImages: r.gallery_images ?? [],
     isActive: r.is_active,
     sortOrder: r.sort_order,
   };
@@ -69,8 +78,11 @@ export async function saveService(service: Partial<Service> & { id?: number }): 
     title_en: service.titleEn,
     description_bg: service.descriptionBg,
     description_en: service.descriptionEn,
+    content_bg: service.contentBg,
+    content_en: service.contentEn,
     icon: service.icon,
     image_url: service.imageUrl,
+    gallery_images: service.galleryImages,
     is_active: service.isActive,
     sort_order: service.sortOrder,
     updated_at: new Date().toISOString(),
