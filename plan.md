@@ -142,13 +142,21 @@ Functions + `_redirects`), не като Cloudflare Dashboard правила. Т
 **Инструмент: Chrome Extension + VSCode за бърз hotfix**
 
 0. [x] **Поща** — вече готово предварително (Фаза 2), не чака за cutover деня: Cloudflare Email Routing активен и потвърден, Gmail receive-as и send-as ("reply from office@") и двете тествани успешно.
-1. [ ] Финален manual dispatch на backup archive workflow-а точно преди флипа.
+1. [x] **Финален backup — направен и проверен задълбочено 2026-09-07 19:33 UTC.** Двата job-а успешни; всичките 13 таблици с точно съвпадащи бройки спрямо живата база; `products.json` реално парсван (1841 реда, 1840 с `old_id`, 1665 активни, spot check `id=1312` → "Чаровната снежанка"/`old_id=1478`); нула spam остатъци; днешните промени вътре (коригирано работно време, ротирана парола); `mirror/main` = `a238f72`, точно текущия HEAD.
+   - ⚠️ Известна дупка при възстановяване: `auth_users` пази профила, но **не и хеша на паролата** — при restore admin потребителят ще съществува без парола и ще трябва reset през Supabase. Не е блокер (незаменимото са продуктите и съдържанието), но е добре да се знае.
 2. [ ] Смени DNS записа в Cloudflare zone-а да сочи към Cloudflare Pages (само web-facing запис — A/CNAME на apex/www, НЕ MX). Правилният начин: Pages проект `carnivalforyoupoc4` → Custom domains → Add `carnivalforyou.com` + `www`, което Cloudflare сам създава/пренасочва записите. ⚠️ Целевият хост е **`carnivalforyoupoc3.pages.dev`** — името на проекта (poc4) и hostname-ът (poc3) НЕ съвпадат.
 3. [x] ~~Активирай Cloudflare Bulk Redirects правилото~~ — неприложимо вече: Фаза 3 redirect-ите са код (Cloudflare Pages Functions + `_redirects`), не Dashboard правило — тръгват автоматично живи в мига на деплоя от стъпка 2, нищо за ръчно активиране тук.
-4. [ ] Изчакай propagation, тествай от няколко локации/устройства.
-5. [ ] Провери SSL/HTTPS сертификата се е издал правилно.
-6. [ ] Провери 301 редиректите работят за няколко случайни стари URL-а (вече активни от т.3).
-7. [ ] Провери отново пощата — потвърди forward-ът и send-as все още работят след флипа (вероятно неповлияни, но бърза проверка не боли).
+4. [x] **ИЗВЪРШЕН 2026-09-07 ~19:42 UTC.** SSL режимът беше вече `Full` (не `Flexible`), значи redirect loop нямаше риск. Cloudflare премахна apex A + AAAA (и двата → jump.bg) и създаде CNAME `@` → `carnivalforyoupoc3.pages.dev`. Нищо от забранителния списък не беше докоснато. Прозорец с грешка 522: **~45 секунди** (19:42:41 → 19:43:28 UTC), докато Pages довърши провизирането.
+5. [x] Проверено на живо веднага след флипа:
+   - `X-Robots-Tag` **отсъства** на истинския домейн ✅ (middleware-ът се държи точно както беше доказан локално)
+   - Новият React сайт е жив; SSL валиден (`ssl_verify_result=0`)
+   - `/product-detail/1312` се зарежда директно, с `<link rel="canonical" href="https://carnivalforyou.com/product-detail/1312">` и правилен `og:title`
+   - **11 от 11 стари URL-а** дават 301 към правилните цели
+   - `sitemap.xml`: 1256 записа, **нула** pages.dev адреси; `robots.txt` и `favicon.svg` — 200
+   - MX (и трите Cloudflare Email Routing), SPF и google-site-verification — непокътнати
+   - Apex вече резолвва към Cloudflare anycast (104.21.69.123 / 172.67.208.6), не към 185.199.38.18
+6. [ ] Тест на пощата от потребителя — изпрати до `office@carnivalforyou.com`, потвърди че пристига в Gmail.
+7. [ ] ⚠️ **www и apex сервират еднакво съдържание** (и двата 200) — за продуктовите страници Function-ата гради canonical от заявения хост, значи `www.` версиите се самоканонизират и разцепват SEO сигнала. Старият сайт е ползвал www в линковете си, тоест вероятно е индексиран и там. **Оправи с Cloudflare Redirect Rule `www.carnivalforyou.com/*` → `https://carnivalforyou.com/$1` (301), преди подаването на sitemap-а.**
 
 ## Фаза 6 — След go-live
 **Инструмент: Chrome Extension + VSCode**
