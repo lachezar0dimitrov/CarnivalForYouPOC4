@@ -2,9 +2,17 @@
 // see project/plan.md Phase 3 and functions/_lib/legacyRedirect.js for the
 // mapping rationale). Runs only once the new site is actually deployed as
 // the Cloudflare Pages origin, so this has zero effect before cutover.
-import { categoryRedirectPath, lookupNewProductId, redirectTo } from './_lib/legacyRedirect.js';
+import {
+  categoryRedirectPath,
+  lookupNewProductId,
+  passThroughIfNotPhp,
+  redirectTo,
+} from './_lib/legacyRedirect.js';
 
 export async function onRequestGet(context) {
+  const guard = await passThroughIfNotPhp(context);
+  if (guard) return guard;
+
   const { request, env } = context;
   const url = new URL(request.url);
   const obid = url.searchParams.get('obid');

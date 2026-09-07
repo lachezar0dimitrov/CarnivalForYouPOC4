@@ -2,7 +2,7 @@
 <html lang="bg">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0a0f0d" />
     <meta name="description" content="CarnivalForYou — магически костюми под наем. Венециански маски, фантастични образи, Хелоуин и детски костюми." />
@@ -12,16 +12,16 @@
     <meta property="og:site_name" content="CarnivalForYou" />
     <meta property="og:title" content="CarnivalForYou — Магически костюми под наем" />
     <meta property="og:description" content="Магически костюми под наем в София. Венециански маски, фантастични образи, Хелоуин и детски костюми. Резервирайте на място." />
-    <meta property="og:image" content="/og-default.jpg" />
-    <!-- Left generic (not the real domain) since it isn't finalized yet; kept
-         present (rather than omitted) so the product-detail Cloudflare
-         Function has a tag to rewrite via HTMLRewriter. useSEO overwrites
-         this with the real page URL client-side on every other route. -->
-    <meta property="og:url" content="/" />
+    <!-- Absolute URLs, not paths: link-preview crawlers (Facebook, WhatsApp,
+         Viber, Messenger) don't resolve relative og:image/og:url against the
+         page, so a path here yields no preview image at all on every route
+         except product pages, which the Cloudflare Function rewrites. -->
+    <meta property="og:image" content="https://carnivalforyou.com/og-default.jpg" />
+    <meta property="og:url" content="https://carnivalforyou.com/" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="CarnivalForYou — Магически костюми под наем" />
     <meta name="twitter:description" content="Магически костюми под наем в София. Венециански маски, фантастични образи, Хелоуин и детски костюми." />
-    <meta name="twitter:image" content="/og-default.jpg" />
+    <meta name="twitter:image" content="https://carnivalforyou.com/og-default.jpg" />
 
     <title>CarnivalForYou — Магически костюми под наем</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

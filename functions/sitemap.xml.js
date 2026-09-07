@@ -25,13 +25,23 @@ async function fetchActiveCategoryIds(env) {
   return rows.map((r) => r.id);
 }
 
+// Mirrors baseQuery() in src/lib/products.ts exactly — a sitemap must only
+// advertise pages the site itself actually surfaces. `is_active` alone is
+// not that set: the listings additionally drop non-positive prices, missing
+// images, and the four hidden categories (masks/hats/wigs/accessories), a
+// 1665-vs-1230 difference when this was checked.
+const HIDDEN_CATEGORY_IDS = '5,6,7,8';
+const VISIBLE_FILTER =
+  'is_active=eq.true&price=gt.0&image_url=not.is.null&image_url=neq.' +
+  `&or=(category_id.is.null,category_id.not.in.(${HIDDEN_CATEGORY_IDS}))`;
+
 async function fetchActiveProducts(env) {
   const pageSize = 1000; // PostgREST's default cap — see CLAUDE.md §7 pagination note
   let offset = 0;
   const all = [];
   for (;;) {
     const res = await fetch(
-      `${env.VITE_SUPABASE_URL}/rest/v1/products?is_active=eq.true&select=id,created_at` +
+      `${env.VITE_SUPABASE_URL}/rest/v1/products?${VISIBLE_FILTER}&select=id,created_at` +
         `&order=id.asc&offset=${offset}&limit=${pageSize}`,
       {
         headers: {
