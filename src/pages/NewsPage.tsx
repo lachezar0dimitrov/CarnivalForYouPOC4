@@ -64,10 +64,29 @@ export default function NewsPage() {
     year: 'numeric',
   });
 
+  // Toggling either direction returns the viewport to the same spot the
+  // page loads at, so the expanded card always opens flush against the top
+  // (see reorder below) and hiding it feels like a fresh visit to the page.
+  const toggleExpanded = (id: number) => {
+    setExpandedId((current) => (current === id ? null : id));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // The expanded post (if any) is always rendered first so it opens at the
+  // top of the grid — spanning both columns — with every other post
+  // pushed below it, regardless of that post's original position.
+  const orderedPosts =
+    expandedId != null
+      ? [
+          ...newsPosts.filter((p) => p.id === expandedId),
+          ...newsPosts.filter((p) => p.id !== expandedId),
+        ]
+      : newsPosts;
+
   return (
     <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32 2xl:max-w-[1680px]">
       <div className="grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-2">
-        {newsPosts.map((post) => {
+        {orderedPosts.map((post) => {
           const title = lang === 'bg' ? post.titleBg : post.titleEn;
           const excerpt = lang === 'bg' ? post.excerptBg : post.excerptEn;
           const content = lang === 'bg' ? post.contentBg : post.contentEn;
@@ -76,7 +95,8 @@ export default function NewsPage() {
           return (
             <article
               key={post.id}
-              className={`glass glass-hover group flex flex-col overflow-hidden rounded-2xl ${
+              onClick={() => toggleExpanded(post.id)}
+              className={`glass glass-hover group flex cursor-pointer flex-col overflow-hidden rounded-2xl ${
                 isExpanded ? 'lg:col-span-2' : ''
               }`}
             >
@@ -117,7 +137,6 @@ export default function NewsPage() {
                 </div>
 
                 <button
-                  onClick={() => setExpandedId(isExpanded ? null : post.id)}
                   className="mt-4 inline-flex items-center gap-1.5 self-start text-sm font-medium text-gold-300 transition hover:gap-2.5 hover:text-gold-200"
                 >
                   {isExpanded ? t('news.showLess') : t('news.readMore')}
