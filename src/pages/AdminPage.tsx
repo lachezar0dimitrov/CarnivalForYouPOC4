@@ -646,7 +646,7 @@ function BannerForm({
 // ============================================================
 // SERVICES MANAGER
 // ============================================================
-const SERVICE_ICONS = ['Scissors', 'Brush', 'Sparkles', 'Users'] as const;
+const SERVICE_ICONS = ['Scissors', 'Brush', 'Sparkles', 'Users', 'Camera', 'Gift', 'PenTool'] as const;
 
 // Shared "show this whole page on the site" switch for Services/News —
 // reads/writes site_settings directly (like the splash-video toggle in
@@ -846,8 +846,11 @@ function ServiceForm({
     titleEn: service?.titleEn ?? '',
     descriptionBg: service?.descriptionBg ?? '',
     descriptionEn: service?.descriptionEn ?? '',
+    contentBg: service?.contentBg ?? '',
+    contentEn: service?.contentEn ?? '',
     icon: service?.icon ?? 'Sparkles',
     imageUrl: service?.imageUrl ?? '',
+    galleryImages: service?.galleryImages ?? [],
     isActive: service?.isActive ?? true,
     sortOrder: service?.sortOrder ?? 0,
   });
@@ -917,6 +920,53 @@ function ServiceForm({
               <option key={icon} value={icon}>{icon}</option>
             ))}
           </select>
+        </FormField>
+
+        <p className="text-xs text-gray-500">
+          {lang === 'bg'
+            ? 'Пълният текст по-долу се показва при клик върху „Прочетете повече“. Празен ред = нов абзац. Ред, започващ с „## “, се показва като подзаглавие. Снимките от галерията долу се разпределят автоматично между абзаците.'
+            : 'The full text below is shown when a visitor clicks "Read more". A blank line = a new paragraph. A line starting with "## " is shown as a sub-heading. The gallery photos below are spread out automatically between the paragraphs.'}
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Пълен текст (БГ)' : 'Full text (BG)'}>
+            <textarea value={form.contentBg} onChange={(e) => setForm({ ...form, contentBg: e.target.value })} className="form-input min-h-64 font-mono text-xs" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Пълен текст (EN)' : 'Full text (EN)'}>
+            <textarea value={form.contentEn} onChange={(e) => setForm({ ...form, contentEn: e.target.value })} className="form-input min-h-64 font-mono text-xs" />
+          </FormField>
+        </div>
+
+        <FormField label={lang === 'bg' ? 'Галерия снимки' : 'Gallery photos'}>
+          <div className="flex flex-col gap-3">
+            {form.galleryImages.map((url, idx) => (
+              <div key={idx} className="flex items-center gap-3 rounded-xl border border-gold-400/15 p-2">
+                <AdminImage src={url} alt="" className="h-14 w-20 shrink-0 rounded-lg object-cover" />
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => {
+                    const next = [...form.galleryImages];
+                    next[idx] = e.target.value;
+                    setForm({ ...form, galleryImages: next });
+                  }}
+                  className="form-input flex-1"
+                  placeholder="https://..."
+                />
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, galleryImages: form.galleryImages.filter((_, i) => i !== idx) })}
+                  className="shrink-0 rounded-lg border border-error/25 p-2 text-error transition hover:bg-error/10"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+            <ImageUploadButton
+              bucket="content-images"
+              onUploaded={(url) => setForm({ ...form, galleryImages: [...form.galleryImages, url] })}
+              label={lang === 'bg' ? 'Добави снимка в галерията' : 'Add a gallery photo'}
+            />
+          </div>
         </FormField>
 
         <div className="flex items-center gap-4">
