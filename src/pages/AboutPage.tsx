@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, Clock, Heart, Users, PartyPopper, type LucideIcon } from 'lucide-react';
+import { Sparkles, Clock, Heart, Users, PartyPopper, Baby, type LucideIcon } from 'lucide-react';
 import { fetchAboutContent, type AboutContent } from '@/lib/aboutContent';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
@@ -134,6 +134,30 @@ export default function AboutPage() {
             <p className="mt-2 text-sm leading-relaxed text-gray-400">{v.text}</p>
           </div>
         ))}
+      </div>
+
+      <div className="mt-16 grid gap-8 md:grid-cols-2 md:items-center">
+        <div className="relative overflow-hidden rounded-3xl border border-gold-400/15 shadow-card">
+          <img
+            src={content.kidsCornerImageUrl}
+            alt={bg ? 'Детски кът в карнавалната къща' : 'Kids\' corner in the carnival house'}
+            className="h-72 w-full object-cover sm:h-96"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        </div>
+
+        <div className="space-y-4">
+          <div className="mb-2 inline-flex rounded-xl border border-gold-400/20 bg-gold-400/5 p-3 text-gold-300">
+            <Baby size={24} />
+          </div>
+          <h3 className="font-display text-2xl font-semibold text-gold-100">
+            {bg ? content.kidsCornerTitleBg : content.kidsCornerTitleEn}
+          </h3>
+          <p className="text-sm leading-relaxed text-gray-300 sm:text-base">
+            {bg ? content.kidsCornerBodyBg : content.kidsCornerBodyEn}
+          </p>
+        </div>
       </div>
 
       <div className="mt-16 grid gap-8 md:grid-cols-2 md:items-center">

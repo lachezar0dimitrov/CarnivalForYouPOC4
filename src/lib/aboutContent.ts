@@ -24,6 +24,11 @@ export type AboutContent = {
   addonsBodyBg: string;
   addonsBodyEn: string;
   offerImageUrl: string;
+  kidsCornerTitleBg: string;
+  kidsCornerTitleEn: string;
+  kidsCornerBodyBg: string;
+  kidsCornerBodyEn: string;
+  kidsCornerImageUrl: string;
   valuesList: AboutValue[];
   originTitleBg: string;
   originTitleEn: string;
@@ -62,6 +67,11 @@ type AboutContentRow = {
   addons_body_bg: string;
   addons_body_en: string;
   offer_image_url: string;
+  kids_corner_title_bg: string;
+  kids_corner_title_en: string;
+  kids_corner_body_bg: string;
+  kids_corner_body_en: string;
+  kids_corner_image_url: string;
   values_list: AboutValueRow[];
   origin_title_bg: string;
   origin_title_en: string;
@@ -99,6 +109,11 @@ function mapRow(r: AboutContentRow): AboutContent {
     addonsBodyBg: r.addons_body_bg ?? '',
     addonsBodyEn: r.addons_body_en ?? '',
     offerImageUrl: r.offer_image_url ?? '',
+    kidsCornerTitleBg: r.kids_corner_title_bg ?? '',
+    kidsCornerTitleEn: r.kids_corner_title_en ?? '',
+    kidsCornerBodyBg: r.kids_corner_body_bg ?? '',
+    kidsCornerBodyEn: r.kids_corner_body_en ?? '',
+    kidsCornerImageUrl: r.kids_corner_image_url ?? '',
     valuesList: (r.values_list ?? []).map((v) => ({
       icon: v.icon ?? 'Sparkles',
       titleBg: v.title_bg ?? '',
@@ -157,6 +172,11 @@ export async function saveAboutContent(content: AboutContent): Promise<void> {
       addons_body_bg: content.addonsBodyBg,
       addons_body_en: content.addonsBodyEn,
       offer_image_url: content.offerImageUrl,
+      kids_corner_title_bg: content.kidsCornerTitleBg,
+      kids_corner_title_en: content.kidsCornerTitleEn,
+      kids_corner_body_bg: content.kidsCornerBodyBg,
+      kids_corner_body_en: content.kidsCornerBodyEn,
+      kids_corner_image_url: content.kidsCornerImageUrl,
       values_list: content.valuesList.map((v) => ({
         icon: v.icon,
         title_bg: v.titleBg,

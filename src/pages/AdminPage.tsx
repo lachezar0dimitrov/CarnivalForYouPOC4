@@ -2832,6 +2832,33 @@ function AboutManager() {
 
       <div className="glass rounded-2xl p-6">
         <h2 className="mb-4 font-display text-lg font-semibold text-gold-100">
+          {lang === 'bg' ? 'Детски кът' : "Kids' Corner"}
+        </h2>
+        <FormField label={lang === 'bg' ? 'Снимка' : 'Image'}>
+          <div className="flex flex-col gap-2">
+            <ImageUploadButton bucket="content-images" onUploaded={(url) => set('kidsCornerImageUrl', url)} label={lang === 'bg' ? 'Качи снимка' : 'Upload image'} />
+            <input type="text" value={content.kidsCornerImageUrl} onChange={(e) => set('kidsCornerImageUrl', e.target.value)} className="form-input" />
+          </div>
+        </FormField>
+        <AdminImage src={content.kidsCornerImageUrl} alt="" className="mt-2 aspect-video w-full rounded-xl border border-gold-400/15 object-cover" />
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Заглавие (БГ)' : 'Title (BG)'}>
+            <input type="text" value={content.kidsCornerTitleBg} onChange={(e) => set('kidsCornerTitleBg', e.target.value)} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Заглавие (EN)' : 'Title (EN)'}>
+            <input type="text" value={content.kidsCornerTitleEn} onChange={(e) => set('kidsCornerTitleEn', e.target.value)} className="form-input" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Текст (БГ)' : 'Text (BG)'}>
+            <textarea value={content.kidsCornerBodyBg} onChange={(e) => set('kidsCornerBodyBg', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Текст (EN)' : 'Text (EN)'}>
+            <textarea value={content.kidsCornerBodyEn} onChange={(e) => set('kidsCornerBodyEn', e.target.value)} className="form-input min-h-24" />
+          </FormField>
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <h2 className="mb-4 font-display text-lg font-semibold text-gold-100">
           {lang === 'bg' ? 'Произход' : 'Origin'}
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
