@@ -23,6 +23,57 @@
     <meta name="twitter:description" content="Магически костюми под наем в София. Венециански маски, фантастични образи, Хелоуин и детски костюми." />
     <meta name="twitter:image" content="https://carnivalforyou.com/og-default.jpg" />
 
+    <!-- Describes the physical shop itself, so search engines and AI
+         assistants can answer "where can I rent a carnival costume in Sofia"
+         with this business. Static rather than injected by useSEO because
+         crawlers that don't run JavaScript are exactly the audience for it;
+         the @id lets any page-level schema refer to the same entity instead
+         of declaring a second business.
+         The address, phone and hours here duplicate site_settings, which is
+         what the site itself renders and what the admin panel edits — if
+         those change there, update this block in the same commit. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ClothingStore",
+        "@id": "https://carnivalforyou.com/#business",
+        "name": "CarnivalForYou",
+        "alternateName": "Карнавал за теб",
+        "url": "https://carnivalforyou.com/",
+        "description": "Магазин за карнавални костюми под наем в София — над 1500 костюма за деца и възрастни, венециански маски, перуки, шапки и аксесоари за Хелоуин, Коледа, тематични партита, рождени дни и фотосесии.",
+        "image": "https://carnivalforyou.com/og-default.jpg",
+        "telephone": "+359888716941",
+        "email": "office@carnivalforyou.com",
+        "priceRange": "€€",
+        "currenciesAccepted": "BGN, EUR",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "ж.к. Младост 4, бл. 426А, вх. В, ет. 1",
+          "addressLocality": "София",
+          "addressCountry": "BG"
+        },
+        "areaServed": { "@type": "City", "name": "София" },
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Wednesday", "Friday"],
+            "opens": "12:00",
+            "closes": "18:00"
+          },
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": "Saturday",
+            "opens": "12:00",
+            "closes": "14:00"
+          }
+        ],
+        "sameAs": [
+          "https://www.instagram.com/carnivalforyou/",
+          "https://www.facebook.com/CarnivalForYou"
+        ]
+      }
+    </script>
+
     <title>CarnivalForYou — Магически костюми под наем</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
