@@ -160,12 +160,19 @@ Functions + `_redirects`), не като Cloudflare Dashboard правила. Т
 8. [x] **403-ките при автоматизирано тестване са артефакт, не проблем.** Проверени 7 реални страници с нормален браузърски User-Agent от независима мрежа — всичките 200, нула 403. Bot Fight Mode удря само автоматизиран трафик от датацентър IP-та.
 9. [ ] ⚠️ **www и apex сервират еднакво съдържание** (и двата 200) — за продуктовите страници Function-ата гради canonical от заявения хост, значи `www.` версиите се самоканонизират и разцепват SEO сигнала. Старият сайт е ползвал www в линковете си, тоест вероятно е индексиран и там.
    - [x] Redirect Rule "www to apex" създадено: `http.host eq "www.carnivalforyou.com"` → Dynamic `concat("https://carnivalforyou.com", http.request.uri.path)`, preserve query string. Пуснато първо като **302** нарочно (сгрешен 301 се кешира трайно в браузърите), потвърдено от независима мрежа: www дава `302` + `Location: https://carnivalforyou.com/`, apex остава `200` без Location, а query string-ът оцелява през хопа.
-   - [ ] Смяна на 302 → **301**, след потвърждението.
+   - [x] Промотирано на **301**, потвърдено от независима мрежа: `HTTP/1.1 301 Moved Permanently` + `Location: https://carnivalforyou.com/`.
 
 ## Фаза 6 — След go-live
 **Инструмент: Chrome Extension + VSCode**
 
-1. [ ] Изпрати новия sitemap.xml в Google Search Console, поискай re-crawl.
+0. [x] **AI краулърите са отблокирани** (2026-09-07, бизнес решение: искаме Gemini/ChatGPT/Claude да четат сайта и да го препоръчват при въпроси за карнавални костюми и идеи за подаръци). Cloudflare блокираше `Google-Extended` (точно това спира Gemini), `GPTBot`, `ClaudeBot`, `CCBot`, `Amazonbot`, `Applebot-Extended`, `Bytespider`, `meta-externalagent`, плюс `Content-Signal: ai-train=no`. Оказаха се **три** отделни места:
+   - `Security → Settings → Block AI bots` (deprecated, WAF ниво) — беше "Block only on pages with ads" → изключено.
+   - В същия диалог, отделна настройка "blocking AI training" — беше настроена да блокира crawler-и с двойна цел **автоматично от 15 септември**; изключена, иначе решението щеше да се саморазвали след седмица.
+   - `AI Crawl Control → Signals → Managed robots.txt` — източникът на блока в robots.txt → изключено.
+   - Bot Fight Mode, rate limiting, DNS и redirect правилото — недокоснати. Потвърдено на живо: `robots.txt` вече съдържа само нашите правила.
+   - Наблюдение от Signals: `Meta-ExternalAgent` е имал 74 нарушения на `Disallow: /` — част от тези ботове така или иначе не са спазвали блока.
+1. [x] **`LocalBusiness` структурирани данни добавени** (commit `4742750`, живи): `ClothingStore` JSON-LD в `index.html` — име, описание, адрес, телефон, имейл, работно време, ценови диапазон, обслужван град, социални профили. Статично, не през `useSEO`, защото краулърите без JavaScript са точно целевата аудитория. Има `@id`, за да може schema на ниво страница да реферира същия бизнес вместо да обявява втори. ⚠️ Адресът/телефонът/часовете дублират `site_settings` — при промяна през админ панела трябва да се обнови и този блок.
+2. [ ] Изпрати новия sitemap.xml в Google Search Console, поискай re-crawl.
 2. [ ] Наблюдавай GSC за crawl errors/404-ки първите 1-2 седмици.
 3. [ ] Наблюдавай Supabase logs за необичаен трафик първите дни.
 4. [x] Финално решение за репото private/Pro — взето 2026-09-08: остава public.
