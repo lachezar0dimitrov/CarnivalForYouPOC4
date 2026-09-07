@@ -5,7 +5,6 @@ import { fetchSiteSettings } from '@/lib/siteSettings';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
-import SectionHeading from '@/components/SectionHeading';
 
 // Content is stored as plain text: blank lines separate paragraphs, a line
 // starting with "## " renders as a sub-heading, and single newlines inside
@@ -67,42 +66,28 @@ export default function NewsPage() {
 
   return (
     <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32 2xl:max-w-[1680px]">
-      <SectionHeading
-        eyebrow={t('news.eyebrow')}
-        title={t('news.title')}
-        subtitle={t('news.subtitle')}
-      />
-
-      <div className="mt-12 grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-2">
+      <div className="grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-2">
         {newsPosts.map((post) => {
           const title = lang === 'bg' ? post.titleBg : post.titleEn;
           const excerpt = lang === 'bg' ? post.excerptBg : post.excerptEn;
           const content = lang === 'bg' ? post.contentBg : post.contentEn;
-          const category = lang === 'bg' ? post.categoryBg : post.categoryEn;
           const isExpanded = expandedId === post.id;
 
           return (
             <article
               key={post.id}
-              className={`glass glass-hover group flex flex-col overflow-hidden rounded-2xl transition-[grid-column] ${
+              className={`glass glass-hover group flex flex-col overflow-hidden rounded-2xl ${
                 isExpanded ? 'lg:col-span-2' : ''
-              } ${isExpanded ? '' : 'sm:flex-row'}`}
+              }`}
             >
-              <div
-                className={`relative shrink-0 overflow-hidden ${
-                  isExpanded ? 'h-64 w-full sm:h-80' : 'h-52 sm:h-auto sm:w-2/5'
-                }`}
-              >
+              <div className="relative w-full shrink-0">
                 <img
                   src={post.imageUrl}
                   alt={title}
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="block h-auto w-full"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent sm:bg-gradient-to-r" />
-                <span className="absolute left-3 top-3 rounded-full bg-gold-400/90 px-3 py-1 text-xs font-semibold text-stone-950">
-                  {category}
-                </span>
+                <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-gold-400/0 transition-all duration-300 group-hover:ring-2 group-hover:ring-gold-400/70" />
               </div>
 
               <div className="flex flex-1 flex-col p-5">
