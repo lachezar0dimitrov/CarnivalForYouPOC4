@@ -109,8 +109,15 @@ export async function onRequestGet(context) {
   const { request, env, params } = context;
   const url = new URL(request.url);
 
+  // Ask the asset layer for "/", not "/index.html": Pages serves clean URLs
+  // and answers a request for /index.html with a 301 to /. That redirect came
+  // back as `assetResponse`, failed the `.ok` check below, and got returned
+  // verbatim — so every direct load of a product page bounced to the home
+  // page, and with it every old products.php link and 1230 of the 1256 URLs
+  // in sitemap.xml. Requesting "/" hands back the same index.html with a 200.
   const htmlUrl = new URL(url);
-  htmlUrl.pathname = '/index.html';
+  htmlUrl.pathname = '/';
+  htmlUrl.search = '';
   const assetResponse = await env.ASSETS.fetch(new Request(htmlUrl.toString(), request));
 
   const numericId = Number(params.id);
