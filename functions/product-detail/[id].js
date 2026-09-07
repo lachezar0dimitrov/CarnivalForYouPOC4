@@ -105,6 +105,19 @@ class TitleSetter {
   }
 }
 
+// useSEO sets a canonical client-side, which Google does pick up, but a
+// crawler that skips JS sees none at all on the site's 1230 most-crawled
+// pages. Built from the parsed numeric id rather than the raw path, so it
+// also collapses variants like /product-detail/007 onto one canonical URL.
+class CanonicalAppender {
+  constructor(href) {
+    this.href = href;
+  }
+  element(element) {
+    element.append(`<link rel="canonical" href="${this.href}">`, { html: true });
+  }
+}
+
 export async function onRequestGet(context) {
   const { request, env, params } = context;
   const url = new URL(request.url);
@@ -134,6 +147,7 @@ export async function onRequestGet(context) {
   const meta = buildMeta(product, url.origin, url.pathname);
 
   return new HTMLRewriter()
+    .on('head', new CanonicalAppender(`${url.origin}/product-detail/${numericId}`))
     .on('title', new TitleSetter(meta.title))
     .on('meta[name="description"]', new MetaContentSetter(meta.description))
     .on('meta[property="og:title"]', new MetaContentSetter(meta.title))
