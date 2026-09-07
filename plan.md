@@ -21,14 +21,17 @@
 
 ## Фаза 1 — Security hardening преди реални потребители
 **Инструмент: VSCode + Chrome Extension**
+**⚠️ Статус 2026-09-08: изцяло пропусната досега** — прескочихме директно към Фаза 2 в предната сесия. Проверена през Supabase `get_advisors` точно сега:
 
-1. [ ] Ротирай admin паролата отново (в момента `Bogomil1`, известно слаба).
-2. [ ] Прегледай `.env` историята в git за нищо изтекло (вече потвърдено gitignored, само двойна проверка).
-3. [ ] Бърз secret-scan по цялото repo преди да върнеш видимостта private.
-4. [ ] Реши: GitHub Pro ($4/мес) за private + запазен anti-force-push ruleset, или остави публично (mirror архивът вече го прави безопасно).
-5. [ ] Ако избереш private → Chrome Extension: Settings → Danger Zone → Change visibility.
-6. [ ] Провери Supabase RLS policies отново (`get_advisors` през Supabase MCP, във VSCode).
-7. [ ] Реши дали да ъпгрейднеш Supabase на Pro ($25/мес) за автоматични DB backups.
+1. [x] **Admin паролата ротирана 2026-09-08** — генерирана случайна силна парола (24 char base64url, ~144 бита ентропия) през Supabase Admin Auth API (service_role key от локалния `.env`), приложена за `valeriya@carnicalforyou.com`, потвърдено с реален login тест (получен access token). Новата парола е дадена на потребителя в чата — не е записана никъде в repo-то.
+2. [x] `.env` историята — вече потвърдено gitignored, local-only (виж reference memory), нищо ново оттогава.
+3. [ ] Бърз secret-scan по цялото repo преди да върнеш видимостта private (неприложимо засега — виж т.4).
+4. [x] **Решено 2026-09-08: репото остава public засега** — mirror архивът вече го прави безопасно, преминаване към private без спешна причина сега.
+5. [ ] N/A (само ако по-късно решим да минем на private).
+6. [x] Supabase RLS advisors проверени 2026-09-08:
+   - ⚠️ **Leaked Password Protection изключена** в Supabase Auth (HaveIBeenPwned проверка) — препоръчано включване. Изисква Supabase Dashboard (Chrome extension) — Authentication → Policies → Password Security, няма MCP tool за това. Все още отворено.
+   - ℹ️ 2 archive/backup таблици (`products_archived_nonproducts_20260820`, `products_text_backup_20260820`) с RLS включен но без policy — RLS default-deny означава реално 0 достъп, само lint шум, не риск. Не спешно.
+7. [ ] Реши дали да ъпгрейднеш Supabase на Pro ($25/мес) за автоматични DB backups (nightly GH Action backup-ът вече работи като алтернатива — виж backups memory).
 
 ## Фаза 2 — Свързване на домейна към Cloudflare
 **Инструмент: Chrome Extension + VSCode за проверка**
@@ -99,7 +102,7 @@ Functions + `_redirects`), не като Cloudflare Dashboard правила. Т
 0. [x] **Поща** — вече готово предварително (Фаза 2), не чака за cutover деня: Cloudflare Email Routing активен и потвърден, Gmail receive-as и send-as ("reply from office@") и двете тествани успешно.
 1. [ ] Финален manual dispatch на backup archive workflow-а точно преди флипа.
 2. [ ] Смени DNS записа в Cloudflare zone-а да сочи към Cloudflare Pages (само web-facing запис — A/CNAME на apex/www, НЕ MX).
-3. [ ] **Активирай Cloudflare Bulk Redirects правилото от Фаза 3 (Enable)** — едновременно с/веднага след стъпка 2, за да не остане прозорец с живи стари URL-и без редирект.
+3. [x] ~~Активирай Cloudflare Bulk Redirects правилото~~ — неприложимо вече: Фаза 3 redirect-ите са код (Cloudflare Pages Functions + `_redirects`), не Dashboard правило — тръгват автоматично живи в мига на деплоя от стъпка 2, нищо за ръчно активиране тук.
 4. [ ] Изчакай propagation, тествай от няколко локации/устройства.
 5. [ ] Провери SSL/HTTPS сертификата се е издал правилно.
 6. [ ] Провери 301 редиректите работят за няколко случайни стари URL-а (вече активни от т.3).
