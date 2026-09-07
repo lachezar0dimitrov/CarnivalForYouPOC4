@@ -15,7 +15,6 @@ import { fetchSiteSettings } from '@/lib/siteSettings';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
-import ReservationSteps from '@/components/ReservationSteps';
 
 const iconMap: Record<string, LucideIcon> = {
   Scissors,
@@ -147,11 +146,11 @@ export default function ServicesPage() {
                 hasContent ? 'cursor-pointer' : ''
               } ${isExpanded ? 'sm:col-span-2 lg:col-span-4' : ''}`}
             >
-              <div className="relative w-full shrink-0">
+              <div className={`relative w-full shrink-0 overflow-hidden ${isExpanded ? '' : 'h-48'}`}>
                 <img
                   src={s.imageUrl}
                   alt={title}
-                  className="block h-auto w-full"
+                  className={isExpanded ? 'block h-auto w-full' : 'h-full w-full object-cover object-top'}
                   loading="lazy"
                 />
                 <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-gold-400/0 transition-all duration-300 group-hover:ring-2 group-hover:ring-gold-400/70" />
@@ -202,10 +201,6 @@ export default function ServicesPage() {
             </article>
           );
         })}
-      </div>
-
-      <div className="mt-16">
-        <ReservationSteps />
       </div>
     </div>
   );
