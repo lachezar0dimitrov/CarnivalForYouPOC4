@@ -27,6 +27,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.news': 'Новини',
     'nav.contacts': 'Контакти',
     'nav.terms': 'Условия и въпроси',
+    'nav.search': 'Търсене и филтри',
 
     // common
     'common.costumesRent': 'Костюми под наем · София',
@@ -239,6 +240,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.news': 'News',
     'nav.contacts': 'Contacts',
     'nav.terms': 'Terms & FAQ',
+    'nav.search': 'Search & filters',
 
     // common
     'common.costumesRent': 'Costume Rentals · Sofia',

@@ -205,6 +205,25 @@ export default function ProductsPage() {
   const primaryCats = dbCats.filter((c) => c.showAsTile && !SEASONAL_CATEGORY_IDS.has(c.id));
   const secondaryCats = dbCats.filter((c) => !c.showAsTile || SEASONAL_CATEGORY_IDS.has(c.id));
 
+  const filterSectionRef = useRef<HTMLDivElement>(null);
+  // Arriving from the header's search shortcut (?openFilter=1) should expand
+  // the advanced filter panel and bring it into view immediately, instead of
+  // requiring an extra click on the toggle button.
+  const needsFilterOpenRef = useRef(queryParams.openFilter === '1');
+
+  useEffect(() => {
+    if (needsFilterOpenRef.current) {
+      needsFilterOpenRef.current = false;
+      setFilterOpen(true);
+      setTimeout(() => {
+        filterSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+    // Runs once on mount only — this is a one-shot arrival action, not
+    // something that should re-fire on later query-param changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const resultsRef = useRef<HTMLDivElement>(null);
   // Arriving with a category already in the URL (e.g. clicking a tile on the
   // home page) must scroll to the results too. The effect below only reacts
@@ -544,7 +563,10 @@ export default function ProductsPage() {
         </div>
       </section>
 
-      <div className="mt-8 flex flex-wrap items-center gap-3 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-3">
+      <div
+        ref={filterSectionRef}
+        className="mt-8 flex flex-wrap items-center gap-3 rounded-2xl border border-gold-400/15 bg-ink-700/40 px-4 py-3 scroll-mt-[calc(var(--header-height,4rem)+1rem)]"
+      >
         <button
           onClick={() => setFilterOpen((v) => !v)}
           className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition ${

@@ -1,4 +1,4 @@
-import { Menu, X, Globe } from 'lucide-react';
+import { Menu, X, Globe, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, type Route } from '@/lib/router';
 import { useI18n, type Lang } from '@/lib/i18n';
@@ -62,6 +62,14 @@ export default function Header() {
     setOpen(false);
   };
 
+  // Jumps straight to the products page with its advanced filter panel
+  // already expanded, rather than just landing on the catalog like the
+  // regular "Products" nav link does.
+  const openProductFilter = () => {
+    navigate('products', { openFilter: '1' });
+    setOpen(false);
+  };
+
   const toggleLang = () => {
     setLang(lang === 'bg' ? 'en' : 'bg');
   };
@@ -70,7 +78,17 @@ export default function Header() {
     <header ref={headerRef} className="site-header fixed inset-x-0 top-0 z-50">
       <div className="site-header-surface glass border-b border-gold-400/15">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 2xl:max-w-[1680px]">
-          <Logo onClick={() => go('home')} large />
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Logo onClick={() => go('home')} large />
+            <button
+              onClick={openProductFilter}
+              className="flex shrink-0 items-center justify-center rounded-full border border-gold-400/30 p-2.5 text-gold-200 transition hover:border-gold-400/60 hover:bg-gold-400/10 hover:text-gold-100"
+              aria-label={t('nav.search')}
+              title={t('nav.search')}
+            >
+              <Search size={20} />
+            </button>
+          </div>
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-1 lg:flex">
