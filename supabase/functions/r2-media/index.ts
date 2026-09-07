@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const ALLOWED_FOLDERS = new Set(["product-images", "banner-images", "category-images"]);
+const ALLOWED_FOLDERS = new Set(["product-images", "banner-images", "category-images", "content-images"]);
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
 function json(body: unknown, status = 200) {

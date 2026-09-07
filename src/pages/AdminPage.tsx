@@ -1069,6 +1069,8 @@ function NewsForm({
     titleEn: post?.titleEn ?? '',
     excerptBg: post?.excerptBg ?? '',
     excerptEn: post?.excerptEn ?? '',
+    contentBg: post?.contentBg ?? '',
+    contentEn: post?.contentEn ?? '',
     categoryBg: post?.categoryBg ?? '',
     categoryEn: post?.categoryEn ?? '',
     postDate: post?.postDate ?? new Date().toISOString().slice(0, 10),
@@ -1139,6 +1141,20 @@ function NewsForm({
           </FormField>
           <FormField label={lang === 'bg' ? 'Категория (EN)' : 'Category (EN)'}>
             <input type="text" value={form.categoryEn} onChange={(e) => setForm({ ...form, categoryEn: e.target.value })} className="form-input" />
+          </FormField>
+        </div>
+
+        <p className="text-xs text-gray-500">
+          {lang === 'bg'
+            ? 'Пълният текст по-долу се показва при клик върху „Прочетете повече“. Празен ред = нов абзац. Ред, започващ с „## “, се показва като подзаглавие.'
+            : 'The full text below is shown when a visitor clicks "Read more". A blank line = a new paragraph. A line starting with "## " is shown as a sub-heading.'}
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label={lang === 'bg' ? 'Пълен текст (БГ)' : 'Full text (BG)'}>
+            <textarea value={form.contentBg} onChange={(e) => setForm({ ...form, contentBg: e.target.value })} className="form-input min-h-64 font-mono text-xs" />
+          </FormField>
+          <FormField label={lang === 'bg' ? 'Пълен текст (EN)' : 'Full text (EN)'}>
+            <textarea value={form.contentEn} onChange={(e) => setForm({ ...form, contentEn: e.target.value })} className="form-input min-h-64 font-mono text-xs" />
           </FormField>
         </div>
 

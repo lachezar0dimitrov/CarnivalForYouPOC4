@@ -6,6 +6,8 @@ export type NewsPostRecord = {
   titleEn: string;
   excerptBg: string;
   excerptEn: string;
+  contentBg: string;
+  contentEn: string;
   categoryBg: string;
   categoryEn: string;
   postDate: string;
@@ -20,6 +22,8 @@ type NewsPostRow = {
   title_en: string;
   excerpt_bg: string;
   excerpt_en: string;
+  content_bg: string;
+  content_en: string;
   category_bg: string;
   category_en: string;
   post_date: string;
@@ -35,6 +39,8 @@ function mapRow(r: NewsPostRow): NewsPostRecord {
     titleEn: r.title_en ?? '',
     excerptBg: r.excerpt_bg ?? '',
     excerptEn: r.excerpt_en ?? '',
+    contentBg: r.content_bg ?? '',
+    contentEn: r.content_en ?? '',
     categoryBg: r.category_bg ?? '',
     categoryEn: r.category_en ?? '',
     postDate: r.post_date,
@@ -75,6 +81,8 @@ export async function saveNewsPost(post: Partial<NewsPostRecord> & { id?: number
     title_en: post.titleEn,
     excerpt_bg: post.excerptBg,
     excerpt_en: post.excerptEn,
+    content_bg: post.contentBg,
+    content_en: post.contentEn,
     category_bg: post.categoryBg,
     category_en: post.categoryEn,
     post_date: post.postDate,
