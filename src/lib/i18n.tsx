@@ -207,6 +207,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'news.subtitle':
       'Последни новини, сезонни оферти и събития от света на CarnivalForYou.',
     'news.readMore': 'Прочетете повече',
+    'news.showLess': 'Скрий',
 
     // terms
     'terms.eyebrow': 'Правила и условия',
@@ -418,6 +419,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'news.subtitle':
       'Latest news, seasonal offers and events from the world of CarnivalForYou.',
     'news.readMore': 'Read more',
+    'news.showLess': 'Show less',
 
     // terms
     'terms.eyebrow': 'Rules & conditions',
