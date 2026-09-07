@@ -110,12 +110,19 @@ Functions + `_redirects`), не като Cloudflare Dashboard правила. Т
 12. [x] **Сайтът нямаше favicon изобщо** — `index.html` сочеше към несъществуващ `/vite.svg`. Добавен `public/favicon.svg` в стила на марката.
 13. [x] **Защита срещу misroute** — `*.php.js` функциите вече връщат SPA-та непокътната, ако пътят не завършва на `.php`, така че изненада в Pages routing-а не може да сложи `products.php.js` върху реалния `/products`.
 
-### Остават — изискват Chrome Extension, не мога от VSCode ⚠️
-14. [ ] 🔴 **КРИТИЧНО — провери Cloudflare Pages проекта преди cutover:**
-    - Съществува ли Pages проект, вързан за GitHub `main`?
-    - **Production env променливи `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`** — ако липсват в Production (не само Preview), **всичките 1840 продуктови редиректа и целият sitemap тихо се израждат** (редиректите падат към `/products`, sitemap-ът остава само със 7 статични страници). Това е най-големият скрит риск на цялата миграция.
-    - Build output = `dist`, root directory коректна, `functions/` се разпознава.
-    - Може ли `carnivalforyou.com` да се закачи като custom domain.
+### Cloudflare Pages проверка — извършена 2026-09-08 през Chrome extension ✅/🔴
+14. [x] **Конфигурацията е наред:**
+    - Проект `carnivalforyoupoc4`, но **hostname-ът е `carnivalforyoupoc3.pages.dev`** (не poc4!) — ⚠️ важно за Фаза 5, DNS трябва да сочи натам.
+    - Вързан за `lachezar0dimitrov/CarnivalForYouPOC4`, production branch `main`, авто-деплой включен.
+    - Build: `npm run build`, output `dist`, root `/`. Последен деплой успешен.
+    - И 6-те Functions се разпознават.
+    - `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` **съществуват в Production** (тип Secret) — потвърдено допълнително и от факта, че sitemap-ът връща пълните 1256 записа, т.е. Supabase се чете реално. Големият страх не се е сбъднал.
+    - Няма закачен custom domain — точно както трябва преди cutover.
+15. [x] 🔴 **Открит и поправен реален блокер** (commit `8228065`): всяко директно зареждане на `/product-detail/*` правеше сървърен 301 към началната страница. Причина: `functions/product-detail/[id].js` искаше `/index.html` от asset слоя, а Pages сервира clean URLs и отговаря на това с 301 към `/`; редът `if (!assetResponse.ok) return assetResponse;` връщаше този 301 直 на браузъра. Функцията е отпреди тази работа (29 авг., OG previews) и в `CLAUDE.md` изрично пишеше, че никога не е тествана срещу реален деплой — била е счупена от самото начало, но само директното зареждане я задейства, а вътрешната навигация работи, затова не е била забелязана. Ако беше минала в cutover-а: 1230 от 1256 URL-а в sitemap-а + всички стари `products.php` линкове щяха да водят до началната страница = масов soft-404 за Google. Поправено с искане на `/`.
+16. [x] Добавен `functions/_middleware.js` (commit `90a2383`): `X-Robots-Tag: noindex` само за `*.pages.dev`, за да не се индексира preview копието като дублиращо съдържание срещу истинския домейн (sitemap-ът там обявява pages.dev URL-и, понеже `<loc>` се гради от заявения хост).
+17. [ ] ⏳ **Изчаква повторен тест след деплоя на `90a2383`** — трябва да се потвърди, че `/product-detail/1`, `/product-detail/1312` се зареждат нормално и че `products.php?...&obid=N` вече стига до правилната продуктова страница. Този път да се тества и `holds.php`, който беше пропуснат.
+
+### Остава — изисква Chrome Extension ⚠️
 15. [ ] Провери Google Search Console за manual actions, особено продукти 255, 259, 1427, 1430, 1543, 1547. Провери и дали verification-ът е през DNS TXT (не видяхме `google-site-verification` запис в зоната — ако е бил DNS-базиран, verification-ът може да е паднал при смяната на nameservers).
 16. [x] Финална ротация на admin паролата — направена във Фаза 1.
 17. [ ] Незначително, за после: непознат Cloudflare worker `statuscheck-prober` (създаден 05 септ.) — потвърди, че е твой.
@@ -125,7 +132,7 @@ Functions + `_redirects`), не като Cloudflare Dashboard правила. Т
 
 0. [x] **Поща** — вече готово предварително (Фаза 2), не чака за cutover деня: Cloudflare Email Routing активен и потвърден, Gmail receive-as и send-as ("reply from office@") и двете тествани успешно.
 1. [ ] Финален manual dispatch на backup archive workflow-а точно преди флипа.
-2. [ ] Смени DNS записа в Cloudflare zone-а да сочи към Cloudflare Pages (само web-facing запис — A/CNAME на apex/www, НЕ MX).
+2. [ ] Смени DNS записа в Cloudflare zone-а да сочи към Cloudflare Pages (само web-facing запис — A/CNAME на apex/www, НЕ MX). Правилният начин: Pages проект `carnivalforyoupoc4` → Custom domains → Add `carnivalforyou.com` + `www`, което Cloudflare сам създава/пренасочва записите. ⚠️ Целевият хост е **`carnivalforyoupoc3.pages.dev`** — името на проекта (poc4) и hostname-ът (poc3) НЕ съвпадат.
 3. [x] ~~Активирай Cloudflare Bulk Redirects правилото~~ — неприложимо вече: Фаза 3 redirect-ите са код (Cloudflare Pages Functions + `_redirects`), не Dashboard правило — тръгват автоматично живи в мига на деплоя от стъпка 2, нищо за ръчно активиране тук.
 4. [ ] Изчакай propagation, тествай от няколко локации/устройства.
 5. [ ] Провери SSL/HTTPS сертификата се е издал правилно.
