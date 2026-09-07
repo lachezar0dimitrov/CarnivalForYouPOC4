@@ -9,7 +9,13 @@ import {
   redirectTo,
 } from './_lib/legacyRedirect.js';
 
-export async function onRequestGet(context) {
+// onRequest, not onRequestGet: a HEAD request would otherwise skip this
+// function entirely and fall through to the SPA catch-all, answering 200 for
+// a legacy URL that should say 301. Browsers and Googlebot use GET, but link
+// checkers and SEO audit tools routinely use HEAD and would read those old
+// URLs as live duplicates rather than redirects. The static _redirects rules
+// already behave correctly for both methods; this matches them.
+export async function onRequest(context) {
   const guard = await passThroughIfNotPhp(context);
   if (guard) return guard;
 

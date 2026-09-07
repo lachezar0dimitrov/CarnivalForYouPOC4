@@ -4,7 +4,8 @@
 // having their own .php files. See functions/_lib/legacyRedirect.js.
 import { contentRedirectPath, passThroughIfNotPhp, redirectTo } from './_lib/legacyRedirect.js';
 
-export async function onRequestGet(context) {
+// onRequest (not onRequestGet) so HEAD redirects too — see products.php.js.
+export async function onRequest(context) {
   const guard = await passThroughIfNotPhp(context);
   if (guard) return guard;
 
