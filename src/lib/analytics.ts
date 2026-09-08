@@ -23,8 +23,13 @@ export function initConsentDefaults() {
   if (!MEASUREMENT_ID) return;
 
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer.push(args);
+  // Must push the `arguments` object, not a rest-parameter array: gtag.js
+  // only recognises queued entries whose shape is [object Arguments] as
+  // commands. A plain array is ignored, so 'config' never runs — the script
+  // loads and the container bootstraps, but no hit is ever sent.
+  // eslint-disable-next-line prefer-rest-params
+  window.gtag = function gtag() {
+    window.dataLayer.push(arguments);
   };
   window.gtag('consent', 'default', { analytics_storage: 'denied' });
   window.gtag('js', new Date());
