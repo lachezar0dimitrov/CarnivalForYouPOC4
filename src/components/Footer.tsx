@@ -175,13 +175,6 @@ export default function Footer() {
                 ? 'Костюми под наем — София, България.'
                 : 'Costume rentals — Sofia, Bulgaria.'}
             </p>
-            <button
-              onClick={() => navigate('admin')}
-              className="rounded px-2 py-1 text-[11px] text-gray-600 transition hover:text-gold-300"
-              aria-label="Admin panel"
-            >
-              Admin
-            </button>
           </div>
         </div>
       </div>
