@@ -33,9 +33,16 @@ const OLD_TID_TO_PATH = {
 // all sub-pages of about.php on the old site, not their own scripts).
 const OLD_CNTID_TO_PATH = {
   16: '/about', // Представяне
-  18: '/terms', // Условия за отдаване под наем
+  // 18 (Условия за отдаване под наем) intentionally does NOT go to /terms.
+  // The old site reused one generic, homepage-sounding <title> across many
+  // pages, this one included — Google still shows that stale title for
+  // this exact URL on searches like "карнавални костюми" (found 2026-09-08).
+  // A visitor clicking it expects the shop, not a terms page, and whatever
+  // ranking weight this old URL carries is far more useful transferred to
+  // the homepage than spent on a page that doesn't sell anything.
+  18: '/',
   20: '/news', // Новини
-  30: '/terms', // Защита на лични данни — no dedicated page, bundled into Terms
+  30: '/', // Защита на лични данни — same reasoning as 18, see above
   19: '/about', // Партньори — no dedicated page, closest match
 };
 
