@@ -46,22 +46,37 @@ const OLD_CNTID_TO_PATH = {
   19: '/about', // Партньори — no dedicated page, closest match
 };
 
+// Prefixes an internal path with /en when the old URL carried &lang=en —
+// every target below (products, category listings, about/services/news)
+// has a real /en/... equivalent since the language routing project. Old
+// English product links redirect to the English URL even for the small set
+// of products still missing a written English description (see
+// ProductDetailPage.tsx's suppressAlternates) — the page still renders
+// correctly (falls back to Bulgarian text, same as everywhere else), and
+// this avoids a second Supabase round-trip in the redirect hot path just to
+// check content completeness.
+function withLang(path, lang) {
+  if (lang !== 'en') return path;
+  return path === '/' ? '/en' : `/en${path}`;
+}
+
 // Every old tid NOT listed above (9, 10, 12, 13, 15, 18, 21 — pets, party
 // decor, themed parties, gifts, men's formal wear, purchase-only items, and
 // a blank placeholder row — plus 5/6/7/8, hidden per the note above) has no
 // reachable equivalent on the new site — user confirmed 2026-09-07 the
 // generic catalog is the right fallback rather than inventing a closer match.
-export function categoryRedirectPath(tid) {
+export function categoryRedirectPath(tid, lang) {
   const id = Number(tid);
-  if (!Number.isFinite(id)) return '/products';
-  if (OLD_TID_TO_PATH[id]) return OLD_TID_TO_PATH[id];
-  if (OLD_TID_TO_CATEGORY_ID[id]) return `/products?category=${OLD_TID_TO_CATEGORY_ID[id]}`;
-  return '/products';
+  if (!Number.isFinite(id)) return withLang('/products', lang);
+  if (OLD_TID_TO_PATH[id]) return withLang(OLD_TID_TO_PATH[id], lang);
+  if (OLD_TID_TO_CATEGORY_ID[id]) return withLang(`/products?category=${OLD_TID_TO_CATEGORY_ID[id]}`, lang);
+  return withLang('/products', lang);
 }
 
-export function contentRedirectPath(cntid) {
+export function contentRedirectPath(cntid, lang) {
   const id = Number(cntid);
-  return (Number.isFinite(id) && OLD_CNTID_TO_PATH[id]) || '/about';
+  const path = (Number.isFinite(id) && OLD_CNTID_TO_PATH[id]) || '/about';
+  return withLang(path, lang);
 }
 
 // products.old_id was preserved verbatim during the Supabase migration
@@ -103,5 +118,6 @@ export async function handleCategoryListing(context) {
   const guard = await passThroughIfNotPhp(context);
   if (guard) return guard;
   const url = new URL(context.request.url);
-  return redirectTo(categoryRedirectPath(url.searchParams.get('tid')), url.origin);
+  const path = categoryRedirectPath(url.searchParams.get('tid'), url.searchParams.get('lang'));
+  return redirectTo(path, url.origin);
 }

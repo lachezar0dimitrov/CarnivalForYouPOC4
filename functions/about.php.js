@@ -11,5 +11,6 @@ export async function onRequest(context) {
 
   const url = new URL(context.request.url);
   const cntid = url.searchParams.get('cntid');
-  return redirectTo(contentRedirectPath(cntid), url.origin);
+  const lang = url.searchParams.get('lang');
+  return redirectTo(contentRedirectPath(cntid, lang), url.origin);
 }

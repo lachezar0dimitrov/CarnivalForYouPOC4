@@ -23,16 +23,21 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const obid = url.searchParams.get('obid');
   const tid = url.searchParams.get('tid');
+  const lang = url.searchParams.get('lang');
+  const enPrefix = lang === 'en' ? '/en' : '';
 
   let target = null;
   if (obid) {
     try {
       const newId = await lookupNewProductId(env, obid);
-      if (newId != null) target = `/product-detail/${newId}`;
+      // Redirects to the English product URL even if that product doesn't
+      // have a written English description yet — see the withLang comment
+      // in _lib/legacyRedirect.js for why.
+      if (newId != null) target = `${enPrefix}/product-detail/${newId}`;
     } catch {
       // old product no longer resolvable — fall through to category/catalog fallback
     }
   }
 
-  return redirectTo(target ?? categoryRedirectPath(tid), url.origin);
+  return redirectTo(target ?? categoryRedirectPath(tid, lang), url.origin);
 }
