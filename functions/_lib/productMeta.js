@@ -157,6 +157,18 @@ class CanonicalAppender {
   }
 }
 
+// index.html carries a static hreflang pair for the homepage (added for
+// non-JS crawlers on / itself) — left in place on every other server-
+// rendered page, it would misreport this product page's alternate as the
+// homepage. React overwrites it correctly once it mounts, but a non-JS
+// crawler reading the raw response never gets that far, so it must be
+// stripped here before any product-specific pair is appended.
+class ElementRemover {
+  element(element) {
+    element.remove();
+  }
+}
+
 // Mirrors useSEO.ts's setLangAlternates for non-JS crawlers — only appended
 // when the product has real English content (see
 // hasMeaningfulEnglishDescription above), same suppression logic as the
@@ -202,6 +214,7 @@ export async function handleProductDetail(context, lang) {
   const meta = buildMeta(product, url.origin, pathname, lang);
 
   const rewriter = new HTMLRewriter()
+    .on('link[rel="alternate"]', new ElementRemover())
     .on('head', new CanonicalAppender(meta.url))
     .on('title', new TitleSetter(meta.title))
     .on('meta[name="description"]', new MetaContentSetter(meta.description))

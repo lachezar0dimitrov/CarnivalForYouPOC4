@@ -129,6 +129,21 @@ class CanonicalAppender {
   }
 }
 
+// index.html carries a static hreflang pair for the homepage (added for the
+// /en language routes' non-JS crawlers) — left in place here, it would
+// misreport this product page's language alternate as the homepage. React
+// overwrites it correctly once it mounts, but a non-JS crawler reading the
+// raw response never gets that far. This function doesn't add its own
+// alternate tags (that's the English route's job, in
+// functions/en/product-detail/[id].js) — it only strips the stale ones, a
+// pure removal that can't change anything the title/OG/canonical logic
+// above depends on.
+class AlternateRemover {
+  element(element) {
+    element.remove();
+  }
+}
+
 export async function onRequestGet(context) {
   const { request, env, params } = context;
   const url = new URL(request.url);
@@ -158,6 +173,7 @@ export async function onRequestGet(context) {
   const meta = buildMeta(product, url.origin, url.pathname);
 
   return new HTMLRewriter()
+    .on('link[rel="alternate"]', new AlternateRemover())
     .on('head', new CanonicalAppender(`${url.origin}/product-detail/${numericId}`))
     .on('title', new TitleSetter(meta.title))
     .on('meta[name="description"]', new MetaContentSetter(meta.description))
