@@ -41,6 +41,12 @@ export default function HomePage() {
     // now just starts cleanly below the header at every width -- full
     // image, always, matching how mobile already behaves.
     <div className="home-page relative">
+      {/* The page's single h1. Visually hidden because the hero's own visible
+          text is the rotating banner copy, which changes per slide and per
+          season — this gives crawlers and screen readers one stable,
+          descriptive heading without touching the design. */}
+      <h1 className="sr-only">{t('home.h1')}</h1>
+
       {/* HERO — banner rotator carousel with light overlay & fireflies */}
       <div className="relative mx-auto w-full max-w-[1920px] overflow-hidden">
         <BannerCarousel />

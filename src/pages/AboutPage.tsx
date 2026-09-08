@@ -37,6 +37,7 @@ export default function AboutPage() {
     <div className="relative z-10 mx-auto max-w-5xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
       <div className="mx-auto max-w-2xl">
         <SectionHeading
+          as="h1"
           eyebrow={t('about.eyebrow')}
           title={t('about.title')}
           subtitle={t('about.subtitle')}

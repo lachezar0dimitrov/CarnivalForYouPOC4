@@ -75,7 +75,6 @@ function urlEntry(loc, lastmod, priority) {
 export async function onRequestGet(context) {
   const { env, request } = context;
   const origin = new URL(request.url).origin;
-  const today = new Date().toISOString().slice(0, 10);
 
   let categoryIds = [];
   let products = [];
@@ -90,8 +89,11 @@ export async function onRequestGet(context) {
   }
 
   const entries = [
-    ...STATIC_PATHS.map((p) => urlEntry(`${origin}${p}`, today, p === '/' ? '1.0' : '0.8')),
-    ...categoryIds.map((id) => urlEntry(`${origin}/products?category=${id}`, today, '0.7')),
+    // No lastmod on the static pages: it used to be "today" on every request,
+    // which told Google the whole site changed daily and devalues the signal
+    // for the product URLs, where the date is real.
+    ...STATIC_PATHS.map((p) => urlEntry(`${origin}${p}`, undefined, p === '/' ? '1.0' : '0.8')),
+    ...categoryIds.map((id) => urlEntry(`${origin}/products?category=${id}`, undefined, '0.7')),
     ...products.map((p) =>
       urlEntry(
         `${origin}/product-detail/${p.id}`,

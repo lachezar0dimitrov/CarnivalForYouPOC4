@@ -58,6 +58,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // home
     'home.eyebrow': 'Костюми под наем · София',
+    'home.h1': 'Карнавални костюми под наем в София',
     'home.heroTitle1': 'Всичко за вашето',
     'home.heroTitle2': 'уникално парти.',
     'home.heroBody':
@@ -275,6 +276,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // home
     'home.eyebrow': 'Costume Rentals · Sofia',
+    'home.h1': 'Carnival Costume Rental in Sofia',
     'home.heroTitle1': 'Everything for your',
     'home.heroTitle2': 'unique party.',
     'home.heroBody':

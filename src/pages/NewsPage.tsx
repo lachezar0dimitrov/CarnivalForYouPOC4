@@ -85,6 +85,11 @@ export default function NewsPage() {
 
   return (
     <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32 2xl:max-w-[1680px]">
+      {/* Hidden rather than visible: this page deliberately opens straight
+          into the article grid, so the h1 exists for crawlers and screen
+          readers without adding a heading the design doesn't have. */}
+      <h1 className="sr-only">{t('news.title')}</h1>
+
       <div className="grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-2">
         {orderedPosts.map((post) => {
           const title = lang === 'bg' ? post.titleBg : post.titleEn;

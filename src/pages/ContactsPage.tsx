@@ -62,6 +62,7 @@ export default function ContactsPage() {
   return (
     <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32 2xl:max-w-[1680px]">
       <SectionHeading
+        as="h1"
         eyebrow={t('contacts.eyebrow')}
         title={t('contacts.title')}
         subtitle={t('contacts.subtitle')}

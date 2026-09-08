@@ -3,6 +3,10 @@ type Props = {
   title: string;
   subtitle?: string;
   center?: boolean;
+  // Heading level. Stays h2 by default (this renders section headings all
+  // over the site); pages whose main heading this is pass "h1" so the page
+  // has exactly one top-level heading. Styling is identical either way.
+  as?: 'h1' | 'h2';
 };
 
 export default function SectionHeading({
@@ -10,13 +14,14 @@ export default function SectionHeading({
   title,
   subtitle,
   center = true,
+  as: Heading = 'h2',
 }: Props) {
   return (
     <div className={center ? 'text-center' : 'text-left'}>
       {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
-      <h2 className="font-display text-2xl font-semibold text-gray-100 sm:text-3xl md:text-4xl">
+      <Heading className="font-display text-2xl font-semibold text-gray-100 sm:text-3xl md:text-4xl">
         {title}
-      </h2>
+      </Heading>
       {center && (
         <div className="mx-auto mt-4 h-px w-20 bg-gold-grad shadow-glow-sm" />
       )}

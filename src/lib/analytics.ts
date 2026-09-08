@@ -27,8 +27,8 @@ export function initConsentDefaults() {
   // only recognises queued entries whose shape is [object Arguments] as
   // commands. A plain array is ignored, so 'config' never runs — the script
   // loads and the container bootstraps, but no hit is ever sent.
-  // eslint-disable-next-line prefer-rest-params
   window.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params
     window.dataLayer.push(arguments);
   };
   window.gtag('consent', 'default', { analytics_storage: 'denied' });

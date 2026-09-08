@@ -60,11 +60,11 @@ export default function BannerCarousel() {
         <div className="absolute inset-0 bg-mystical-radial" />
         {!isChristmas && <HeroFireflies count={20} />}
         <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-center px-4 text-center md:min-h-[80vh]">
-          <h1 className="font-display text-2xl font-bold leading-tight text-gray-100 sm:text-3xl md:text-4xl lg:text-5xl">
+          <h2 className="font-display text-2xl font-bold leading-tight text-gray-100 sm:text-3xl md:text-4xl lg:text-5xl">
             {t('home.heroTitle1')}
             <br />
             <span className="text-magic-grad">{t('home.heroTitle2')}</span>
-          </h1>
+          </h2>
           <p className="mx-auto mt-6 max-w-md text-sm text-gray-300 sm:text-base">
             {t('home.heroBody')}
           </p>
@@ -189,7 +189,10 @@ export default function BannerCarousel() {
                 Android gets an explicit halved clamp so the rendered size
                 actually matches iOS. Revisit these numbers against a real
                 Android device; they're a first guess at the right ratio. */}
-            <h1
+            {/* h2, not h1: there is one slide per banner, so h1 here gave the
+                homepage three competing top-level headings, all seasonal
+                marketing copy. The page's real h1 lives in HomePage. */}
+            <h2
               className={`font-display font-bold leading-tight text-[#f7e9b8] drop-shadow-lg ${
                 isAndroid
                   ? 'text-[clamp(0.5625rem,1.125vw,1.375rem)]'
@@ -197,7 +200,7 @@ export default function BannerCarousel() {
               }`}
             >
               {lang === 'bg' ? banner.titleBg : banner.titleEn}
-            </h1>
+            </h2>
             <p
               className={`mx-auto mt-2 max-w-2xl text-[#e5e7eb] drop-shadow ${
                 isAndroid

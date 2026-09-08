@@ -52,6 +52,7 @@ export default function TermsPage() {
   return (
     <div className="relative z-10 mx-auto max-w-3xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
       <SectionHeading
+        as="h1"
         eyebrow={t('terms.eyebrow')}
         title={t('terms.title')}
         subtitle={t('terms.subtitle')}

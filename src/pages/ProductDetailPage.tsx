@@ -33,6 +33,69 @@ import {
 import ProductCard from '@/components/ProductCard';
 import ImageLightbox from '@/components/ImageLightbox';
 
+// Matches the @id of the ClothingStore block in index.html, so the product's
+// seller resolves to the same business entity rather than declaring a second.
+const BUSINESS_ID = 'https://carnivalforyou.com/#business';
+
+// Product + BreadcrumbList. The breadcrumb mirrors the real navigation path
+// (home → category listing → product) and is what search results render as
+// the trail above the link instead of a bare URL.
+function buildProductSchema(product: Product, name: string, lang: 'bg' | 'en') {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const productUrl = `${origin}/product-detail/${product.id}`;
+  // Hidden categories (masks/hats/wigs/accessories) are excluded from every
+  // listing, so linking a breadcrumb at one would point search engines to an
+  // empty page — those fall back to the plain catalogue, same as the legacy
+  // redirects do.
+  const HIDDEN_CATEGORY_IDS = [5, 6, 7, 8];
+  const catId =
+    product.categoryId && !HIDDEN_CATEGORY_IDS.includes(product.categoryId)
+      ? product.categoryId
+      : null;
+  const catName = catId ? categoryName(catId, lang) : null;
+
+  const trail: { name: string; url: string }[] = [
+    { name: lang === 'bg' ? 'Начало' : 'Home', url: `${origin}/` },
+    ...(catName && catId
+      ? [{ name: catName, url: `${origin}/products?category=${catId}` }]
+      : [{ name: lang === 'bg' ? 'Продукти' : 'Products', url: `${origin}/products` }]),
+    { name, url: productUrl },
+  ];
+
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name,
+      image: product.imageUrl ? [product.imageUrl] : undefined,
+      description: productSeoDescription(product, lang),
+      sku: product.oldCatalogNumber ?? String(product.id),
+      brand: { '@type': 'Brand', name: 'CarnivalForYou' },
+      offers: {
+        '@type': 'Offer',
+        url: productUrl,
+        priceCurrency: 'EUR',
+        price: product.price.toFixed(2),
+        availability: 'https://schema.org/InStock',
+        // itemCondition deliberately omitted: these are rental costumes, and
+        // neither New nor Used describes them honestly — asserting Used risks
+        // a "used" label in results for no gain.
+        seller: { '@id': BUSINESS_ID },
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: trail.map((step, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: step.name,
+        item: step.url,
+      })),
+    },
+  ];
+}
+
 export default function ProductDetailPage() {
   const { productId, navigate, goBack } = useRouter();
   const { t, lang } = useI18n();
@@ -119,23 +182,7 @@ export default function ProductDetailPage() {
     description: product ? productSeoDescription(product, lang) : t('seo.homeDesc'),
     image: product?.imageUrl ?? undefined,
     type: 'product',
-    structuredData: product
-      ? {
-          '@context': 'https://schema.org',
-          '@type': 'Product',
-          name,
-          image: product.imageUrl ? [product.imageUrl] : undefined,
-          description: productSeoDescription(product, lang),
-          sku: product.oldCatalogNumber ?? String(product.id),
-          offers: {
-            '@type': 'Offer',
-            url: typeof window !== 'undefined' ? window.location.href : undefined,
-            priceCurrency: 'EUR',
-            price: product.price.toFixed(2),
-            availability: 'https://schema.org/InStock',
-          },
-        }
-      : undefined,
+    structuredData: product ? buildProductSchema(product, name, lang) : undefined,
   });
 
   if (loading) {

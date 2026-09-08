@@ -129,6 +129,10 @@ export default function ServicesPage() {
 
   return (
     <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32 2xl:max-w-[1680px]">
+      {/* Hidden for the same reason as on the news page — the layout opens
+          straight into the service cards, with no visible page title. */}
+      <h1 className="sr-only">{t('services.title')}</h1>
+
       <div className="grid items-start gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {orderedServices.map((s) => {
           const Icon = iconMap[s.icon] ?? Sparkles;
