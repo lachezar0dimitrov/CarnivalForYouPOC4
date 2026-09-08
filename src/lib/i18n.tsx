@@ -134,6 +134,9 @@ const translations: Record<Lang, Record<string, string>> = {
       'За групови резервации и консултации по образ ви препоръчваме да ни се обадите предварително.',
     'contacts.openMaps': 'Отворете в Google Maps',
     'contacts.required': 'задължително',
+    'contacts.mapLoad': 'Зареди картата',
+    'contacts.mapLoadHint':
+      'Google Maps се зарежда само при клик, за да не поставя бисквитки без съгласието ви.',
 
     // about
     'about.eyebrow': 'Историята ни',
@@ -348,6 +351,9 @@ const translations: Record<Lang, Record<string, string>> = {
       'For group reservations and look consultations we recommend calling us in advance.',
     'contacts.openMaps': 'Open in Google Maps',
     'contacts.required': 'required',
+    'contacts.mapLoad': 'Load the map',
+    'contacts.mapLoadHint':
+      'Google Maps only loads on click, so it never sets cookies without your consent.',
 
     // about
     'about.eyebrow': 'Our story',

@@ -6,6 +6,7 @@ import {
   Clock,
   Navigation,
   DoorOpen,
+  Map as MapIcon,
 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
@@ -21,6 +22,7 @@ export default function ContactsPage() {
   });
 
   const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     fetchSiteSettings().then(setSettings).catch(() => {});
@@ -146,23 +148,43 @@ export default function ContactsPage() {
       {/* Map */}
       <div id="map" className="mt-8 overflow-hidden rounded-2xl border border-gold-400/25 shadow-card">
         <div className="relative">
-          <iframe
-            title="Carnival for You, София"
-            src={mapsEmbed}
-            className="h-72 w-full sm:h-96"
-            style={{ border: 0 }}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            allowFullScreen
-          />
+          {mapLoaded ? (
+            <iframe
+              title="Carnival for You, София"
+              src={mapsEmbed}
+              className="h-72 w-full sm:h-96"
+              style={{ border: 0 }}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMapLoaded(true)}
+              className="flex h-72 w-full flex-col items-center justify-center gap-3 bg-ink-800 text-center transition hover:bg-ink-800/80 sm:h-96"
+            >
+              <div className="inline-flex rounded-xl border border-gold-400/20 bg-gold-400/5 p-3 text-gold-300">
+                <MapIcon size={24} />
+              </div>
+              <span className="btn-gold rounded-full px-5 py-2.5 text-sm">
+                {t('contacts.mapLoad')}
+              </span>
+              <span className="max-w-xs px-6 text-xs text-gray-500">
+                {t('contacts.mapLoadHint')}
+              </span>
+            </button>
+          )}
           <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-gold-400/20" />
 
-          <div className="absolute bottom-4 left-4 z-10 flex items-center gap-3">
-            <div className="glass flex items-center gap-2 rounded-full px-4 py-2">
-              <Navigation size={16} className="text-gold-300" />
-              <span className="text-xs text-gray-200">{address}</span>
+          {mapLoaded && (
+            <div className="absolute bottom-4 left-4 z-10 flex items-center gap-3">
+              <div className="glass flex items-center gap-2 rounded-full px-4 py-2">
+                <Navigation size={16} className="text-gold-300" />
+                <span className="text-xs text-gray-200">{address}</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

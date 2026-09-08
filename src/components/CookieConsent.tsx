@@ -1,6 +1,7 @@
 import { Cookie, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { loadAnalytics } from '@/lib/analytics';
 
 const CONSENT_KEY = 'cfy-cookie-consent';
 
@@ -10,6 +11,10 @@ export default function CookieConsent() {
 
   useEffect(() => {
     const stored = localStorage.getItem(CONSENT_KEY);
+    if (stored === 'accepted') {
+      loadAnalytics();
+      return;
+    }
     if (!stored) {
       const timer = setTimeout(() => setVisible(true), 800);
       return () => clearTimeout(timer);
@@ -19,6 +24,9 @@ export default function CookieConsent() {
   const decide = (choice: 'accepted' | 'declined') => {
     localStorage.setItem(CONSENT_KEY, choice);
     setVisible(false);
+    if (choice === 'accepted') {
+      loadAnalytics();
+    }
   };
 
   if (!visible) return null;

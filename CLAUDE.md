@@ -36,7 +36,7 @@ Persistent operational guidelines for Claude Code sessions on this repository.
 
 - **Current workflow**: Admin interface ([src/pages/AdminPage.tsx](src/pages/AdminPage.tsx)) uploads media → [src/lib/r2.ts](src/lib/r2.ts) (client, no secrets) → `r2-media` edge function (server, holds R2 credentials + verifies caller is admin) → Cloudflare R2 → public R2 URL saved to Supabase DB table.
 - **Environment variables**:
-  - Local `.env` (client-side, gitignored): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+  - Local `.env` (client-side, gitignored): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_GA_MEASUREMENT_ID` (GA4, optional — [src/lib/analytics.ts](src/lib/analytics.ts) is a no-op when unset; must also be set in Cloudflare Pages' Production env vars, same as the Supabase two, or GA silently never loads in prod)
   - Supabase Edge Function secrets (server-side only, set via `supabase secrets set` or dashboard — not in `.env`, not in the client bundle): `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`
   - `.env` is gitignored — never commit real keys; check Cloudflare Pages dashboard env vars when debugging prod-only issues.
 
