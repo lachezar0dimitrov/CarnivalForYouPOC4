@@ -247,6 +247,16 @@ export function productDescription(p: Product, lang: Lang): string {
   return enMeaningful ? en : bg;
 }
 
+// Same "is this real English text" threshold as productDescription's own
+// fallback check — used to decide whether an /en/product-detail/:id page is
+// worth advertising as a genuine language alternate (hreflang) or sitemap
+// entry, versus one that's currently just showing Bulgarian text under an
+// English URL.
+export function hasMeaningfulEnglishDescription(p: Product): boolean {
+  const en = cleanText(p.descriptionEn ?? '');
+  return en.length > 3 && /[a-zA-Z]/.test(en);
+}
+
 // --- SEO metadata -----------------------------------------------------------
 // Product names in the DB are short catalogue names (avg ~18 chars), which
 // produced <title> tags averaging 35 characters — well under the ~50-60 band

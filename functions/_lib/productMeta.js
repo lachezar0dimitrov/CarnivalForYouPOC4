@@ -1,27 +1,22 @@
-// Cloudflare Pages Function — runs server-side, before the SPA ever loads.
+// Shared server-side OG/meta composition for /product-detail/:id and
+// /en/product-detail/:id — extracted from the original BG-only
+// product-detail/[id].js so both language routes stay in sync instead of
+// duplicating ~160 lines. See functions/product-detail/[id].js and
+// functions/en/product-detail/[id].js, the two thin route files that call
+// handleProductDetail() below.
+//
 // Social/messenger link-preview crawlers (Facebook, WhatsApp, Viber,
 // Messenger, X, ...) fetch a URL's raw HTML and read its <meta> tags; they do
 // NOT execute JavaScript. The React app's own SEO hook (src/lib/useSEO.ts)
-// only edits the DOM after mount, so without this function every shared
-// product link would show the generic site-wide OG tags instead of that
-// product's photo/title. This rewrites the static index.html's tags with the
-// real product data before the response ever leaves the edge.
+// only edits the DOM after mount, so without this, every shared product link
+// would show the generic site-wide OG tags instead of that product's
+// photo/title. This rewrites the static index.html's tags with the real
+// product data before the response ever leaves the edge.
 //
 // Reads VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY from Cloudflare Pages'
 // "Variables and secrets" (already configured there for the build step) —
 // Pages exposes that same dashboard config to Functions at request time via
 // context.env, so nothing extra needs to be added for this to work.
-//
-// Deliberately left untouched (not refactored to share code with the new
-// functions/en/product-detail/[id].js) when the /en language routing project
-// added that file — this exact function has broken silently before (see the
-// CanonicalAppender comment below), it's driving real production traffic on
-// 1230+ URLs, and testing changes to it requires a real Pages deployment,
-// not just local reasoning. Keeping it as-is means the new /en route can't
-// regress it. functions/_lib/productMeta.js's pure text-composition helpers
-// (buildMeta, cleanText, etc.) are a near-identical extraction of the logic
-// below for the EN route to reuse — the actual request/HTMLRewriter
-// orchestration here is intentionally NOT shared.
 
 const BGN_TO_EUR_RATE = 1.95583;
 const MARKUP = 1.2;
@@ -44,9 +39,9 @@ function cleanText(raw) {
     .trim();
 }
 
-// Kept in sync by hand with the bg side of SEO_CATEGORY_PHRASE in
-// src/lib/products.ts (that file can't be imported here — it pulls in
-// Vite/React-only modules that don't run in the Functions runtime).
+// Kept in sync by hand with SEO_CATEGORY_PHRASE in src/lib/products.ts (that
+// file can't be imported here — it pulls in Vite/React-only modules that
+// don't run in the Functions runtime).
 const CATEGORY_PHRASE_BG = {
   2: 'дамски костюм под наем',
   3: 'мъжки костюм под наем',
@@ -61,16 +56,49 @@ const CATEGORY_PHRASE_BG = {
   8: 'карнавален аксесоар под наем',
 };
 
-function buildMeta(product, origin, pathname) {
-  const name = cleanText(product.name_bg) || cleanText(product.name_en) || `#${product.id}`;
-  const qualifier = CATEGORY_PHRASE_BG[product.category_id] ?? 'карнавален костюм под наем';
+const CATEGORY_PHRASE_EN = {
+  2: "women's costume rental",
+  3: "men's costume rental",
+  4: "girls' costume rental",
+  17: "boys' costume rental",
+  19: 'kids costume rental',
+  10: 'Halloween costume rental',
+  20: 'Christmas costume rental',
+  5: 'carnival mask rental',
+  6: 'party hat rental',
+  7: 'wig rental',
+  8: 'carnival accessory rental',
+};
+
+// Same "is this real English text" threshold as the client-side check in
+// src/lib/products.ts's hasMeaningfulEnglishDescription. A product without
+// it doesn't get hreflang alternate tags here — its /en/ page still renders
+// (falling back to Bulgarian text, same as the client), it just isn't
+// advertised as a genuine language pair yet.
+function hasMeaningfulEnglishDescription(product) {
+  const en = cleanText(product.description_en);
+  return en.length > 3 && /[a-zA-Z]/.test(en);
+}
+
+function buildMeta(product, origin, pathname, lang) {
+  const name =
+    lang === 'en'
+      ? cleanText(product.name_en) || cleanText(product.name_bg) || `#${product.id}`
+      : cleanText(product.name_bg) || cleanText(product.name_en) || `#${product.id}`;
+  const phraseTable = lang === 'en' ? CATEGORY_PHRASE_EN : CATEGORY_PHRASE_BG;
+  const qualifier = phraseTable[product.category_id] ?? (lang === 'en' ? 'carnival costume rental' : 'карнавален костюм под наем');
   const title = `${name} — ${qualifier} | CarnivalForYou`;
 
-  const bodyText = cleanText(product.description_bg) || cleanText(product.description_en);
+  const bodyText =
+    lang === 'en'
+      ? cleanText(product.description_en) || cleanText(product.description_bg)
+      : cleanText(product.description_bg) || cleanText(product.description_en);
   const price = Number(product.price) > 0 ? `${bgnToEur(Number(product.price))} EUR` : '';
   const parts = [bodyText || `${name} — ${qualifier}.`];
-  if (price) parts.push(`Наем от ${price}/ден.`);
-  parts.push('Вземете от магазина в София.');
+  if (price) {
+    parts.push(lang === 'en' ? `From ${price}/day.` : `Наем от ${price}/ден.`);
+  }
+  parts.push(lang === 'en' ? 'Pick up at our shop in Sofia.' : 'Вземете от магазина в София.');
 
   return {
     title: title.length <= 70 ? title : `${name} — ${qualifier}`,
@@ -117,9 +145,9 @@ class TitleSetter {
 }
 
 // useSEO sets a canonical client-side, which Google does pick up, but a
-// crawler that skips JS sees none at all on the site's 1230 most-crawled
-// pages. Built from the parsed numeric id rather than the raw path, so it
-// also collapses variants like /product-detail/007 onto one canonical URL.
+// crawler that skips JS sees none at all on the site's most-crawled pages.
+// Built from the parsed numeric id rather than the raw path, so it also
+// collapses variants like /product-detail/007 onto one canonical URL.
 class CanonicalAppender {
   constructor(href) {
     this.href = href;
@@ -129,7 +157,23 @@ class CanonicalAppender {
   }
 }
 
-export async function onRequestGet(context) {
+// Mirrors useSEO.ts's setLangAlternates for non-JS crawlers — only appended
+// when the product has real English content (see
+// hasMeaningfulEnglishDescription above), same suppression logic as the
+// client.
+class AlternateAppender {
+  constructor(bgHref, enHref) {
+    this.bgHref = bgHref;
+    this.enHref = enHref;
+  }
+  element(element) {
+    element.append(`<link rel="alternate" hreflang="bg" href="${this.bgHref}">`, { html: true });
+    element.append(`<link rel="alternate" hreflang="en" href="${this.enHref}">`, { html: true });
+    element.append(`<link rel="alternate" hreflang="x-default" href="${this.bgHref}">`, { html: true });
+  }
+}
+
+export async function handleProductDetail(context, lang) {
   const { request, env, params } = context;
   const url = new URL(request.url);
 
@@ -137,8 +181,7 @@ export async function onRequestGet(context) {
   // and answers a request for /index.html with a 301 to /. That redirect came
   // back as `assetResponse`, failed the `.ok` check below, and got returned
   // verbatim — so every direct load of a product page bounced to the home
-  // page, and with it every old products.php link and 1230 of the 1256 URLs
-  // in sitemap.xml. Requesting "/" hands back the same index.html with a 200.
+  // page. Requesting "/" hands back the same index.html with a 200.
   const htmlUrl = new URL(url);
   htmlUrl.pathname = '/';
   htmlUrl.search = '';
@@ -155,10 +198,11 @@ export async function onRequestGet(context) {
   }
   if (!product) return assetResponse;
 
-  const meta = buildMeta(product, url.origin, url.pathname);
+  const pathname = lang === 'en' ? `/en/product-detail/${numericId}` : `/product-detail/${numericId}`;
+  const meta = buildMeta(product, url.origin, pathname, lang);
 
-  return new HTMLRewriter()
-    .on('head', new CanonicalAppender(`${url.origin}/product-detail/${numericId}`))
+  const rewriter = new HTMLRewriter()
+    .on('head', new CanonicalAppender(meta.url))
     .on('title', new TitleSetter(meta.title))
     .on('meta[name="description"]', new MetaContentSetter(meta.description))
     .on('meta[property="og:title"]', new MetaContentSetter(meta.title))
@@ -168,6 +212,13 @@ export async function onRequestGet(context) {
     .on('meta[property="og:type"]', new MetaContentSetter('product'))
     .on('meta[name="twitter:title"]', new MetaContentSetter(meta.title))
     .on('meta[name="twitter:description"]', new MetaContentSetter(meta.description))
-    .on('meta[name="twitter:image"]', new MetaContentSetter(meta.image))
-    .transform(assetResponse);
+    .on('meta[name="twitter:image"]', new MetaContentSetter(meta.image));
+
+  if (hasMeaningfulEnglishDescription(product)) {
+    const bgHref = `${url.origin}/product-detail/${numericId}`;
+    const enHref = `${url.origin}/en/product-detail/${numericId}`;
+    rewriter.on('head', new AlternateAppender(bgHref, enHref));
+  }
+
+  return rewriter.transform(assetResponse);
 }

@@ -159,7 +159,7 @@ function FilterFields({
 
 export default function ProductsPage() {
   const { t, lang } = useI18n();
-  const { queryParams, updateQuery, pendingScrollRestore, clearScrollRestore } = useRouter();
+  const { queryParams, updateQuery, pendingScrollRestore, clearScrollRestore, lang: routeLang } = useRouter();
   const isChristmas = getCurrentSeason() === 'christmas';
 
   const [primaryCategories, setPrimaryCategories] = useState<number[]>(() =>
@@ -343,7 +343,7 @@ export default function ProductsPage() {
     // near-duplicate content — canonicalize them back to the single-category
     // (or bare catalog) URL rather than letting every combination compete
     // as its own indexed page.
-    canonical: `${window.location.origin}${seoCat ? `/products?category=${seoCat.id}` : '/products'}`,
+    canonical: `${window.location.origin}${routeLang === 'en' ? '/en' : ''}${seoCat ? `/products?category=${seoCat.id}` : '/products'}`,
   });
 
   useEffect(() => {

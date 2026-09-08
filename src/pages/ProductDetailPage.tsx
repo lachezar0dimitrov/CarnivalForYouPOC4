@@ -27,6 +27,7 @@ import {
   productSeoDescription,
   productSizes,
   categoryName,
+  hasMeaningfulEnglishDescription,
   type Product,
   type AdjacentProducts,
 } from '@/lib/products';
@@ -182,6 +183,10 @@ export default function ProductDetailPage() {
     description: product ? productSeoDescription(product, lang) : t('seo.homeDesc'),
     image: product?.imageUrl ?? undefined,
     type: 'product',
+    // Don't advertise an /en alternate for a product that doesn't really
+    // have English content yet — it would just be the Bulgarian text under
+    // an English URL. Self-corrects once description_en is filled in.
+    suppressAlternates: product ? !hasMeaningfulEnglishDescription(product) : true,
     structuredData: product ? buildProductSchema(product, name, lang) : undefined,
   });
 

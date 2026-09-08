@@ -41,7 +41,7 @@ async function fetchActiveProducts(env) {
   const all = [];
   for (;;) {
     const res = await fetch(
-      `${env.VITE_SUPABASE_URL}/rest/v1/products?${VISIBLE_FILTER}&select=id,created_at` +
+      `${env.VITE_SUPABASE_URL}/rest/v1/products?${VISIBLE_FILTER}&select=id,created_at,description_en` +
         `&order=id.asc&offset=${offset}&limit=${pageSize}`,
       {
         headers: {
@@ -59,13 +59,38 @@ async function fetchActiveProducts(env) {
   return all;
 }
 
+// Same "is this real English text" threshold as the client-side check in
+// src/lib/products.ts's hasMeaningfulEnglishDescription — a product without
+// it doesn't get an /en/ sitemap entry, since that page currently just shows
+// Bulgarian text under an English URL. Self-corrects once the description is
+// filled in (see project plan.md Phase 4 for the small remaining list).
+function hasMeaningfulEnglishDescription(p) {
+  const en = String(p.description_en ?? '').trim();
+  return en.length > 3 && /[a-zA-Z]/.test(en);
+}
+
 function xmlEscape(s) {
   return String(s).replace(/&/g, '&amp;');
 }
 
-function urlEntry(loc, lastmod, priority) {
+// Same three-way hreflang set (self + other language + x-default) on every
+// entry in a language pair, per Google's sitemap-annotation guidance —
+// x-default points at the Bulgarian version, the site's primary market.
+function buildAlternates(bgHref, enHref) {
+  return [
+    ['bg', bgHref],
+    ['en', enHref],
+    ['x-default', bgHref],
+  ];
+}
+
+function urlEntry(loc, lastmod, priority, alternates) {
+  const altXml = (alternates || [])
+    .map(([hreflang, href]) => `    <xhtml:link rel="alternate" hreflang="${hreflang}" href="${xmlEscape(href)}" />\n`)
+    .join('');
   return (
     `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n` +
+    altXml +
     (lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : '') +
     (priority != null ? `    <priority>${priority}</priority>\n` : '') +
     `  </url>`
@@ -88,24 +113,49 @@ export async function onRequestGet(context) {
     // failing the whole sitemap over a transient Supabase hiccup
   }
 
-  const entries = [
-    // No lastmod on the static pages: it used to be "today" on every request,
-    // which told Google the whole site changed daily and devalues the signal
-    // for the product URLs, where the date is real.
-    ...STATIC_PATHS.map((p) => urlEntry(`${origin}${p}`, undefined, p === '/' ? '1.0' : '0.8')),
-    ...categoryIds.map((id) => urlEntry(`${origin}/products?category=${id}`, undefined, '0.7')),
-    ...products.map((p) =>
-      urlEntry(
-        `${origin}/product-detail/${p.id}`,
-        p.created_at ? p.created_at.slice(0, 10) : undefined,
-        '0.6'
-      )
-    ),
-  ];
+  const entries = [];
+
+  // Static pages: all fully bilingual (About/Services/News/Contacts/Terms
+  // content and their SEO strings all verified live in Supabase/i18n.tsx) —
+  // both language variants ship unconditionally.
+  for (const p of STATIC_PATHS) {
+    const bgHref = `${origin}${p}`;
+    const enHref = p === '/' ? `${origin}/en` : `${origin}/en${p}`;
+    const priority = p === '/' ? '1.0' : '0.8';
+    const alternates = buildAlternates(bgHref, enHref);
+    entries.push(urlEntry(bgHref, undefined, priority, alternates));
+    entries.push(urlEntry(enHref, undefined, priority, alternates));
+  }
+
+  // Categories: all 19 active categories already have name_en populated —
+  // both variants ship unconditionally, same as static pages.
+  for (const id of categoryIds) {
+    const bgHref = `${origin}/products?category=${id}`;
+    const enHref = `${origin}/en/products?category=${id}`;
+    const alternates = buildAlternates(bgHref, enHref);
+    entries.push(urlEntry(bgHref, undefined, '0.7', alternates));
+    entries.push(urlEntry(enHref, undefined, '0.7', alternates));
+  }
+
+  // Products: the English variant only ships once the product actually has
+  // real English content — this makes indexing self-completing as
+  // description_en gets filled in (admin panel), no redeploy needed.
+  for (const p of products) {
+    const bgHref = `${origin}/product-detail/${p.id}`;
+    const lastmod = p.created_at ? p.created_at.slice(0, 10) : undefined;
+    if (hasMeaningfulEnglishDescription(p)) {
+      const enHref = `${origin}/en/product-detail/${p.id}`;
+      const alternates = buildAlternates(bgHref, enHref);
+      entries.push(urlEntry(bgHref, lastmod, '0.6', alternates));
+      entries.push(urlEntry(enHref, lastmod, '0.6', alternates));
+    } else {
+      entries.push(urlEntry(bgHref, lastmod, '0.6', undefined));
+    }
+  }
 
   const xml =
     '<?xml version="1.0" encoding="UTF-8"?>\n' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
     entries.join('\n') +
     '\n</urlset>\n';
 

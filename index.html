@@ -23,6 +23,13 @@
     <meta name="twitter:description" content="Магически костюми под наем в София. Венециански маски, фантастични образи, Хелоуин и детски костюми." />
     <meta name="twitter:image" content="https://carnivalforyou.com/og-default.jpg" />
 
+    <!-- Static homepage hreflang pair, additive to the client-side ones
+         useSEO.ts sets for every other route — helps non-JS crawlers the
+         same way the static OG block above does. -->
+    <link rel="alternate" hreflang="bg" href="https://carnivalforyou.com/" />
+    <link rel="alternate" hreflang="en" href="https://carnivalforyou.com/en" />
+    <link rel="alternate" hreflang="x-default" href="https://carnivalforyou.com/" />
+
     <!-- Describes the physical shop itself, so search engines and AI
          assistants can answer "where can I rent a carnival costume in Sofia"
          with this business. Static rather than injected by useSEO because
