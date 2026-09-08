@@ -189,11 +189,15 @@ Functions + `_redirects`), не като Cloudflare Dashboard правила. Т
 
 ### ⭐ Важни TODO-та за следващата сесия
 
-12. [ ] 🔴 **24-часов мониторинг: провери всички non-200 отговори от новия сайт.** Cloudflare пази исторически логове/аналитика — трябва да се прегледа трафикът от момента на cutover-а (2026-09-07 ~19:42 UTC) насам за:
-    - Реални 4xx/5xx кодове (не кеширани в браузъра фалшиви аларми, каквито вече имахме два пъти — виж т.7 по-горе).
-    - Дали Bot Fight Mode или rate limiting правилото са хванали реален посетителски трафик, не само автоматизирани тестове.
-    - Concentрация от грешки върху конкретен path — би сочило към пропусната redirect комбинация или продукт с проблем.
-    - Cloudflare Dashboard → Analytics & Logs → Traffic, филтрирано по status code; или Security → Events за блокираните заявки конкретно.
+12. [x] ✅ **24-часов мониторинг направен 2026-09-08 (Chrome extension), период 7 сеп 19:00 UTC → 8 сеп 16:20 UTC (~21ч). Резултат: миграцията сама по себе си е чиста.**
+    - **5xx:** apex+www имат точно 11×522, всичките в известния прозорец 19:42–19:43 UTC на cutover-а. Нула 5xx извън него, нула origin 5xx изобщо.
+    - **404:** само 11 за целия период, разпръснати (7× `/images/favicon.ico`, по 1× `/llms.txt`, `/cdn-cgi/rum`, `/robots.txt`, `/ai.txt`) — нула концентрация върху стар URL, redirect-ите покриват всичко.
+    - **Security Events (855 mitigated: 718 Block + 137 Managed Challenge):** проверени поотделно — нито един прилича на реален посетител. Всички топ IP-та са datacenter ASN-и (Google Cloud/AWS/Azure), сканират `.env`/`.ssh`/secrets пътища, 606/649 blocked са HTTP/1.1 (реални браузъри почти винаги HTTP/2+). **Search engine crawlers (765 заявки: Googlebot 509, Bing 118, Yandex 70) — нула блокирани.** AI crawlers (2.88k, ClaudeBot/GPTBot/Perplexity) — нула блокирани, всички Allowed. Хипотезата за image-heavy страница удряща rate limit прага — не се потвърди.
+    - **Намерени реални проблеми извън самия сайт (DNS остатъци от старото хостване, не пипнато — чака решение):**
+      - 🔴 **`mail.`/`pop.`/`smtp.carnivalforyou.com`** — DNS-only CNAME към `carnivalforyou.com`, което вече е proxied към Pages → 170×522. Преди миграцията same chain стигаше до jump.bg IP-то, което е обслужвало и пощата; сега не стига доникъде. Риск: ако някой все още ползва тези hostname-и в реален mail клиент (не Gmail), е счупено. Трябва да се провери дали изобщо някой ги ползва.
+      - 🟡 **`test.`/`new.carnivalforyou.com`** — още Proxied към старото jump.bg IP (185.199.38.18), поемат 819×403 сканиращ трафик (не реални посетители), плюс Cloudflare предупреждава за частично изложен origin IP заради това.
+      - ℹ️ Apex/www CNAME towards `carnivalforyoupoc3.pages.dev` (не poc4) — вече потвърдено правилно при go-live, не нова находка.
+      - Дребно: `/images/favicon.ico` 404 — браузърски default probe, ниска важност.
 13. [x] ✅ **Google Analytics — ЖИВ И ПОТВЪРДЕН 2026-09-08.** GA4 Realtime показа реални сесии от България (посещение от телефон + проверки срещу живия домейн), consent gating работи и в двете посоки.
     - [x] **Код-частта готова 2026-09-08 (VSCode сесия):** [src/lib/analytics.ts](src/lib/analytics.ts) — GA4 loader с Consent Mode (`analytics_storage` default `denied`, `initConsentDefaults()` викнато веднъж в [src/main.tsx](src/main.tsx)). [src/components/CookieConsent.tsx](src/components/CookieConsent.tsx) вече реално гейтва: `accepted` → `loadAnalytics()` (и при клик, и при вече запазен избор при следващо зареждане), `declined`/без избор → скриптът никога не се вкарва в DOM-а. Без `VITE_GA_MEASUREMENT_ID` цялото нещо е no-op — безопасно е вече мърджнато без да чака GA4 property-то. `tsc`/build минават чисти.
     - [x] Google Maps iframe-ът на Контакти вече е **click-to-load** ([src/pages/ContactsPage.tsx](src/pages/ContactsPage.tsx)) — плейсхолдър бутон вместо безусловен iframe; единственият чужд бисквитков източник вече не се зарежда без действие от посетителя.
