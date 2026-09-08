@@ -5,6 +5,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import type { Lang } from '@/lib/i18n';
 
 export type Route =
   | 'home'
@@ -35,7 +36,18 @@ type RouterContextType = {
   route: Route;
   productId: string | null;
   queryParams: Record<string, string>;
+  // Content language, derived from a leading /en path segment — the single
+  // source of truth for language on public routes (see src/lib/i18n.tsx,
+  // which reads this instead of localStorage now). Always 'bg' on /admin,
+  // which has no /en equivalent and keeps its own separate UI-language
+  // toggle untouched.
+  lang: Lang;
   navigate: (route: Route, idOrParams?: string | Record<string, string>, params?: Record<string, string>) => void;
+  // Rebuilds the *current* route (same page, same params/productId) under
+  // the other language's URL prefix and navigates there — what the header's
+  // language toggle needs ("this page, other language"), not a plain
+  // navigate() to some fixed route.
+  switchLanguage: (next: Lang) => void;
   // Updates the current page's query string in place (history.replaceState,
   // no new entry) — used by pages whose filters live in local state to keep
   // the URL mirroring them, so it's accurate whenever a product-detail
@@ -59,13 +71,27 @@ const validRoutes: Route[] = [
   'home', 'products', 'product-detail', 'about', 'services', 'news', 'contacts', 'terms', 'admin',
 ];
 
-// Parse a real path like "/products?category=2" or "/product-detail/123".
-// Real (non-hash) paths so crawlers and Cloudflare Pages Functions can see
-// which page is being requested — a hash fragment never reaches the server,
-// which made per-product OpenGraph previews impossible under the old
-// hash-routing scheme.
-function parseLocation(): { route: Route; productId: string | null; queryParams: Record<string, string> } {
-  const pathPart = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+// Parse a real path like "/products?category=2" or "/product-detail/123",
+// optionally prefixed with /en for the English version of the same page
+// (/en/products?category=2, /en/product-detail/123). Real (non-hash) paths
+// so crawlers and Cloudflare Pages Functions can see which page is being
+// requested — a hash fragment never reaches the server, which made
+// per-product OpenGraph previews impossible under the old hash-routing
+// scheme.
+function parseLocation(): {
+  route: Route;
+  productId: string | null;
+  queryParams: Record<string, string>;
+  lang: Lang;
+} {
+  const rawPath = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+
+  let lang: Lang = 'bg';
+  let pathPart = rawPath;
+  if (pathPart === 'en' || pathPart.startsWith('en/')) {
+    lang = 'en';
+    pathPart = pathPart.slice(2).replace(/^\/+/, '');
+  }
 
   const queryParams: Record<string, string> = {};
   new URLSearchParams(window.location.search).forEach((value, key) => {
@@ -73,22 +99,27 @@ function parseLocation(): { route: Route; productId: string | null; queryParams:
   });
 
   if (pathPart.startsWith('product-detail/')) {
-    return { route: 'product-detail', productId: pathPart.split('/')[1] ?? null, queryParams };
+    return { route: 'product-detail', productId: pathPart.split('/')[1] ?? null, queryParams, lang };
   }
   const r = validRoutes.includes(pathPart as Route) ? (pathPart as Route) : 'home';
-  return { route: r, productId: null, queryParams };
+  // /admin has no /en equivalent — never let a stray /en/admin visit report
+  // an English content language, since the admin UI has its own unrelated
+  // BG/EN toggle that must keep working exactly as it does today.
+  return { route: r, productId: null, queryParams, lang: r === 'admin' ? 'bg' : lang };
 }
 
 type State = {
   route: Route;
   productId: string | null;
   queryParams: Record<string, string>;
+  lang: Lang;
   origin: Origin | null;
   pendingScrollRestore: number | null;
 };
 
-function buildPath(route: Route, params?: Record<string, string> | null): string {
-  let path = route === 'home' ? '/' : `/${route}`;
+function buildPath(route: Route, params: Record<string, string> | null | undefined, lang: Lang): string {
+  const prefix = lang === 'en' ? '/en' : '';
+  let path = route === 'home' ? prefix || '/' : `${prefix}/${route}`;
   if (params && Object.keys(params).length > 0) {
     path += `?${new URLSearchParams(params).toString()}`;
   }
@@ -99,7 +130,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(() =>
     typeof window !== 'undefined'
       ? { ...parseLocation(), origin: null, pendingScrollRestore: null }
-      : { route: 'home', productId: null, queryParams: {}, origin: null, pendingScrollRestore: null }
+      : { route: 'home', productId: null, queryParams: {}, lang: 'bg', origin: null, pendingScrollRestore: null }
   );
 
   useEffect(() => {
@@ -119,12 +150,15 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     idOrParams?: string | Record<string, string>,
     params?: Record<string, string>
   ) => {
+    // In-app navigation stays within whatever language the user is
+    // currently browsing in — only switchLanguage() below changes it.
+    const prefix = state.lang === 'en' ? '/en' : '';
     let path = '';
 
     if (next === 'product-detail' && typeof idOrParams === 'string') {
-      path = `/product-detail/${idOrParams}`;
+      path = `${prefix}/product-detail/${idOrParams}`;
     } else {
-      path = next === 'home' ? '/' : `/${next}`;
+      path = next === 'home' ? prefix || '/' : `${prefix}/${next}`;
     }
 
     const query = params ?? (idOrParams && typeof idOrParams === 'object' ? idOrParams : null);
@@ -147,6 +181,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
           : null;
 
       return {
+        ...prev,
         route: next,
         productId: typeof idOrParams === 'string' ? idOrParams : null,
         queryParams: query ?? {},
@@ -176,14 +211,17 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   ) => {
     if (state.origin) {
       const { route, queryParams, scrollY } = state.origin;
-      window.history.pushState({}, '', buildPath(route, queryParams));
-      setState({
+      // The origin was captured from the current session, so it's always in
+      // whatever language the user is browsing in right now.
+      window.history.pushState({}, '', buildPath(route, queryParams, state.lang));
+      setState((prev) => ({
+        ...prev,
         route,
         productId: null,
         queryParams,
         origin: null,
         pendingScrollRestore: scrollY,
-      });
+      }));
     } else {
       navigate(fallbackRoute, fallbackIdOrParams);
     }
@@ -193,13 +231,35 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     setState((prev) => (prev.pendingScrollRestore == null ? prev : { ...prev, pendingScrollRestore: null }));
   };
 
+  const switchLanguage = (next: Lang) => {
+    // /admin has no /en equivalent — the toggle is never rendered there
+    // (see Header.tsx), but guard anyway rather than ever producing a stray
+    // /en/admin URL.
+    if (state.route === 'admin') return;
+
+    const prefix = next === 'en' ? '/en' : '';
+    const basePath =
+      state.route === 'product-detail' && state.productId
+        ? `${prefix}/product-detail/${state.productId}`
+        : buildPath(state.route, null, next);
+    const query =
+      Object.keys(state.queryParams).length > 0
+        ? `?${new URLSearchParams(state.queryParams).toString()}`
+        : '';
+
+    window.history.pushState({}, '', basePath + query);
+    setState((prev) => ({ ...prev, lang: next, origin: null, pendingScrollRestore: null }));
+  };
+
   return (
     <RouterContext.Provider
       value={{
         route: state.route,
         productId: state.productId,
         queryParams: state.queryParams,
+        lang: state.lang,
         navigate,
+        switchLanguage,
         updateQuery,
         goBack,
         pendingScrollRestore: state.pendingScrollRestore,

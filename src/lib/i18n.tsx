@@ -5,6 +5,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useRouter } from '@/lib/router';
 
 export type Lang = 'bg' | 'en';
 
@@ -465,16 +466,31 @@ function detectInitialLang(): Lang {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() =>
+  const router = useRouter();
+
+  // /admin has no /en equivalent and keeps its own independent,
+  // localStorage-persisted preference exactly as before this change —
+  // nothing currently changes it while on that page anyway (Header, the
+  // only setLang caller, isn't rendered there; see App.tsx).
+  const [adminLang, setAdminLang] = useState<Lang>(() =>
     typeof window !== 'undefined' ? detectInitialLang() : 'bg'
   );
 
+  // Every other route: the URL (/en prefix, parsed by the router) is the
+  // single source of truth for content language — no cookie/localStorage
+  // switching of what a given URL shows, per Google's own multi-regional
+  // site guidance. This is why RouterProvider now wraps I18nProvider (see
+  // App.tsx) instead of the other way around.
+  const lang: Lang = router.route === 'admin' ? adminLang : router.lang;
+
   useEffect(() => {
     document.documentElement.lang = lang;
-    localStorage.setItem(STORAGE_KEY, lang);
-  }, [lang]);
+    if (router.route === 'admin') {
+      localStorage.setItem(STORAGE_KEY, adminLang);
+    }
+  }, [lang, router.route, adminLang]);
 
-  const setLang = (next: Lang) => setLangState(next);
+  const setLang = (next: Lang) => setAdminLang(next);
 
   const t = (key: string): string => translations[lang][key] ?? key;
 

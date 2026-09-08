@@ -1,13 +1,13 @@
 import { Menu, X, Globe, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, type Route } from '@/lib/router';
-import { useI18n, type Lang } from '@/lib/i18n';
+import { useI18n } from '@/lib/i18n';
 import { fetchSiteSettings } from '@/lib/siteSettings';
 import Logo from '@/components/Logo';
 
 export default function Header() {
-  const { route, navigate } = useRouter();
-  const { t, lang, setLang } = useI18n();
+  const { route, navigate, switchLanguage } = useRouter();
+  const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const [pageVisibility, setPageVisibility] = useState({ services: true, news: true });
@@ -71,7 +71,10 @@ export default function Header() {
   };
 
   const toggleLang = () => {
-    setLang(lang === 'bg' ? 'en' : 'bg');
+    // Rebuilds the current page's URL under the other language's /en
+    // prefix and navigates there — content language is URL-driven now, not
+    // a bare in-place state flip (see src/lib/router.tsx).
+    switchLanguage(lang === 'bg' ? 'en' : 'bg');
   };
 
   return (

@@ -66,16 +66,20 @@ function CurrentPage() {
 }
 
 export default function App() {
+  // RouterProvider wraps I18nProvider (not the reverse, as before) because
+  // content language is now derived from the URL's /en prefix — I18nProvider
+  // reads the current route via useRouter() to do that. RouterProvider has
+  // no dependency the other way, so this is safe.
   return (
-    <I18nProvider>
-      <AuthProvider>
-        <ToastProvider>
-          <RouterProvider>
+    <RouterProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <ToastProvider>
             <AppShell />
-          </RouterProvider>
-        </ToastProvider>
-      </AuthProvider>
-    </I18nProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </I18nProvider>
+    </RouterProvider>
   );
 }
 
