@@ -10,6 +10,7 @@ import {
   fetchProducts,
   getAvailableSizes,
   getHomepageCategories,
+  productName,
   type Product,
   type CategoryMeta,
 } from '@/lib/products';
@@ -17,6 +18,30 @@ import { getCurrentSeason } from '@/lib/season';
 import ProductCard from '@/components/ProductCard';
 import CategoryGrid from '@/components/CategoryGrid';
 import ReservationSteps from '@/components/ReservationSteps';
+
+// ItemList of the products actually rendered on this category listing —
+// lightweight (name/url/image per entry, no Offer/price) since the full
+// Product rich result already lives on each item's own detail page; this
+// just tells Google which photos this specific listing page is showing, the
+// same signal the sitemap's per-category <image:image> entry gives for the
+// single tile photo. Only ever built for the exact view its canonical URL
+// points at (page 1, no search/size filters) — see isCanonicalCategoryView
+// below — so the markup never describes a page state Google isn't looking at.
+function buildCategoryItemListSchema(products: Product[], catName: string, lang: 'bg' | 'en') {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: catName,
+    itemListElement: products.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${origin}/product-detail/${p.id}`,
+      name: productName(p, lang),
+      image: p.imageUrl ?? undefined,
+    })),
+  };
+}
 
 function parseIdList(raw: string | undefined): number[] {
   if (!raw) return [];
@@ -336,6 +361,12 @@ export default function ProductsPage() {
       ? `${seoCat.nameBg} костюми под наем | CarnivalForYou`
       : `${seoCat.nameEn} costume rentals | CarnivalForYou`
     : t('seo.productsTitle');
+  // True only when the rendered grid is exactly what the canonical URL
+  // below points at (single category, first page, no search/size filters) —
+  // the one moment structured data describing "this page's products" is
+  // guaranteed to match what a crawler landing on that canonical URL sees.
+  const isCanonicalCategoryView =
+    Boolean(seoCat) && page === 0 && !debouncedSearch.trim() && sizeFilters.length === 0;
   useSEO({
     title: seoTitle,
     description: t('seo.productsDesc'),
@@ -344,6 +375,10 @@ export default function ProductsPage() {
     // (or bare catalog) URL rather than letting every combination compete
     // as its own indexed page.
     canonical: `${window.location.origin}${routeLang === 'en' ? '/en' : ''}${seoCat ? `/products?category=${seoCat.id}` : '/products'}`,
+    structuredData:
+      isCanonicalCategoryView && seoCat && products.length > 0
+        ? buildCategoryItemListSchema(products, lang === 'bg' ? seoCat.nameBg : seoCat.nameEn, lang)
+        : undefined,
   });
 
   useEffect(() => {

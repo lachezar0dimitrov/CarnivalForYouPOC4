@@ -3,17 +3,47 @@ import { Sparkles } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
-import { loadCategories, getHomepageCategories, type CategoryMeta } from '@/lib/products';
+import {
+  loadCategories,
+  getHomepageCategories,
+  fetchPopularProducts,
+  productName,
+  type CategoryMeta,
+  type Product,
+} from '@/lib/products';
 import { getCurrentSeason } from '@/lib/season';
 import BannerCarousel from '@/components/BannerCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
 import HeroFireflies from '@/components/HeroFireflies';
 import NewArrivalsRibbon from '@/components/NewArrivalsRibbon';
+import PopularCostumes from '@/components/PopularCostumes';
+
+// ItemList of the visible PopularCostumes section below — kept lightweight
+// (name/url/image per entry, no full Product/Offer markup) since a duplicate
+// of the real Product rich-result already declared on each product's own
+// detail page would be the kind of markup-not-matching-the-page problem
+// Google's structured data guidelines warn about.
+function buildPopularCostumesSchema(products: Product[], lang: 'bg' | 'en') {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: lang === 'bg' ? 'Популярни костюми' : 'Popular costumes',
+    itemListElement: products.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${origin}/product-detail/${p.id}`,
+      name: productName(p, lang),
+      image: p.imageUrl ?? undefined,
+    })),
+  };
+}
 
 export default function HomePage() {
   const { navigate } = useRouter();
   const { t, lang } = useI18n();
   const [categories, setCategories] = useState<CategoryMeta[]>([]);
+  const [popularProducts, setPopularProducts] = useState<Product[]>([]);
   const isChristmas = getCurrentSeason() === 'christmas';
 
   useEffect(() => {
@@ -22,9 +52,17 @@ export default function HomePage() {
     });
   }, []);
 
+  useEffect(() => {
+    fetchPopularProducts()
+      .then(setPopularProducts)
+      .catch(() => {});
+  }, []);
+
   useSEO({
     title: t('seo.homeTitle'),
     description: t('seo.homeDesc'),
+    structuredData:
+      popularProducts.length > 0 ? buildPopularCostumesSchema(popularProducts, lang) : undefined,
   });
 
   return (
@@ -88,6 +126,8 @@ export default function HomePage() {
           />
         </div>
       </section>
+
+      <PopularCostumes products={popularProducts} />
 
       <NewArrivalsRibbon />
 

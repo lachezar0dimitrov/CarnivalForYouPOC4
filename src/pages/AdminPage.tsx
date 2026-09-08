@@ -1290,6 +1290,7 @@ function mapAdminRow(r: any): AdminProduct {
     tags: r.tags ?? [],
     isActive: r.is_active ?? true,
     isNew: r.is_new ?? false,
+    isPopular: r.is_popular ?? false,
   };
 }
 
@@ -1987,6 +1988,7 @@ function ProductForm({
     sizes: product?.sizes ?? '',
     is_active: product?.isActive ?? true,
     is_new: product?.isNew ?? false,
+    is_popular: product?.isPopular ?? false,
     priority: product?.priority ?? 0,
     old_id: product?.oldId ?? null,
     old_catalog_number: product?.oldCatalogNumber ?? '',
@@ -2024,6 +2026,7 @@ function ProductForm({
       sizes: form.sizes || null,
       is_active: form.is_active,
       is_new: form.is_new,
+      is_popular: form.is_popular,
       priority: Number(form.priority),
       old_id: form.old_id ? Number(form.old_id) : null,
       old_catalog_number: form.old_catalog_number.trim() || null,
@@ -2161,6 +2164,10 @@ function ProductForm({
           <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
             <input type="checkbox" checked={form.is_new} onChange={(e) => setForm({ ...form, is_new: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
             {lang === 'bg' ? 'Нов продукт (лента на началната страница)' : 'New product (home page ribbon)'}
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+            <input type="checkbox" checked={form.is_popular} onChange={(e) => setForm({ ...form, is_popular: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
+            {lang === 'bg' ? 'Популярен костюм (началната страница)' : 'Popular costume (home page)'}
           </label>
         </div>
 

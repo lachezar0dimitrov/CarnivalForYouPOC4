@@ -44,6 +44,7 @@ export type Product = {
   priority: number;
   tags: string[];
   isNew: boolean;
+  isPopular: boolean;
 };
 
 export type ProductRow = {
@@ -63,6 +64,7 @@ export type ProductRow = {
   priority: number;
   tags: string[] | null;
   is_new: boolean | null;
+  is_popular: boolean | null;
 };
 
 function mapRow(r: ProductRow): Product {
@@ -117,6 +119,7 @@ function mapRow(r: ProductRow): Product {
     priority: r.priority ?? 0,
     tags: r.tags ?? [],
     isNew: r.is_new ?? false,
+    isPopular: r.is_popular ?? false,
   };
 }
 
@@ -430,7 +433,7 @@ export type FetchResult = {
 };
 
 const selectColumns =
-  'id, old_id, old_catalog_number, category_id, category_ids, name_bg, name_en, description_bg, description_en, sizes, price, old_price, image_url, priority, tags, is_new';
+  'id, old_id, old_catalog_number, category_id, category_ids, name_bg, name_en, description_bg, description_en, sizes, price, old_price, image_url, priority, tags, is_new, is_popular';
 
 // Маски / Шапки / Перуки / Аксесоари — hidden by stakeholder decision
 // (categories.is_active = false), not shown as tiles or filter chips.
@@ -698,6 +701,22 @@ export async function fetchProductById(id: number): Promise<Product | null> {
 export async function fetchNewProducts(limit = 20): Promise<Product[]> {
   const { data, error } = await baseQuery()
     .eq('is_new', true)
+    .order('priority', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data as unknown as ProductRow[] | null ?? []).map(mapRow);
+}
+
+// Products flagged "popular" in the admin form, for the homepage's
+// "Популярни костюми" section (src/components/PopularCostumes.tsx) — same
+// admin-editable-checkbox pattern as fetchNewProducts/is_new above. No fixed
+// count: an admin can flag as many or as few products as they like, ordered
+// by the same priority field the rest of the catalog already sorts by.
+export async function fetchPopularProducts(limit = 40): Promise<Product[]> {
+  const { data, error } = await baseQuery()
+    .eq('is_popular', true)
     .order('priority', { ascending: false })
     .order('id', { ascending: false })
     .limit(limit);
