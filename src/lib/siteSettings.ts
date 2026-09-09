@@ -3,6 +3,7 @@ import type { ThemeOverride } from '@/lib/season';
 
 export type SiteSettings = {
   address: string;
+  addressEn: string;
   phone: string;
   email: string;
   hoursBg: { day: string; time: string }[];
@@ -17,6 +18,7 @@ export type SiteSettings = {
 type SettingsRow = {
   id: number;
   address: string;
+  address_en: string;
   phone: string;
   email: string;
   hours_bg: { day: string; time: string }[];
@@ -31,6 +33,7 @@ type SettingsRow = {
 function mapRow(r: SettingsRow): SiteSettings {
   return {
     address: r.address ?? '',
+    addressEn: r.address_en ?? '',
     phone: r.phone ?? '',
     email: r.email ?? '',
     hoursBg: r.hours_bg ?? [],
@@ -60,6 +63,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
     .from('site_settings')
     .update({
       address: settings.address,
+      address_en: settings.addressEn,
       phone: settings.phone,
       email: settings.email,
       hours_bg: settings.hoursBg,

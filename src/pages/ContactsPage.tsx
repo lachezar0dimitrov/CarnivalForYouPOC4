@@ -28,7 +28,9 @@ export default function ContactsPage() {
     fetchSiteSettings().then(setSettings).catch(() => {});
   }, []);
 
-  const address = settings?.address || storeInfo.address;
+  const address =
+    (lang === 'bg' ? settings?.address : settings?.addressEn) ||
+    (lang === 'bg' ? storeInfo.address : storeInfo.addressEn);
   const phone = settings?.phone || storeInfo.phone;
   const email = settings?.email || storeInfo.email;
   const hours = settings

@@ -2401,6 +2401,7 @@ function ContactsManager() {
       .then((s) => {
         setSettings(s ?? {
           address: '',
+          addressEn: '',
           phone: '',
           email: '',
           themeOverride: 'auto',
@@ -2524,6 +2525,18 @@ function ContactsManager() {
             </div>
           </FormField>
         </div>
+
+        <FormField label={lang === 'bg' ? 'Адрес (EN)' : 'Address (EN)'}>
+          <div className="relative">
+            <MapPin size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gold-300/50" />
+            <input
+              type="text"
+              value={settings.addressEn}
+              onChange={(e) => setSettings({ ...settings, addressEn: e.target.value })}
+              className="form-input pl-9"
+            />
+          </div>
+        </FormField>
 
         <FormField label={lang === 'bg' ? 'Google Maps заявка' : 'Google Maps query'}>
           <input
@@ -3384,6 +3397,7 @@ function ThemeManager() {
         setSettings(
           s ?? {
             address: '',
+            addressEn: '',
             phone: '',
             email: '',
             hoursBg: [],
