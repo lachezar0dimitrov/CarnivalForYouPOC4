@@ -40,23 +40,45 @@ function buildPopularCostumesSchema(products: Product[], lang: 'bg' | 'en') {
 }
 
 export default function HomePage() {
-  const { navigate } = useRouter();
+  const { navigate, pendingScrollRestore, clearScrollRestore } = useRouter();
   const { t, lang } = useI18n();
   const [categories, setCategories] = useState<CategoryMeta[]>([]);
   const [popularProducts, setPopularProducts] = useState<Product[]>([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [popularLoaded, setPopularLoaded] = useState(false);
   const isChristmas = getCurrentSeason() === 'christmas';
 
   useEffect(() => {
-    loadCategories().then((cats) => {
-      setCategories(cats.filter((cat) => Boolean(cat.image?.trim())));
-    });
+    loadCategories()
+      .then((cats) => {
+        setCategories(cats.filter((cat) => Boolean(cat.image?.trim())));
+      })
+      .finally(() => setCategoriesLoaded(true));
   }, []);
 
   useEffect(() => {
     fetchPopularProducts()
       .then(setPopularProducts)
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setPopularLoaded(true));
   }, []);
+
+  // Restores the exact scroll position (e.g. deep in the Popular Costumes or
+  // New Arrivals section) when the user hit Back from a product opened here
+  // — same router.pendingScrollRestore mechanism ProductsPage already uses.
+  // Gated on both above-the-fold async sections having settled, since either
+  // one loading in after an early restore would shift the saved position out
+  // of view again.
+  useEffect(() => {
+    if (categoriesLoaded && popularLoaded && pendingScrollRestore != null) {
+      window.scrollTo(0, pendingScrollRestore);
+      clearScrollRestore();
+    }
+    // clearScrollRestore intentionally omitted, same as ProductsPage's
+    // identical effect — it's stable and re-running this on its identity
+    // isn't the intent.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoriesLoaded, popularLoaded, pendingScrollRestore]);
 
   useSEO({
     title: t('seo.homeTitle'),
