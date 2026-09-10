@@ -40,9 +40,11 @@ Cloudflare/GitHub/Supabase/GSC), **Desktop app** (преглед/решения)
 1. [ ] `/images/favicon.ico` 404 — браузърски default probe, козметично.
 2. [ ] DMARC запис (`p=none` начален режим).
 3. [ ] Supabase: Leaked Password Protection (Dashboard → Auth → Policies → Password Security, няма MCP tool).
-4. [ ] Supabase Pro backups ($25/мес) — реши дали да ъпгрейднеш (nightly GH Action backup вече работи като алтернатива).
+4. [x] ~~Supabase Pro backups~~ — решено 2026-09-09: няма да се плаща, nightly GH Action backup е достатъчен.
 5. [ ] Следи GSC "Страници" отчета — брой намерени страници трябва да скочи от 1256 към ~2512 (двуезичния sitemap), обичайно отнема дни.
-6. [ ] Непознат Cloudflare worker `statuscheck-prober` (създаден 5 септ.) — потвърди, че е твой.
-7. [ ] `ClothingStore` JSON-LD в `index.html` остава на български и в `/en` — нисък приоритет, козметично несъответствие.
+6. [x] Cloudflare worker `statuscheck-prober` — потвърдено 2026-09-09, потребителски е.
+7. [x] ~~`ClothingStore` JSON-LD bg-only в `/en`~~ — решено 2026-09-09: не си заслужава усилието, оставя се както си е.
 8. [ ] 3-те неразпознати стари `cn-*` landing страници (временни татуировки/грим/Halloween) — следи за реален трафик преди да инвестираш в точна redirect цел.
 9. [ ] `arlekinobg.com` GA акаунт имаше стар account-level достъп на непознат имейл, премахнат — провери дали подобен стар достъп не виси другаде (Cloudflare/GitHub/Supabase/GSC), по желание.
+10. [ ] 301 redirect mapping за старите jump.bg `/news` и `/services` страници — предстои проверка през Chrome extension (виж промпта по-долу), част от Phase 3 SEO.
+11. [ ] 385 активни продукта без описание на нито един език (Перуки 121, Аксесоари 117, Маски 90, Шапки 57) — реално отложена задача, изисква писане на нови описания, не превод (виж памет `project_carnivalforyou_missing_en_descriptions`).

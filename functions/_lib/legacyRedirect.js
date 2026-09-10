@@ -55,7 +55,7 @@ const OLD_CNTID_TO_PATH = {
 // correctly (falls back to Bulgarian text, same as everywhere else), and
 // this avoids a second Supabase round-trip in the redirect hot path just to
 // check content completeness.
-function withLang(path, lang) {
+export function withLang(path, lang) {
   if (lang !== 'en') return path;
   return path === '/' ? '/en' : `/en${path}`;
 }
@@ -120,4 +120,23 @@ export async function handleCategoryListing(context) {
   const url = new URL(context.request.url);
   const path = categoryRedirectPath(url.searchParams.get('tid'), url.searchParams.get('lang'));
   return redirectTo(path, url.origin);
+}
+
+// Old site scripts that map 1:1 onto a single new page regardless of any
+// other query params, but still need `lang=en` honored (services.php,
+// contacts.php). These were previously only covered by static rules in
+// public/_redirects, which match on path only and silently dropped
+// `?lang=en` — every old English link landed on the Bulgarian page. Found
+// during the Phase 3 redirect audit (2026-09-10): services.php's 4 old
+// sub-services (грим/прическа/хна татуировки/поръчка) were never separate
+// URLs on the old site (confirmed via Wayback Machine + zero GSC
+// impressions for any of them in 16 months), so a single target page is
+// correct — this only needed to stop swallowing the language.
+export function handleStaticContentPage(path) {
+  return async function onRequest(context) {
+    const guard = await passThroughIfNotPhp(context);
+    if (guard) return guard;
+    const url = new URL(context.request.url);
+    return redirectTo(withLang(path, url.searchParams.get('lang')), url.origin);
+  };
 }
