@@ -25,6 +25,23 @@ export function eurToBgn(eur: number): number {
   return Math.round(((eur * BGN_TO_EUR_RATE) / MARKUP) * 100) / 100;
 }
 
+// Deposit tiers by daily rental price (EUR). Above the top tier, the deposit
+// stays capped at the last bracket's amount rather than scaling further.
+const DEPOSIT_TIERS: { max: number; deposit: number }[] = [
+  { max: 18, deposit: 30 },
+  { max: 25, deposit: 40 },
+  { max: 39, deposit: 50 },
+  { max: 54, deposit: 70 },
+  { max: 68, deposit: 80 },
+  { max: 89, deposit: 90 },
+];
+
+export function calculateDeposit(priceEur: number): number {
+  const price = Math.round(priceEur);
+  const tier = DEPOSIT_TIERS.find((t) => price <= t.max);
+  return tier ? tier.deposit : DEPOSIT_TIERS[DEPOSIT_TIERS.length - 1].deposit;
+}
+
 export type Product = {
   id: number;
   oldId: number | null;

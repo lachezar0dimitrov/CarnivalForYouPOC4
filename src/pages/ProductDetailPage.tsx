@@ -28,6 +28,7 @@ import {
   productSizes,
   categoryName,
   hasMeaningfulEnglishDescription,
+  calculateDeposit,
   type Product,
   type AdjacentProducts,
 } from '@/lib/products';
@@ -345,7 +346,7 @@ export default function ProductDetailPage() {
                     <Info size={12} />
                   </span>
                 }
-                value={`${Math.round(product.price) * 2 + 10} ${t('common.eur')}`}
+                value={`${calculateDeposit(product.price)} ${t('common.eur')}`}
                 onClick={() => setShowDepositInfo((v) => !v)}
                 expanded={showDepositInfo}
               />
