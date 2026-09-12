@@ -112,6 +112,11 @@ type FilterFieldsProps = {
   availableSizes: string[];
   sizeFilters: string[];
   onToggleSize: (s: string) => void;
+  // Fired when the user hits the mobile keyboard's Enter/Go key in the
+  // search field — closes the full-screen overlay to reveal the (already
+  // live-filtered) results, mirroring the "Show results" button below it.
+  // Optional because the desktop sidebar has no overlay to dismiss.
+  onSubmitSearch?: () => void;
 };
 
 function FilterFields({
@@ -128,13 +133,22 @@ function FilterFields({
   availableSizes,
   sizeFilters,
   onToggleSize,
+  onSubmitSearch,
 }: FilterFieldsProps) {
   return (
     <div className="flex flex-col gap-6">
       <input
         type="text"
+        inputMode="search"
+        enterKeyHint="search"
         value={searchQuery}
         onChange={(e) => onSearchChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.currentTarget.blur();
+            onSubmitSearch?.();
+          }
+        }}
         placeholder={t('products.searchPlaceholder')}
         className="w-full rounded-lg border border-gold-400/20 bg-ink-700 px-4 py-2.5 text-sm text-gray-200 transition placeholder:text-gray-500 focus:border-gold-400/60 focus:outline-none"
       />
@@ -234,21 +248,27 @@ export default function ProductsPage() {
   const filterSectionRef = useRef<HTMLDivElement>(null);
   // Arriving from the header's search shortcut (?openFilter=1) should expand
   // the advanced filter panel and bring it into view immediately, instead of
-  // requiring an extra click on the toggle button.
-  const needsFilterOpenRef = useRef(queryParams.openFilter === '1');
-
+  // requiring an extra click on the toggle button. Keyed on the query param
+  // itself (not just mount) — clicking the header's search icon again while
+  // already on /products doesn't remount this page (see App.tsx, ProductsPage
+  // isn't keyed by route), it only pushes a new queryParams object, so a
+  // mount-only effect would silently do nothing on that second click.
   useEffect(() => {
-    if (needsFilterOpenRef.current) {
-      needsFilterOpenRef.current = false;
+    if (queryParams.openFilter === '1') {
       setFilterOpen(true);
       setTimeout(() => {
         filterSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 50);
+      // Consume the one-shot param immediately. Left in place, a second
+      // click of the header's search icon would push the same 'openFilter=1'
+      // value again — since the dependency below is the primitive string,
+      // an unchanged '1' -> '1' wouldn't re-trigger this effect the second
+      // time, and the filter panel would never reopen.
+      const { openFilter: _openFilter, ...rest } = queryParams;
+      updateQuery(rest);
     }
-    // Runs once on mount only — this is a one-shot arrival action, not
-    // something that should re-fire on later query-param changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [queryParams.openFilter]);
 
   const resultsRef = useRef<HTMLDivElement>(null);
   // Arriving with a category already in the URL (e.g. clicking a tile on the
@@ -679,6 +699,7 @@ export default function ProductsPage() {
                 availableSizes={availableSizes}
                 sizeFilters={sizeFilters}
                 onToggleSize={toggleSize}
+                onSubmitSearch={() => setFilterOpen(false)}
               />
             </div>
             <div className="border-t border-gold-400/15 px-4 py-4">
