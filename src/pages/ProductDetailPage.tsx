@@ -106,6 +106,14 @@ export default function ProductDetailPage() {
   const [similar, setSimilar] = useState<Product[]>([]);
   const [adjacent, setAdjacent] = useState<AdjacentProducts>({ prevId: null, nextId: null });
   const [loading, setLoading] = useState(true);
+  // True only while hopping to a different product via Prev/Next or a
+  // "similar" card while one is already on screen — distinct from `loading`
+  // (which covers the very first load, when there's nothing to keep
+  // showing). Keeps the current product visible with a brief fade instead of
+  // tearing the whole page down to a spinner, which used to cause a jarring
+  // jump + flash of the loading text on every hop.
+  const [switching, setSwitching] = useState(false);
+  const hasLoadedOnce = useRef(false);
   const [error, setError] = useState(false);
   const [showDepositInfo, setShowDepositInfo] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -134,21 +142,36 @@ export default function ProductDetailPage() {
       return;
     }
     let cancelled = false;
-    setLoading(true);
     setError(false);
-    setSimilar([]);
-    setAdjacent({ prevId: null, nextId: null });
+    // Only the very first load blanks the page for a spinner. A hop between
+    // products (Prev/Next, a "similar" card) keeps the outgoing product's
+    // image/details/similar-grid on screen — cleared only once the new data
+    // has actually arrived — so nothing collapses or reflows mid-transition.
+    if (hasLoadedOnce.current) {
+      setSwitching(true);
+    } else {
+      setLoading(true);
+    }
 
     fetchProductById(numericId)
       .then(async (p) => {
         if (cancelled) return;
         if (!p) {
           setLoading(false);
+          setSwitching(false);
+          setProduct(null);
           return;
         }
+        hasLoadedOnce.current = true;
         setProduct(p);
         setLoading(false);
+        setSwitching(false);
 
+        // The previous product's "similar" grid and Prev/Next targets are
+        // left in place (rather than cleared to empty first) until these
+        // resolve — swapping straight to the new values avoids a moment
+        // where the similar-products section collapses to nothing and the
+        // page height jumps.
         try {
           const sim = await fetchSimilarProducts(p.categoryIds, p.id, 4);
           if (!cancelled) setSimilar(sim);
@@ -167,6 +190,7 @@ export default function ProductDetailPage() {
         if (!cancelled) {
           setError(true);
           setLoading(false);
+          setSwitching(false);
         }
       });
 
@@ -241,7 +265,11 @@ export default function ProductDetailPage() {
     : [product.categoryId].filter((id): id is number => id !== null);
 
   return (
-    <div className="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-24 sm:px-6 sm:pt-28">
+    <div
+      className={`relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-24 transition-opacity duration-200 sm:px-6 sm:pt-28 ${
+        switching ? 'opacity-60' : 'opacity-100'
+      }`}
+    >
       <button
         onClick={handleBack}
         className="mb-6 inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-gold-200"
@@ -276,7 +304,7 @@ export default function ProductDetailPage() {
           {(adjacent.prevId != null || adjacent.nextId != null) && (
             <div className="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex items-center justify-center gap-4">
               <button
-                onClick={() => adjacent.prevId != null && navigate('product-detail', String(adjacent.prevId))}
+                onClick={() => !switching && adjacent.prevId != null && navigate('product-detail', String(adjacent.prevId))}
                 disabled={adjacent.prevId == null}
                 aria-label={t('common.previousProduct')}
                 title={t('common.previousProduct')}
@@ -285,7 +313,7 @@ export default function ProductDetailPage() {
                 <ChevronLeft size={20} />
               </button>
               <button
-                onClick={() => adjacent.nextId != null && navigate('product-detail', String(adjacent.nextId))}
+                onClick={() => !switching && adjacent.nextId != null && navigate('product-detail', String(adjacent.nextId))}
                 disabled={adjacent.nextId == null}
                 aria-label={t('common.nextProduct')}
                 title={t('common.nextProduct')}

@@ -762,6 +762,15 @@ async function fetchByCategoryGroups(
   return (data as unknown as ProductRow[] | null ?? []).map(mapRow);
 }
 
+function shuffle<T>(items: T[]): T[] {
+  const arr = items.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 // "Similar" products must match the same demographic/primary category
 // (Women/Men/Boys/...) AND at least one shared theme/season tag
 // (Halloween/Christmas/Pirates/...) where the source product has one —
@@ -770,6 +779,11 @@ async function fetchByCategoryGroups(
 // costumes purely because they shared the same demographic. Falls back to
 // primary-only matches to top up the list when the tightly-matched set is
 // too small (e.g. a product with a rare/unique theme combination).
+//
+// Both tiers are pulled as a wider pool and shuffled before slicing to
+// `limit` — a plain top-N by priority/id always resurfaced the exact same
+// handful of products for a given category combination, no matter which
+// product in that combination linked here.
 export async function fetchSimilarProducts(
   categoryIds: number[],
   excludeId: number,
@@ -780,15 +794,19 @@ export async function fetchSimilarProducts(
   const primary = categoryIds.filter((id) => PRIMARY_CATEGORY_IDS.has(id));
   const secondary = categoryIds.filter((id) => !PRIMARY_CATEGORY_IDS.has(id));
 
-  const results =
+  const POOL_SIZE = Math.max(limit * 6, 24);
+
+  const tight =
     primary.length > 0 && secondary.length > 0
-      ? await fetchByCategoryGroups(excludeId, primary, secondary, limit)
+      ? shuffle(await fetchByCategoryGroups(excludeId, primary, secondary, POOL_SIZE))
       : [];
+
+  const results = tight.slice(0, limit);
 
   if (results.length < limit) {
     const have = new Set(results.map((p) => p.id));
     const fallbackIds = primary.length > 0 ? primary : categoryIds;
-    const more = await fetchByCategoryGroups(excludeId, fallbackIds, [], limit * 2);
+    const more = shuffle(await fetchByCategoryGroups(excludeId, fallbackIds, [], POOL_SIZE * 2));
     for (const p of more) {
       if (results.length >= limit) break;
       if (!have.has(p.id)) {
@@ -798,5 +816,5 @@ export async function fetchSimilarProducts(
     }
   }
 
-  return results.slice(0, limit);
+  return results;
 }
