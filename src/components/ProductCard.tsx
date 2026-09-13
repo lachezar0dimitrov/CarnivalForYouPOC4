@@ -58,6 +58,13 @@ export default function ProductCard({ product }: { product: Product }) {
             -{Math.round((1 - product.price / product.oldPrice) * 100)}%
           </span>
         )}
+
+        {/* Couple Badge */}
+        {product.couplePartnerId != null && (
+          <span className="absolute bottom-3 right-3 z-20 rounded-full border border-gold-400/50 bg-black/70 px-2.5 py-1 text-[0.65rem] font-bold text-[#f7e9b8] shadow-glow-sm">
+            {lang === 'bg' ? 'Двойка' : 'Couple'}
+          </span>
+        )}
       </div>
 
       {/* Product Info */}

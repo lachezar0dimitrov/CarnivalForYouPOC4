@@ -62,6 +62,8 @@ export type Product = {
   tags: string[];
   isNew: boolean;
   isPopular: boolean;
+  couplePartnerId: number | null;
+  newSince: string | null;
 };
 
 export type ProductRow = {
@@ -82,6 +84,8 @@ export type ProductRow = {
   tags: string[] | null;
   is_new: boolean | null;
   is_popular: boolean | null;
+  couple_partner_id: number | null;
+  new_since: string | null;
 };
 
 function mapRow(r: ProductRow): Product {
@@ -137,6 +141,8 @@ function mapRow(r: ProductRow): Product {
     tags: r.tags ?? [],
     isNew: r.is_new ?? false,
     isPopular: r.is_popular ?? false,
+    couplePartnerId: r.couple_partner_id ?? null,
+    newSince: r.new_since ?? null,
   };
 }
 
@@ -450,7 +456,7 @@ export type FetchResult = {
 };
 
 const selectColumns =
-  'id, old_id, old_catalog_number, category_id, category_ids, name_bg, name_en, description_bg, description_en, sizes, price, old_price, image_url, priority, tags, is_new, is_popular';
+  'id, old_id, old_catalog_number, category_id, category_ids, name_bg, name_en, description_bg, description_en, sizes, price, old_price, image_url, priority, tags, is_new, is_popular, couple_partner_id, new_since';
 
 // Маски / Шапки / Перуки / Аксесоари — hidden by stakeholder decision
 // (categories.is_active = false), not shown as tiles or filter chips.
@@ -714,10 +720,41 @@ export async function fetchProductById(id: number): Promise<Product | null> {
   return mapRow(data as unknown as ProductRow);
 }
 
+// Admin-only lookup for the couple-partner picker (AdminPage.tsx product
+// form) — deliberately skips baseQuery()'s public is_active/price/image
+// filters so an admin can pair a product that isn't published yet.
+export async function searchProductsBasic(
+  query: string,
+  excludeId?: number,
+  limit = 20
+): Promise<Product[]> {
+  const filter = searchFilter(query);
+  if (!filter) return [];
+
+  let q = supabase.from('products').select(selectColumns).or(filter);
+  if (excludeId != null) q = q.neq('id', excludeId);
+
+  const { data, error } = await q.order('name_bg', { ascending: true }).limit(limit);
+
+  if (error) throw error;
+  return (data as unknown as ProductRow[] | null ?? []).map(mapRow);
+}
+
 // Products flagged "new" in the admin form, for the home page ribbon.
+// new_since is only ever set by the Rubies-invoice bulk import loader
+// (AdminPage.tsx's Import tab) — manually-flagged products (via the
+// ProductForm checkbox) keep new_since NULL and so never expire, exactly as
+// before this column existed. Only imported batches actually age out, and
+// that's computed here at query time (no cron/scheduled job).
+const NEW_BADGE_MONTHS = 6;
+
 export async function fetchNewProducts(limit = 20): Promise<Product[]> {
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - NEW_BADGE_MONTHS);
+
   const { data, error } = await baseQuery()
     .eq('is_new', true)
+    .or(`new_since.is.null,new_since.gt.${cutoff.toISOString()}`)
     .order('priority', { ascending: false })
     .order('id', { ascending: false })
     .limit(limit);

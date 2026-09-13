@@ -104,6 +104,7 @@ export default function ProductDetailPage() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [similar, setSimilar] = useState<Product[]>([]);
+  const [couplePartner, setCouplePartner] = useState<Product | null>(null);
   const [adjacent, setAdjacent] = useState<AdjacentProducts>({ prevId: null, nextId: null });
   const [loading, setLoading] = useState(true);
   // True only while hopping to a different product via Prev/Next or a
@@ -177,6 +178,13 @@ export default function ProductDetailPage() {
           if (!cancelled) setSimilar(sim);
         } catch {
           // similar products are non-critical
+        }
+
+        try {
+          const partner = p.couplePartnerId != null ? await fetchProductById(p.couplePartnerId) : null;
+          if (!cancelled) setCouplePartner(partner);
+        } catch {
+          // couple partner is non-critical
         }
 
         try {
@@ -433,6 +441,23 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Part of a couple set */}
+      {product && couplePartner && (
+        <section className="mt-16">
+          <div className="mb-6 flex items-center gap-3">
+            <h2 className="font-display text-xl font-semibold text-gray-100 sm:text-2xl">
+              {t('common.partOfCouple')}
+            </h2>
+            <div className="h-px flex-1 bg-gold-400/15" />
+          </div>
+
+          <div className="grid max-w-xl grid-cols-2 gap-4">
+            <ProductCard product={product} />
+            <ProductCard product={couplePartner} />
+          </div>
+        </section>
+      )}
 
       {/* Similar suggestions */}
       {similar.length > 0 && (

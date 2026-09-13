@@ -36,7 +36,7 @@ import {
   deleteBanner,
   type Banner,
 } from '@/lib/banners';
-import { bgnToEur, eurToBgn, type Product } from '@/lib/products';
+import { bgnToEur, eurToBgn, fetchProductById, searchProductsBasic, type Product } from '@/lib/products';
 import { uploadImage, type ImageBucket } from '@/lib/r2';
 import {
   fetchSiteSettings,
@@ -1291,6 +1291,7 @@ function mapAdminRow(r: any): AdminProduct {
     isActive: r.is_active ?? true,
     isNew: r.is_new ?? false,
     isPopular: r.is_popular ?? false,
+    couplePartnerId: r.couple_partner_id ?? null,
   };
 }
 
@@ -1997,6 +1998,13 @@ function ProductForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [couplePartner, setCouplePartner] = useState<Product | null>(null);
+  useEffect(() => {
+    if (product?.couplePartnerId != null) {
+      fetchProductById(product.couplePartnerId).then(setCouplePartner).catch(() => setCouplePartner(null));
+    }
+  }, [product?.couplePartnerId]);
+
   const toggleTheme = (catId: number) => {
     setForm((prev) => {
       const exists = prev.theme_category_ids.includes(catId);
@@ -2014,13 +2022,26 @@ function ProductForm({
 
     const tagsArray = form.tags.split(',').map((t) => t.trim()).filter(Boolean);
 
+    // Couple-pairing is 1:1 and reciprocal — both rows must point at each
+    // other. Linking two products also tags both with the "Двойки" category
+    // (id 35) so they surface in that filter too, in addition to their own
+    // categories. Unlinking never strips that tag back off (additive only).
+    const prevPartnerId = product?.couplePartnerId ?? null;
+    const newPartnerId = couplePartner?.id ?? null;
+    const partnerChanged = newPartnerId !== prevPartnerId;
+
+    let categoryIds = [form.primary_category_id, ...form.theme_category_ids];
+    if (partnerChanged && newPartnerId != null && !categoryIds.includes(35)) {
+      categoryIds = [...categoryIds, 35];
+    }
+
     const payload = {
       name_bg: form.name_bg || null,
       name_en: form.name_en || null,
       description_bg: form.description_bg || null,
       description_en: form.description_en || null,
       category_id: form.primary_category_id,
-      category_ids: [form.primary_category_id, ...form.theme_category_ids],
+      category_ids: categoryIds,
       price: eurToBgn(Number(form.price)),
       image_url: form.image_url || null,
       sizes: form.sizes || null,
@@ -2031,16 +2052,42 @@ function ProductForm({
       old_id: form.old_id ? Number(form.old_id) : null,
       old_catalog_number: form.old_catalog_number.trim() || null,
       tags: tagsArray,
+      couple_partner_id: newPartnerId,
     };
 
     try {
+      let thisId: number;
       if (product) {
-        const { error: err } = await supabase.from('products').update(payload).eq('id', product.id);
+        thisId = product.id;
+        const { error: err } = await supabase.from('products').update(payload).eq('id', thisId);
         if (err) throw err;
       } else {
-        const { error: err } = await supabase.from('products').insert(payload);
+        const { data, error: err } = await supabase.from('products').insert(payload).select('id').single();
         if (err) throw err;
+        thisId = data.id;
       }
+
+      if (partnerChanged) {
+        // Break the old link, if this product had a different partner before.
+        if (prevPartnerId != null) {
+          await supabase.from('products').update({ couple_partner_id: null }).eq('id', prevPartnerId);
+        }
+        // Point the new partner back at this product, breaking any stale
+        // link it had with a third product first (pairing is strictly 1:1).
+        if (newPartnerId != null && couplePartner) {
+          if (couplePartner.couplePartnerId != null && couplePartner.couplePartnerId !== thisId) {
+            await supabase.from('products').update({ couple_partner_id: null }).eq('id', couplePartner.couplePartnerId);
+          }
+          const partnerCategoryIds = couplePartner.categoryIds.includes(35)
+            ? couplePartner.categoryIds
+            : [...couplePartner.categoryIds, 35];
+          await supabase
+            .from('products')
+            .update({ couple_partner_id: thisId, category_ids: partnerCategoryIds })
+            .eq('id', newPartnerId);
+        }
+      }
+
       notify('success', lang === 'bg' ? 'Продуктът е запазен.' : 'Product saved.');
       onSaved();
     } catch {
@@ -2156,6 +2203,15 @@ function ProductForm({
           <input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="form-input" placeholder="венец, маска, хелоуин" />
         </FormField>
 
+        <FormField label={lang === 'bg' ? 'Част от чифт/двойка с продукт' : 'Part of a couple set with product'}>
+          <CouplePartnerPicker
+            lang={lang}
+            excludeId={product?.id}
+            value={couplePartner}
+            onChange={setCouplePartner}
+          />
+        </FormField>
+
         <div className="flex flex-col gap-2 sm:flex-row sm:gap-6">
           <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
             <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 rounded border-gold-400/30 bg-ink-700" />
@@ -2176,6 +2232,108 @@ function ProductForm({
         <FormActions saving={saving} onCancel={onClose} label={lang === 'bg' ? 'Запази' : 'Save'} />
       </form>
     </Modal>
+  );
+}
+
+// Searchable product picker for pairing two costumes (e.g. men's + women's)
+// as a "couple" set — see ProductForm's couple_partner_id handling above.
+function CouplePartnerPicker({
+  lang,
+  excludeId,
+  value,
+  onChange,
+}: {
+  lang: 'bg' | 'en';
+  excludeId?: number;
+  value: Product | null;
+  onChange: (partner: Product | null) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const [results, setResults] = useState<Product[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    const term = query.trim();
+    if (!term) {
+      setResults([]);
+      return;
+    }
+    setSearching(true);
+    const handle = setTimeout(() => {
+      searchProductsBasic(term, excludeId, 20)
+        .then(setResults)
+        .catch(() => setResults([]))
+        .finally(() => setSearching(false));
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [query, excludeId]);
+
+  if (value) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-gold-400/20 bg-ink-900 p-3">
+        <div className="flex items-center gap-3">
+          <AdminImage src={value.imageUrl} alt="" className="h-12 w-12 rounded-md object-cover" />
+          <div>
+            <div className="text-sm font-medium text-gray-100">{lang === 'bg' ? value.nameBg : value.nameEn}</div>
+            <div className="text-xs text-gray-400">#{value.id} · {value.price.toFixed(0)} €</div>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          className="btn-ghost rounded-lg px-3 py-1.5 text-xs whitespace-nowrap"
+        >
+          {lang === 'bg' ? 'Премахни' : 'Remove'}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder={lang === 'bg' ? 'Търси продукт по име...' : 'Search product by name...'}
+        className="form-input"
+      />
+      {open && query.trim() && (
+        <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-gold-400/20 bg-ink-900 shadow-lg">
+          {searching && (
+            <div className="p-3 text-sm text-gray-400">{lang === 'bg' ? 'Търсене...' : 'Searching...'}</div>
+          )}
+          {!searching && results.length === 0 && (
+            <div className="p-3 text-sm text-gray-400">{lang === 'bg' ? 'Няма резултати.' : 'No results.'}</div>
+          )}
+          {results.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onChange(r);
+                setQuery('');
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-3 p-2 text-left hover:bg-gold-400/10"
+            >
+              <AdminImage src={r.imageUrl} alt="" className="h-10 w-10 rounded-md object-cover" />
+              <div>
+                <div className="text-sm text-gray-100">{lang === 'bg' ? r.nameBg : r.nameEn}</div>
+                <div className="text-xs text-gray-400">#{r.id} · {r.price.toFixed(0)} €</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
