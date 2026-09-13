@@ -6,7 +6,10 @@ import {
   Clock,
   Navigation,
   DoorOpen,
-  Map as MapIcon,
+  ParkingCircle,
+  ShoppingCart,
+  Bus,
+  TrainFront,
 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
@@ -22,7 +25,6 @@ export default function ContactsPage() {
   });
 
   const [settings, setSettings] = useState<SiteSettings | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     fetchSiteSettings().then(setSettings).catch(() => {});
@@ -113,11 +115,19 @@ export default function ContactsPage() {
             </ul>
           </div>
 
-          <div className="mt-6 rounded-xl border border-gold-400/15 bg-gold-400/5 p-4">
-            <p className="text-xs leading-relaxed text-gray-400">
-              <span className="font-semibold text-gold-200">{t('contacts.tip')}</span>{' '}
-              {t('contacts.tipBody')}
-            </p>
+          <div className="mt-6 space-y-3">
+            <div className="rounded-xl border border-gold-400/15 bg-gold-400/5 p-4">
+              <p className="text-xs leading-relaxed text-gray-400">
+                <span className="font-semibold text-gold-200">{t('contacts.tip')}</span>{' '}
+                {t('contacts.tipBody')}
+              </p>
+            </div>
+            <div className="rounded-xl border border-gold-400/15 bg-gold-400/5 p-4">
+              <p className="text-xs leading-relaxed text-gray-400">
+                <span className="font-semibold text-gold-200">{t('contacts.info')}</span>{' '}
+                {t('contacts.infoBody')}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -148,46 +158,105 @@ export default function ContactsPage() {
         </div>
       </div>
 
+      {/* Parking */}
+      <div className="glass mt-8 rounded-2xl p-6">
+        <div className="flex items-center gap-3">
+          <ParkingCircle size={22} className="text-gold-300" />
+          <h3 className="font-display text-lg font-semibold text-gold-100">
+            {t('contacts.parkingTitle')}
+          </h3>
+        </div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-gold-400/15 bg-gold-400/5 p-4 text-center">
+            <div className="inline-flex rounded-xl border border-gold-400/20 bg-gold-400/5 p-2.5 text-gold-300">
+              <ParkingCircle size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gold-200">
+                {t('contacts.parkingNearby')}
+              </p>
+              <p className="mt-1 text-xs text-gray-400">{t('contacts.parkingNearbyBody')}</p>
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-gold-400/15 bg-gold-400/5 p-4 text-center">
+            <div className="inline-flex rounded-xl border border-gold-400/20 bg-gold-400/5 p-2.5 text-gold-300">
+              <ShoppingCart size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gold-200">
+                {t('contacts.parkingTMarket')}
+              </p>
+              <p className="mt-1 text-xs text-gray-400">{t('contacts.parkingTMarketBody')}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Public transport */}
+      <div className="glass mt-8 rounded-2xl p-6">
+        <div className="flex items-center gap-3">
+          <Bus size={22} className="text-gold-300" />
+          <h3 className="font-display text-lg font-semibold text-gold-100">
+            {t('contacts.transportTitle')}
+          </h3>
+        </div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-gold-400/15 bg-gold-400/5 p-4 text-center">
+            <div className="inline-flex rounded-xl border border-gold-400/20 bg-gold-400/5 p-2.5 text-gold-300">
+              <Bus size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gold-200">
+                {t('contacts.transportBus1')}
+              </p>
+              <p className="mt-1 text-xs text-gray-400">{t('contacts.transportBus1Body')}</p>
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-gold-400/15 bg-gold-400/5 p-4 text-center">
+            <div className="inline-flex rounded-xl border border-gold-400/20 bg-gold-400/5 p-2.5 text-gold-300">
+              <Bus size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gold-200">
+                {t('contacts.transportBus2')}
+              </p>
+              <p className="mt-1 text-xs text-gray-400">{t('contacts.transportBus2Body')}</p>
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-gold-400/15 bg-gold-400/5 p-4 text-center">
+            <div className="inline-flex rounded-xl border border-gold-400/20 bg-gold-400/5 p-2.5 text-gold-300">
+              <TrainFront size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gold-200">
+                {t('contacts.transportMetro')}
+              </p>
+              <p className="mt-1 text-xs text-gray-400">{t('contacts.transportMetroBody')}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Map */}
       <div id="map" className="mt-8 overflow-hidden rounded-2xl border border-gold-400/25 shadow-card">
         <div className="relative">
-          {mapLoaded ? (
-            <iframe
-              title="Carnival for You, София"
-              src={mapsEmbed}
-              className="h-72 w-full sm:h-96"
-              style={{ border: 0 }}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setMapLoaded(true)}
-              className="flex h-72 w-full flex-col items-center justify-center gap-3 bg-ink-800 text-center transition hover:bg-ink-800/80 sm:h-96"
-            >
-              <div className="inline-flex rounded-xl border border-gold-400/20 bg-gold-400/5 p-3 text-gold-300">
-                <MapIcon size={24} />
-              </div>
-              <span className="btn-gold rounded-full px-5 py-2.5 text-sm">
-                {t('contacts.mapLoad')}
-              </span>
-              <span className="max-w-xs px-6 text-xs text-gray-500">
-                {t('contacts.mapLoadHint')}
-              </span>
-            </button>
-          )}
+          <iframe
+            title="Carnival for You, София"
+            src={mapsEmbed}
+            className="h-72 w-full sm:h-96"
+            style={{ border: 0 }}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
           <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-gold-400/20" />
 
-          {mapLoaded && (
-            <div className="absolute bottom-4 left-4 z-10 flex items-center gap-3">
-              <div className="glass flex items-center gap-2 rounded-full px-4 py-2">
-                <Navigation size={16} className="text-gold-300" />
-                <span className="text-xs text-gray-200">{address}</span>
-              </div>
+          <div className="absolute bottom-4 left-4 z-10 flex items-center gap-3">
+            <div className="glass flex items-center gap-2 rounded-full px-4 py-2">
+              <Navigation size={16} className="text-gold-300" />
+              <span className="text-xs text-gray-200">{address}</span>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

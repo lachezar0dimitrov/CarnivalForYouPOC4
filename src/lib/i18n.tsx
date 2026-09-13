@@ -135,11 +135,25 @@ const translations: Record<Lang, Record<string, string>> = {
     'contacts.tip': 'Съвет:',
     'contacts.tipBody':
       'За групови резервации и консултации по образ ви препоръчваме да ни се обадите предварително.',
+    'contacts.info': 'Информация:',
+    'contacts.infoBody':
+      'От месец Октомври до края на месец Декември сме с удължено работно време.',
     'contacts.openMaps': 'Отворете в Google Maps',
     'contacts.required': 'задължително',
-    'contacts.mapLoad': 'Зареди картата',
-    'contacts.mapLoadHint':
-      'Google Maps се зарежда само при клик, за да не поставя бисквитки без съгласието ви.',
+    'contacts.parkingTitle': 'Паркиране',
+    'contacts.parkingNearby': 'Около обекта',
+    'contacts.parkingNearbyBody': 'Свободна зона за паркиране.',
+    'contacts.parkingTMarket': 'В близост',
+    'contacts.parkingTMarketBody':
+      'Паркингът на T MARKET (до бл. 427) предлага безплатен престой до 1 час.',
+    'contacts.transportTitle': 'Градски транспорт',
+    'contacts.transportBus1': 'Автобуси 76 и 213',
+    'contacts.transportBus1Body': 'Спирка „Бл. 427 ж.к. Младост 4“ — ~3 мин пеша (200 м).',
+    'contacts.transportBus2': 'Автобуси 111 и 314',
+    'contacts.transportBus2Body': 'Спирка „Бл. 472“ или „Бл. 442“ — ~4–5 мин пеша (400 м).',
+    'contacts.transportMetro': 'Метро',
+    'contacts.transportMetroBody':
+      'Метростанция „Бизнес парк“ (Линия М1) — ~6–8 мин пеша (750 м).',
 
     // about
     'about.eyebrow': 'Историята ни',
@@ -354,11 +368,25 @@ const translations: Record<Lang, Record<string, string>> = {
     'contacts.tip': 'Tip:',
     'contacts.tipBody':
       'For group reservations and look consultations we recommend calling us in advance.',
+    'contacts.info': 'Info:',
+    'contacts.infoBody':
+      'From October through the end of December we have extended working hours.',
     'contacts.openMaps': 'Open in Google Maps',
     'contacts.required': 'required',
-    'contacts.mapLoad': 'Load the map',
-    'contacts.mapLoadHint':
-      'Google Maps only loads on click, so it never sets cookies without your consent.',
+    'contacts.parkingTitle': 'Parking',
+    'contacts.parkingNearby': 'Around the venue',
+    'contacts.parkingNearbyBody': 'Free parking zone.',
+    'contacts.parkingTMarket': 'Nearby',
+    'contacts.parkingTMarketBody':
+      'The T MARKET parking lot (next to bl. 427) offers free parking for up to 1 hour.',
+    'contacts.transportTitle': 'Public transport',
+    'contacts.transportBus1': 'Buses 76 and 213',
+    'contacts.transportBus1Body': '"Bl. 427, Mladost 4" stop — ~3 min walk (200 m).',
+    'contacts.transportBus2': 'Buses 111 and 314',
+    'contacts.transportBus2Body': '"Bl. 472" or "Bl. 442" stop — ~4–5 min walk (400 m).',
+    'contacts.transportMetro': 'Metro',
+    'contacts.transportMetroBody':
+      '"Business Park" station (Line M1) — ~6–8 min walk (750 m).',
 
     // about
     'about.eyebrow': 'Our story',
