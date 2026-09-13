@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, Clock, Heart, Users, PartyPopper, Baby, type LucideIcon } from 'lucide-react';
+import { Sparkles, Users, PartyPopper, Baby } from 'lucide-react';
 import { fetchAboutContent, type AboutContent } from '@/lib/aboutContent';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
 import SectionHeading from '@/components/SectionHeading';
-
-const valueIconMap: Record<string, LucideIcon> = { Sparkles, Clock, Heart };
 
 export default function AboutPage() {
   const { navigate } = useRouter();
@@ -25,11 +23,6 @@ export default function AboutPage() {
   if (!content) return null;
 
   const bg = lang === 'bg';
-  const values = content.valuesList.map((v) => ({
-    icon: valueIconMap[v.icon] ?? Sparkles,
-    title: bg ? v.titleBg : v.titleEn,
-    text: bg ? v.bodyBg : v.bodyEn,
-  }));
   const heroList = content.heroList.map((item) => (bg ? item.bg : item.en));
   const occasions = content.occasions.map((item) => (bg ? item.bg : item.en));
 
@@ -38,7 +31,6 @@ export default function AboutPage() {
       <div className="mx-auto max-w-2xl">
         <SectionHeading
           as="h1"
-          eyebrow={t('about.eyebrow')}
           title={t('about.title')}
           subtitle={t('about.subtitle')}
         />
@@ -56,7 +48,6 @@ export default function AboutPage() {
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
 
         <div className="space-y-4">
@@ -97,7 +88,6 @@ export default function AboutPage() {
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
       </div>
 
@@ -119,22 +109,7 @@ export default function AboutPage() {
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
-      </div>
-
-      <div className="mt-16 grid gap-5 sm:grid-cols-3">
-        {values.map((v) => (
-          <div key={v.title} className="glass glass-hover rounded-2xl p-6">
-            <div className="mb-4 inline-flex rounded-xl border border-gold-400/20 bg-gold-400/5 p-3 text-gold-300">
-              <v.icon size={24} />
-            </div>
-            <h4 className="font-display text-lg font-semibold text-gray-100">
-              {v.title}
-            </h4>
-            <p className="mt-2 text-sm leading-relaxed text-gray-400">{v.text}</p>
-          </div>
-        ))}
       </div>
 
       <div className="mt-16 grid gap-8 md:grid-cols-2 md:items-center">
@@ -145,7 +120,6 @@ export default function AboutPage() {
             className="h-72 w-full object-cover sm:h-96"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
 
         <div className="space-y-4">

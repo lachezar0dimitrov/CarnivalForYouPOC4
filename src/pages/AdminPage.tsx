@@ -2657,7 +2657,7 @@ function ContactsManager() {
 // ============================================================
 // ABOUT MANAGER
 // ============================================================
-const ABOUT_VALUE_ICONS = ['Sparkles', 'Clock', 'Heart'] as const;
+const ABOUT_VALUE_ICONS = ['Sparkles', 'Clock', 'Heart', 'MapPin'] as const;
 
 function AboutManager() {
   const { lang } = useI18n();
