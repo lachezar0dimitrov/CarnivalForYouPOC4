@@ -11,12 +11,14 @@ import {
   type CategoryMeta,
   type Product,
 } from '@/lib/products';
+import { fetchAboutContent, type AboutValue } from '@/lib/aboutContent';
 import { getCurrentSeason } from '@/lib/season';
 import BannerCarousel from '@/components/BannerCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
 import HeroFireflies from '@/components/HeroFireflies';
 import NewArrivalsRibbon from '@/components/NewArrivalsRibbon';
 import PopularCostumes from '@/components/PopularCostumes';
+import ValueProps from '@/components/ValueProps';
 
 // ItemList of the visible PopularCostumes section below — kept lightweight
 // (name/url/image per entry, no full Product/Offer markup) since a duplicate
@@ -44,6 +46,7 @@ export default function HomePage() {
   const { t, lang } = useI18n();
   const [categories, setCategories] = useState<CategoryMeta[]>([]);
   const [popularProducts, setPopularProducts] = useState<Product[]>([]);
+  const [values, setValues] = useState<AboutValue[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [popularLoaded, setPopularLoaded] = useState(false);
   const isChristmas = getCurrentSeason() === 'christmas';
@@ -54,6 +57,14 @@ export default function HomePage() {
         setCategories(cats.filter((cat) => Boolean(cat.image?.trim())));
       })
       .finally(() => setCategoriesLoaded(true));
+  }, []);
+
+  // Same admin-editable content as the About page's value props — shown
+  // here too so first-time visitors see it without navigating to About.
+  useEffect(() => {
+    fetchAboutContent()
+      .then((content) => setValues(content?.valuesList ?? []))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -148,6 +159,12 @@ export default function HomePage() {
           />
         </div>
       </section>
+
+      {values.length > 0 && (
+        <section className="relative z-10 mx-auto w-full max-w-[1920px] px-4 pb-16 sm:px-6 sm:pb-24 lg:px-8">
+          <ValueProps values={values} lang={lang} />
+        </section>
+      )}
 
       <PopularCostumes products={popularProducts} />
 
