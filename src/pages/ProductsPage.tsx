@@ -211,8 +211,8 @@ export default function ProductsPage() {
   const [sizeFilters, setSizeFilters] = useState<string[]>(() =>
     queryParams.size ? queryParams.size.split(',').filter(Boolean) : []
   );
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>(() => queryParams.search ?? '');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>(() => queryParams.search ?? '');
   const [filterOpen, setFilterOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,7 +277,7 @@ export default function ProductsPage() {
   // initialisers above have already parsed the same value out of the URL, so
   // it sees no change and never fires — leaving the user at the top of the
   // page looking at the category grid instead of their filtered products.
-  const needsScrollRef = useRef(queryParams.category != null);
+  const needsScrollRef = useRef(queryParams.category != null || queryParams.search != null);
 
   useEffect(() => {
     if (!loading && needsScrollRef.current) {
@@ -326,9 +326,9 @@ export default function ProductsPage() {
 
   // Mirror the active filters into the URL (replacing, not pushing, so
   // toggling chips doesn't spam browser history). This is what lets a
-  // product opened from here remember exactly which category/theme/size
-  // filters were active — see the router's origin tracking — instead of
-  // only the category the page happened to load with.
+  // product opened from here remember exactly which category/theme/size/
+  // search filters were active — see the router's origin tracking —
+  // instead of only the category the page happened to load with.
   useEffect(() => {
     const categoryIds = [
       ...primaryCategories,
@@ -340,6 +340,7 @@ export default function ProductsPage() {
     if (categoryIds.length > 0) params.category = categoryIds.join(',');
     if (themeIds.length > 0) params.themes = themeIds.join(',');
     if (sizeFilters.length > 0) params.size = sizeFilters.join(',');
+    if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
     if (page > 0) params.page = String(page + 1);
 
     updateQuery(params);
@@ -347,7 +348,7 @@ export default function ProductsPage() {
     // router render, and including it would re-fire this effect on every
     // call to itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [primaryCategories, secondaryCategories, sizeFilters, page]);
+  }, [primaryCategories, secondaryCategories, sizeFilters, debouncedSearch, page]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);

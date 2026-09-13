@@ -83,18 +83,18 @@ export default function Header() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 2xl:max-w-[1680px]">
           <div className="flex items-center gap-2 sm:gap-4">
             <Logo onClick={() => go('home')} large />
+          </div>
+
+          {/* Desktop nav */}
+          <nav className="hidden items-center gap-1 lg:flex">
             <button
               onClick={openProductFilter}
-              className="flex shrink-0 items-center justify-center rounded-full border border-gold-400/30 p-2.5 text-gold-200 transition hover:border-gold-400/60 hover:bg-gold-400/10 hover:text-gold-100"
+              className="mr-1 flex shrink-0 items-center justify-center rounded-full border border-gold-400/30 p-2.5 text-gold-200 transition hover:border-gold-400/60 hover:bg-gold-400/10 hover:text-gold-100"
               aria-label={t('nav.search')}
               title={t('nav.search')}
             >
               <Search size={20} />
             </button>
-          </div>
-
-          {/* Desktop nav */}
-          <nav className="hidden items-center gap-1 lg:flex">
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -159,6 +159,13 @@ export default function Header() {
             onClick={() => setOpen(false)}
           />
           <nav className="glass relative mx-3 mt-2 flex flex-col gap-1 rounded-2xl p-4 shadow-card animate-fadeUp">
+            <button
+              onClick={openProductFilter}
+              className="flex items-center gap-2.5 rounded-xl px-4 py-3.5 text-left text-base text-gray-200 transition hover:bg-white/5"
+            >
+              <Search size={18} className="text-gold-300" />
+              {t('nav.search')}
+            </button>
             {navItems.map((item) => (
               <button
                 key={item.id}
