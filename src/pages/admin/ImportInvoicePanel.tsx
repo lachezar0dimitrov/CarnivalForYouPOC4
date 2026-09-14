@@ -20,17 +20,22 @@ import { useToast } from '@/components/Toast';
 // truthy) when checked. Modeled with an index signature since the column
 // set is dynamic (whatever categories exist in the DB when the sheet was
 // generated).
+// Every text-ish field is typed `string | number` (not just `string`) —
+// SheetJS returns a JS `number` for any cell Excel auto-detected as
+// numeric (catalog numbers, item codes, and sizes can all be plain
+// digits), and pretending otherwise here is exactly what caused the
+// "x.trim is not a function" crash below. Always read these through str().
 type SheetRow = {
-  catalog_number?: string;
+  catalog_number?: string | number;
   match_status?: string;
-  name_en?: string;
-  name_bg?: string;
-  description_en?: string;
-  description_bg?: string;
-  sizes?: string;
+  name_en?: string | number;
+  name_bg?: string | number;
+  description_en?: string | number;
+  description_bg?: string | number;
+  sizes?: string | number;
   cost_price_eur?: number;
   rental_price_eur?: number | string;
-  image_file?: string;
+  image_file?: string | number;
   product_url?: string;
 } & Record<string, string | number | undefined>;
 
@@ -41,6 +46,15 @@ type RowResult = {
 };
 
 type UploadOutcome = { catalogNumber: string; status: 'ok' | 'error'; message?: string };
+
+// SheetJS gives back a JS `number` (not `string`) for any cell Excel
+// auto-detected as numeric — a real problem here since catalog numbers,
+// item codes, and sizes can all be plain digits (e.g. "3001059"). Calling
+// .trim() straight on row.field crashes with "x.trim is not a function"
+// the moment a value happens to be numeric. Always read cells through this.
+function str(value: string | number | undefined): string {
+  return value == null ? '' : String(value).trim();
+}
 
 export default function ImportInvoicePanel() {
   const { lang } = useI18n();
@@ -88,7 +102,7 @@ export default function ImportInvoicePanel() {
       const catIdByName = new Map(categories.map((c) => [c.nameBg, c.id]));
       setCategoryIdByName(catIdByName);
 
-      const catalogNumbers = sheetRows.map((r) => (r.catalog_number ?? '').trim()).filter(Boolean);
+      const catalogNumbers = sheetRows.map((r) => str(r.catalog_number)).filter(Boolean);
       const { data: existing, error } = await supabase
         .from('products')
         .select('old_catalog_number')
@@ -99,7 +113,7 @@ export default function ImportInvoicePanel() {
       const seenCatalogNumbers = new Set<string>();
       const rowResults: RowResult[] = sheetRows.map((row, i) => {
         const errors: string[] = [];
-        const catalogNumber = (row.catalog_number ?? '').trim();
+        const catalogNumber = str(row.catalog_number);
 
         if (!catalogNumber) {
           errors.push(t('липсва catalog_number', 'missing catalog_number'));
@@ -113,8 +127,8 @@ export default function ImportInvoicePanel() {
           seenCatalogNumbers.add(catalogNumber);
         }
 
-        if (!row.name_bg?.trim()) errors.push(t('липсва name_bg', 'missing name_bg'));
-        if (!row.name_en?.trim()) errors.push(t('липсва name_en', 'missing name_en'));
+        if (!str(row.name_bg)) errors.push(t('липсва name_bg', 'missing name_bg'));
+        if (!str(row.name_en)) errors.push(t('липсва name_en', 'missing name_en'));
 
         const rentalPrice = Number(row.rental_price_eur);
         if (!row.rental_price_eur || !Number.isFinite(rentalPrice) || rentalPrice <= 0) {
@@ -126,10 +140,11 @@ export default function ImportInvoicePanel() {
           errors.push(t('няма отметната категория', 'no category checked'));
         }
 
-        if (!row.image_file?.trim()) {
+        const imageFile = str(row.image_file);
+        if (!imageFile) {
           errors.push(t('липсва image_file', 'missing image_file'));
-        } else if (!imageFiles.has(row.image_file.trim())) {
-          errors.push(t(`файлът ${row.image_file} не е сред избраните снимки`, `${row.image_file} not found in selected images`));
+        } else if (!imageFiles.has(imageFile)) {
+          errors.push(t(`файлът ${imageFile} не е сред избраните снимки`, `${imageFile} not found in selected images`));
         }
 
         return { row, rowNumber: i + 2, errors };
@@ -154,9 +169,9 @@ export default function ImportInvoicePanel() {
     const nowIso = new Date().toISOString();
 
     for (const { row } of validated) {
-      const catalogNumber = (row.catalog_number ?? '').trim();
+      const catalogNumber = str(row.catalog_number);
       try {
-        const file = imageFiles.get((row.image_file ?? '').trim())!;
+        const file = imageFiles.get(str(row.image_file))!;
         const { url: imageUrl } = await uploadImage('product-images', file);
 
         const catIds = [...categoryIdByName.entries()]
@@ -164,15 +179,15 @@ export default function ImportInvoicePanel() {
           .map(([, id]) => id);
 
         const payload = {
-          name_bg: row.name_bg?.trim() || null,
-          name_en: row.name_en?.trim() || null,
-          description_bg: row.description_bg?.trim() || null,
-          description_en: row.description_en?.trim() || null,
+          name_bg: str(row.name_bg) || null,
+          name_en: str(row.name_en) || null,
+          description_bg: str(row.description_bg) || null,
+          description_en: str(row.description_en) || null,
           category_id: catIds[0],
           category_ids: catIds,
           price: eurToBgn(Number(row.rental_price_eur)),
           image_url: imageUrl,
-          sizes: row.sizes?.trim() || null,
+          sizes: str(row.sizes) || null,
           is_active: true,
           is_new: true,
           new_since: nowIso,
