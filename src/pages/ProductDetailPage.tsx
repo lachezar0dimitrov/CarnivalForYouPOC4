@@ -11,6 +11,7 @@ import {
   FileText,
   Loader2,
   AlertCircle,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import { useRouter } from '@/lib/router';
@@ -29,6 +30,7 @@ import {
   categoryName,
   hasMeaningfulEnglishDescription,
   calculateDeposit,
+  isProductNew,
   type Product,
   type AdjacentProducts,
 } from '@/lib/products';
@@ -335,6 +337,15 @@ export default function ProductDetailPage() {
           {product.oldPrice != null && product.oldPrice > product.price && (
             <span className="absolute right-4 top-4 z-20 rounded-full bg-error/90 px-3 py-1 text-xs font-bold text-white shadow-glow-sm">
               -{Math.round((1 - product.price / product.oldPrice) * 100)}%
+            </span>
+          )}
+
+          {/* Same green pill as the grid (ProductCard) and homepage ribbon —
+              left side since the discount badge already owns the top-right. */}
+          {isProductNew(product) && (
+            <span className="absolute left-4 top-4 z-20 inline-flex items-center gap-1 rounded-full bg-[#176b4b]/90 px-3 py-1 text-xs font-bold text-white shadow-glow-sm">
+              <Sparkles size={12} />
+              {lang === 'bg' ? 'НОВО' : 'NEW'}
             </span>
           )}
         </div>
