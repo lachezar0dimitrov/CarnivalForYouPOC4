@@ -1,6 +1,7 @@
+import { Sparkles } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useRouter } from '@/lib/router';
-import { productName, type Product } from '@/lib/products';
+import { isProductNew, productName, type Product } from '@/lib/products';
 
 export default function ProductCard({ product }: { product: Product }) {
   const { lang, t } = useI18n();
@@ -51,6 +52,16 @@ export default function ProductCard({ product }: { product: Product }) {
             {lang === 'bg' ? 'Виж повече' : 'See more'}
           </span>
         </span>
+
+        {/* New Badge — same green pill as the homepage ribbon (NewArrivalsRibbon),
+            so the tag reads consistently wherever a shopper sees it. Left side
+            since the discount badge already owns the top-right corner. */}
+        {isProductNew(product) && (
+          <span className="absolute left-3 top-3 z-20 inline-flex items-center gap-1 rounded-full bg-[#176b4b]/90 px-2.5 py-1 text-[0.65rem] font-bold text-white shadow-glow-sm">
+            <Sparkles size={10} />
+            {lang === 'bg' ? 'НОВО' : 'NEW'}
+          </span>
+        )}
 
         {/* Discount Badge */}
         {product.oldPrice != null && product.oldPrice > product.price && (

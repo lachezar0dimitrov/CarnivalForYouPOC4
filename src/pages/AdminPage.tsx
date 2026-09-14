@@ -26,6 +26,7 @@ import {
   Newspaper,
   Info,
   HelpCircle,
+  Sparkles,
 } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
@@ -1384,6 +1385,7 @@ function ProductManager() {
   const [reloadKey, setReloadKey] = useState(0);
   const [filterPrimary, setFilterPrimary] = useState<number[]>([]);
   const [filterTheme, setFilterTheme] = useState<number[]>([]);
+  const [filterNewOnly, setFilterNewOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [dirtyIds, setDirtyIds] = useState<Set<number>>(new Set());
   const [savingIds, setSavingIds] = useState<Set<number>>(new Set());
@@ -1394,7 +1396,7 @@ function ProductManager() {
   const { primaryCategories: filterPrimaryOptions, themeCategories: filterThemeOptions } =
     classifyCategories(categories);
   const primaryIdSet = new Set(filterPrimaryOptions.map((c) => c.id));
-  const activeFilterCount = filterPrimary.length + filterTheme.length;
+  const activeFilterCount = filterPrimary.length + filterTheme.length + (filterNewOnly ? 1 : 0);
 
   const markDirty = (id: number) => {
     setDirtyIds((prev) => {
@@ -1472,9 +1474,11 @@ function ProductManager() {
   const toggleFilterTheme = (id: number) => {
     setFilterTheme((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
+  const toggleFilterNewOnly = () => setFilterNewOnly((v) => !v);
   const clearCategoryFilters = () => {
     setFilterPrimary([]);
     setFilterTheme([]);
+    setFilterNewOnly(false);
   };
 
   useEffect(() => {
@@ -1486,7 +1490,7 @@ function ProductManager() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => { setPage(0); }, [debouncedSearch, filterPrimary, filterTheme]);
+  useEffect(() => { setPage(0); }, [debouncedSearch, filterPrimary, filterTheme, filterNewOnly]);
 
   useEffect(() => {
     setLoading(true);
@@ -1516,6 +1520,7 @@ function ProductManager() {
     if (searchFilter) countQuery.or(searchFilter);
     if (primaryClause) countQuery.or(primaryClause);
     if (themeClause) countQuery.or(themeClause);
+    if (filterNewOnly) countQuery.eq('is_new', true);
     countQuery.then(({ count }) => { if (!cancelled) setTotal(count ?? 0); });
 
     const query = supabase
@@ -1526,6 +1531,7 @@ function ProductManager() {
     if (searchFilter) query.or(searchFilter);
     if (primaryClause) query.or(primaryClause);
     if (themeClause) query.or(themeClause);
+    if (filterNewOnly) query.eq('is_new', true);
 
     query.then(({ data, error }) => {
       if (cancelled) return;
@@ -1535,7 +1541,7 @@ function ProductManager() {
     });
 
     return () => { cancelled = true; };
-  }, [debouncedSearch, page, reloadKey, filterPrimary, filterTheme]);
+  }, [debouncedSearch, page, reloadKey, filterPrimary, filterTheme, filterNewOnly]);
 
   const handleDelete = async (id: number) => {
     if (!confirm(lang === 'bg' ? 'Сигурни ли сте?' : 'Are you sure?')) return;
@@ -1669,6 +1675,25 @@ function ProductManager() {
                 );
               })}
             </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              {lang === 'bg' ? 'Таг' : 'Tag'}
+            </p>
+            <button
+              type="button"
+              onClick={toggleFilterNewOnly}
+              aria-pressed={filterNewOnly}
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm transition ${
+                filterNewOnly
+                  ? 'btn-gold'
+                  : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+              }`}
+            >
+              <Sparkles size={14} />
+              {lang === 'bg' ? 'Ново' : 'New'}
+            </button>
           </div>
         </div>
       )}

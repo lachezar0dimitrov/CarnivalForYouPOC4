@@ -473,6 +473,30 @@ function baseQuery() {
     .or(`category_id.is.null,category_id.not.in.(${HIDDEN_CATEGORY_IDS.join(',')})`);
 }
 
+// "New" badge auto-expiry — see new_since's doc comment on fetchNewProducts
+// below for the full story. Shared here so both the DB-side filters (this
+// function, fetchNewProducts) and the client-side badge check
+// (isProductNew, used by ProductCard) agree on the same cutoff.
+// Stakeholder-requested window: 12 months (raised from the original 6 on
+// 2026-09-15).
+const NEW_BADGE_MONTHS = 12;
+
+function newBadgeCutoffIso(): string {
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - NEW_BADGE_MONTHS);
+  return cutoff.toISOString();
+}
+
+// Client-side equivalent of the "is_new AND (new_since is null OR within
+// the window)" DB filter, for components that already have a fetched
+// Product in hand (e.g. the grid's "НОВО" badge) rather than issuing a new
+// query.
+export function isProductNew(p: Product): boolean {
+  if (!p.isNew) return false;
+  if (!p.newSince) return true;
+  return p.newSince > newBadgeCutoffIso();
+}
+
 function searchFilter(search: string): string {
   const term = search.trim().replace(/[,.()]/g, ' ').trim();
   if (!term) return '';
@@ -500,7 +524,8 @@ export async function getFilteredAndSortedIds(
   primaryCategoryIds: number[] | null,
   secondaryCategoryIds: number[] | null,
   sizeFilters: string[] | null,
-  search: string | null = null
+  search: string | null = null,
+  onlyNew: boolean = false
 ): Promise<number[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let items: any[] = [];
@@ -554,6 +579,10 @@ export async function getFilteredAndSortedIds(
     if (search) {
       const sf = searchFilter(search);
       if (sf) query = query.or(sf);
+    }
+
+    if (onlyNew) {
+      query = query.eq('is_new', true).or(`new_since.is.null,new_since.gt.${newBadgeCutoffIso()}`);
     }
 
     const { data, error } = await query;
@@ -625,9 +654,10 @@ export async function countProducts(
   primaryCategoryIds: number[] | null,
   secondaryCategoryIds: number[] | null,
   sizeFilters: string[] | null,
-  search: string | null = null
+  search: string | null = null,
+  onlyNew: boolean = false
 ): Promise<number> {
-  const ids = await getFilteredAndSortedIds(primaryCategoryIds, secondaryCategoryIds, sizeFilters, search);
+  const ids = await getFilteredAndSortedIds(primaryCategoryIds, secondaryCategoryIds, sizeFilters, search, onlyNew);
   return ids.length;
 }
 
@@ -637,10 +667,11 @@ export async function fetchProducts(
   sizeFilters: string[] | null,
   page: number,
   search: string | null = null,
-  pageSize: number = DEFAULT_PAGE_SIZE
+  pageSize: number = DEFAULT_PAGE_SIZE,
+  onlyNew: boolean = false
 ): Promise<FetchResult> {
   // Get fully sorted and filtered IDs matching the query
-  const allIds = await getFilteredAndSortedIds(primaryCategoryIds, secondaryCategoryIds, sizeFilters, search);
+  const allIds = await getFilteredAndSortedIds(primaryCategoryIds, secondaryCategoryIds, sizeFilters, search, onlyNew);
 
   const total = allIds.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -745,16 +776,13 @@ export async function searchProductsBasic(
 // (AdminPage.tsx's Import tab) — manually-flagged products (via the
 // ProductForm checkbox) keep new_since NULL and so never expire, exactly as
 // before this column existed. Only imported batches actually age out, and
-// that's computed here at query time (no cron/scheduled job).
-const NEW_BADGE_MONTHS = 6;
-
+// that's computed here at query time (no cron/scheduled job). Cutoff window
+// (NEW_BADGE_MONTHS) is defined once near getFilteredAndSortedIds above,
+// shared with isProductNew (the grid badge) and the "Само нови" filter.
 export async function fetchNewProducts(limit = 20): Promise<Product[]> {
-  const cutoff = new Date();
-  cutoff.setMonth(cutoff.getMonth() - NEW_BADGE_MONTHS);
-
   const { data, error } = await baseQuery()
     .eq('is_new', true)
-    .or(`new_since.is.null,new_since.gt.${cutoff.toISOString()}`)
+    .or(`new_since.is.null,new_since.gt.${newBadgeCutoffIso()}`)
     .order('priority', { ascending: false })
     .order('id', { ascending: false })
     .limit(limit);

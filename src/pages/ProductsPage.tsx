@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Loader2, AlertCircle, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
+import { Loader2, AlertCircle, ChevronLeft, ChevronRight, SlidersHorizontal, Sparkles, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useRouter } from '@/lib/router';
 import { useSEO } from '@/lib/useSEO';
@@ -112,6 +112,8 @@ type FilterFieldsProps = {
   availableSizes: string[];
   sizeFilters: string[];
   onToggleSize: (s: string) => void;
+  onlyNew: boolean;
+  onToggleNew: () => void;
   // Fired when the user hits the mobile keyboard's Enter/Go key in the
   // search field — closes the full-screen overlay to reveal the (already
   // live-filtered) results, mirroring the "Show results" button below it.
@@ -133,6 +135,8 @@ function FilterFields({
   availableSizes,
   sizeFilters,
   onToggleSize,
+  onlyNew,
+  onToggleNew,
   onSubmitSearch,
 }: FilterFieldsProps) {
   return (
@@ -192,6 +196,22 @@ function FilterFields({
           })}
         </div>
       </div>
+
+      <div>
+        <button
+          type="button"
+          onClick={onToggleNew}
+          aria-pressed={onlyNew}
+          className={`flex w-full items-center justify-between rounded-lg px-3.5 py-2.5 text-sm transition ${
+            onlyNew
+              ? 'btn-gold'
+              : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+          }`}
+        >
+          {t('products.filterNewOnly')}
+          <Sparkles size={16} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -211,6 +231,7 @@ export default function ProductsPage() {
   const [sizeFilters, setSizeFilters] = useState<string[]>(() =>
     queryParams.size ? queryParams.size.split(',').filter(Boolean) : []
   );
+  const [onlyNew, setOnlyNew] = useState<boolean>(() => queryParams.new === '1');
   const [searchQuery, setSearchQuery] = useState<string>(() => queryParams.search ?? '');
   const [debouncedSearch, setDebouncedSearch] = useState<string>(() => queryParams.search ?? '');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -340,6 +361,7 @@ export default function ProductsPage() {
     if (categoryIds.length > 0) params.category = categoryIds.join(',');
     if (themeIds.length > 0) params.themes = themeIds.join(',');
     if (sizeFilters.length > 0) params.size = sizeFilters.join(',');
+    if (onlyNew) params.new = '1';
     if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
     if (page > 0) params.page = String(page + 1);
 
@@ -348,7 +370,7 @@ export default function ProductsPage() {
     // router render, and including it would re-fire this effect on every
     // call to itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [primaryCategories, secondaryCategories, sizeFilters, debouncedSearch, page]);
+  }, [primaryCategories, secondaryCategories, sizeFilters, onlyNew, debouncedSearch, page]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
@@ -412,7 +434,7 @@ export default function ProductsPage() {
     const sizes = sizeFilters.length > 0 ? sizeFilters : null;
     const search = debouncedSearch.trim() || null;
 
-    fetchProducts(primary, secondary, sizes, page, search, pageSize)
+    fetchProducts(primary, secondary, sizes, page, search, pageSize, onlyNew)
       .then((result) => {
         if (!cancelled) {
           setProducts(result.products);
@@ -431,7 +453,7 @@ export default function ProductsPage() {
     return () => {
       cancelled = true;
     };
-  }, [primaryCategories, secondaryCategories, sizeFilters, page, debouncedSearch, pageSize]);
+  }, [primaryCategories, secondaryCategories, sizeFilters, onlyNew, page, debouncedSearch, pageSize]);
 
   // A pageSize change only happens by resizing a browser window across the
   // 640px breakpoint (a real phone's rotation never crosses it), but page is
@@ -456,12 +478,12 @@ export default function ProductsPage() {
   // change still jumps back to page 0 as before.
   const filterSignatureRef = useRef<string | null>(null);
   useEffect(() => {
-    const signature = JSON.stringify([primaryCategories, secondaryCategories, sizeFilters, debouncedSearch]);
+    const signature = JSON.stringify([primaryCategories, secondaryCategories, sizeFilters, onlyNew, debouncedSearch]);
     if (filterSignatureRef.current !== null && filterSignatureRef.current !== signature) {
       setPage(0);
     }
     filterSignatureRef.current = signature;
-  }, [primaryCategories, secondaryCategories, sizeFilters, debouncedSearch]);
+  }, [primaryCategories, secondaryCategories, sizeFilters, onlyNew, debouncedSearch]);
 
   const scrollToResults = () => {
     needsScrollRef.current = true;
@@ -495,10 +517,13 @@ export default function ProductsPage() {
     setSizeFilters((prev) => toggleInArray(prev, size));
   };
 
+  const toggleNew = () => setOnlyNew((v) => !v);
+
   const clearFilters = () => {
     setPrimaryCategories([]);
     setSecondaryCategories([]);
     setSizeFilters([]);
+    setOnlyNew(false);
     setSearchQuery('');
   };
 
@@ -506,6 +531,7 @@ export default function ProductsPage() {
     primaryCategories.length +
     secondaryCategories.length +
     sizeFilters.length +
+    (onlyNew ? 1 : 0) +
     (debouncedSearch.trim() ? 1 : 0);
 
   const renderPagination = () => {
@@ -700,6 +726,8 @@ export default function ProductsPage() {
                 availableSizes={availableSizes}
                 sizeFilters={sizeFilters}
                 onToggleSize={toggleSize}
+                onlyNew={onlyNew}
+                onToggleNew={toggleNew}
                 onSubmitSearch={() => setFilterOpen(false)}
               />
             </div>
@@ -751,6 +779,8 @@ export default function ProductsPage() {
               availableSizes={availableSizes}
               sizeFilters={sizeFilters}
               onToggleSize={toggleSize}
+              onlyNew={onlyNew}
+              onToggleNew={toggleNew}
             />
           </aside>
         )}
