@@ -27,3 +27,14 @@ client_requests.txt
 
 # Supabase CLI scratch
 supabase/.temp/
+
+# Generated per-invoice review sheets + downloaded product photos from the
+# Rubies invoice import tool (scripts/import-invoice) — working data, not
+# source, and can be large/numerous across runs.
+imports/
+
+# Windows shortcut(s) for double-click launchers (e.g. "Import Invoice.lnk")
+# — bakes in this machine's absolute repo path, so it's local convenience,
+# not something to version-control. import-invoice.cmd itself IS tracked
+# (it's a portable relative-path script).
+*.lnk

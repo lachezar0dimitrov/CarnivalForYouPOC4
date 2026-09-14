@@ -78,8 +78,9 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/components/Toast';
 import carouselImages from 'virtual:carousel-images';
+import ImportInvoicePanel from '@/pages/admin/ImportInvoicePanel';
 
-type Tab = 'banners' | 'products' | 'categories' | 'services' | 'news' | 'about' | 'terms' | 'contacts' | 'theme';
+type Tab = 'banners' | 'products' | 'import' | 'categories' | 'services' | 'news' | 'about' | 'terms' | 'contacts' | 'theme';
 
 const NO_IMAGE = '/no-image.svg';
 
@@ -161,6 +162,9 @@ export default function AdminPage() {
         <TabButton active={tab === 'products'} onClick={() => setTab('products')} icon={Package}>
           {lang === 'bg' ? 'Продукти' : 'Products'}
         </TabButton>
+        <TabButton active={tab === 'import'} onClick={() => setTab('import')} icon={Upload}>
+          {lang === 'bg' ? 'Импорт' : 'Import'}
+        </TabButton>
         <TabButton active={tab === 'categories'} onClick={() => setTab('categories')} icon={Tag}>
           {lang === 'bg' ? 'Категории' : 'Categories'}
         </TabButton>
@@ -186,6 +190,7 @@ export default function AdminPage() {
 
       {tab === 'banners' && <BannerManager />}
       {tab === 'products' && <ProductManager />}
+      {tab === 'import' && <ImportInvoicePanel />}
       {tab === 'categories' && <CategoryManager />}
       {tab === 'services' && <ServicesManager />}
       {tab === 'news' && <NewsManager />}
@@ -1292,6 +1297,7 @@ function mapAdminRow(r: any): AdminProduct {
     isNew: r.is_new ?? false,
     isPopular: r.is_popular ?? false,
     couplePartnerId: r.couple_partner_id ?? null,
+    newSince: r.new_since ?? null,
   };
 }
 
