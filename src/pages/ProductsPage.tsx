@@ -19,6 +19,11 @@ import ProductCard from '@/components/ProductCard';
 import CategoryGrid from '@/components/CategoryGrid';
 import ReservationSteps from '@/components/ReservationSteps';
 
+// Size filter surfaces raw clothing sizes (XS-XXL) across all categories,
+// so on "Деца" it shows adult sizing and lets kids-section browsing land on
+// adult/sexy costumes. Hidden until sizes are scoped per demographic.
+const SHOW_SIZE_FILTER = false;
+
 // ItemList of the products actually rendered on this category listing —
 // lightweight (name/url/image per entry, no Offer/price) since the full
 // Product rich result already lives on each item's own detail page; this
@@ -171,31 +176,33 @@ function FilterFields({
         <CategoryChips cats={secondaryCats} selected={secondaryCategories} onToggle={onToggleSecondary} lang={lang} />
       </div>
 
-      <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-          {t('products.filterSize')}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {availableSizes.map((s) => {
-            const isSelected = sizeFilters.includes(s);
-            return (
-              <button
-                key={s}
-                type="button"
-                onClick={() => onToggleSize(s)}
-                aria-pressed={isSelected}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
-                  isSelected
-                    ? 'btn-gold'
-                    : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
-                }`}
-              >
-                {s}
-              </button>
-            );
-          })}
+      {SHOW_SIZE_FILTER && (
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+            {t('products.filterSize')}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {availableSizes.map((s) => {
+              const isSelected = sizeFilters.includes(s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => onToggleSize(s)}
+                  aria-pressed={isSelected}
+                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm transition ${
+                    isSelected
+                      ? 'btn-gold'
+                      : 'border border-gold-400/25 text-gray-300 hover:border-gold-400/50 hover:text-gold-200'
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
         <button
