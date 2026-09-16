@@ -12,16 +12,19 @@
 // Pages exposes that same dashboard config to Functions at request time via
 // context.env, so nothing extra needs to be added for this to work.
 //
-// Deliberately left untouched (not refactored to share code with the new
-// functions/en/product-detail/[id].js) when the /en language routing project
-// added that file — this exact function has broken silently before (see the
-// CanonicalAppender comment below), it's driving real production traffic on
-// 1230+ URLs, and testing changes to it requires a real Pages deployment,
-// not just local reasoning. Keeping it as-is means the new /en route can't
-// regress it. functions/_lib/productMeta.js's pure text-composition helpers
-// (buildMeta, cleanText, etc.) are a near-identical extraction of the logic
-// below for the EN route to reuse — the actual request/HTMLRewriter
-// orchestration here is intentionally NOT shared.
+// Deliberately NOT refactored to share the request/HTMLRewriter orchestration
+// with functions/en/product-detail/[id].js — this exact function has broken
+// silently before (see the CanonicalAppender comment below), it's driving real
+// production traffic on 1230+ URLs, and testing changes to it requires a real
+// Pages deployment, not just local reasoning. Keeping it separate means the
+// /en route can't regress it. functions/_lib/productMeta.js's pure
+// text-composition helpers (buildMeta, cleanText, etc.) are a near-identical
+// extraction of the logic below for the EN route to reuse.
+//
+// The one later change (AlternateAppender, 2026-09-16) was made here as a pure
+// addition for that same reason: the missing bg-side hreflang could have been
+// fixed by delegating to _lib/productMeta.js, but that would have swapped the
+// whole proven request path for an untested one to gain three link tags.
 
 const BGN_TO_EUR_RATE = 1.95583;
 const MARKUP = 1.2;
@@ -60,6 +63,15 @@ const CATEGORY_PHRASE_BG = {
   7: 'перука под наем',
   8: 'карнавален аксесоар под наем',
 };
+
+// Same "is this real English text" threshold as the client-side check in
+// src/lib/products.ts's hasMeaningfulEnglishDescription, and as the identical
+// helper in functions/_lib/productMeta.js that the /en route uses. A product
+// without it isn't advertised as a genuine language pair from either side.
+function hasMeaningfulEnglishDescription(product) {
+  const en = cleanText(product.description_en);
+  return en.length > 3 && /[a-zA-Z]/.test(en);
+}
 
 function buildMeta(product, origin, pathname) {
   const name = cleanText(product.name_bg) || cleanText(product.name_en) || `#${product.id}`;
@@ -133,14 +145,31 @@ class CanonicalAppender {
 // /en language routes' non-JS crawlers) — left in place here, it would
 // misreport this product page's language alternate as the homepage. React
 // overwrites it correctly once it mounts, but a non-JS crawler reading the
-// raw response never gets that far. This function doesn't add its own
-// alternate tags (that's the English route's job, in
-// functions/en/product-detail/[id].js) — it only strips the stale ones, a
-// pure removal that can't change anything the title/OG/canonical logic
-// above depends on.
+// raw response never gets that far, so the stale pair is stripped before the
+// product-specific one below is appended.
 class AlternateRemover {
   element(element) {
     element.remove();
+  }
+}
+
+// hreflang only counts when BOTH pages point at each other: Google discards an
+// annotation the other side doesn't confirm. Until this was added, the /en page
+// declared the bg↔en pair (functions/en/product-detail/[id].js does append it)
+// while this, the Bulgarian side, declared nothing — so the on-page pairing was
+// one-directional and ignored. The bilingual sitemap declares the same pair for
+// every URL, which is why nothing was visibly broken; this restores the on-page
+// signal to match. Identical output to the /en route's AlternateAppender: same
+// two hrefs, same order, x-default on the Bulgarian URL.
+class AlternateAppender {
+  constructor(bgHref, enHref) {
+    this.bgHref = bgHref;
+    this.enHref = enHref;
+  }
+  element(element) {
+    element.append(`<link rel="alternate" hreflang="bg" href="${this.bgHref}">`, { html: true });
+    element.append(`<link rel="alternate" hreflang="en" href="${this.enHref}">`, { html: true });
+    element.append(`<link rel="alternate" hreflang="x-default" href="${this.bgHref}">`, { html: true });
   }
 }
 
@@ -172,7 +201,7 @@ export async function onRequestGet(context) {
 
   const meta = buildMeta(product, url.origin, url.pathname);
 
-  return new HTMLRewriter()
+  const rewriter = new HTMLRewriter()
     .on('link[rel="alternate"]', new AlternateRemover())
     .on('head', new CanonicalAppender(`${url.origin}/product-detail/${numericId}`))
     .on('title', new TitleSetter(meta.title))
@@ -184,6 +213,13 @@ export async function onRequestGet(context) {
     .on('meta[property="og:type"]', new MetaContentSetter('product'))
     .on('meta[name="twitter:title"]', new MetaContentSetter(meta.title))
     .on('meta[name="twitter:description"]', new MetaContentSetter(meta.description))
-    .on('meta[name="twitter:image"]', new MetaContentSetter(meta.image))
-    .transform(assetResponse);
+    .on('meta[name="twitter:image"]', new MetaContentSetter(meta.image));
+
+  if (hasMeaningfulEnglishDescription(product)) {
+    const bgHref = `${url.origin}/product-detail/${numericId}`;
+    const enHref = `${url.origin}/en/product-detail/${numericId}`;
+    rewriter.on('head', new AlternateAppender(bgHref, enHref));
+  }
+
+  return rewriter.transform(assetResponse);
 }
