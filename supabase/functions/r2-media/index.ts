@@ -11,6 +11,30 @@ const corsHeaders = {
 const ALLOWED_FOLDERS = new Set(["product-images", "banner-images", "category-images", "content-images"]);
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
+// Public bases a stored media URL may legitimately use. R2_PUBLIC_URL is the
+// one new uploads are written with; this list is what DELETE will still
+// recognise. The bucket got a custom domain (img.carnivalforyou.com) on
+// 2026-09-16 while every existing row still pointed at the r2.dev
+// development URL, so accepting only the current R2_PUBLIC_URL would have
+// made the admin panel unable to delete any image uploaded before the
+// switch — and would have done it silently, as a 400 on an existing row.
+// Both stay accepted until every stored URL is on the custom domain and the
+// r2.dev public URL is actually turned off; only then is dropping the legacy
+// entry safe.
+const LEGACY_PUBLIC_BASES = ["https://pub-e3f62979b75f4bce8005a776ca5b4129.r2.dev"];
+
+function publicHostsFrom(currentBase: string) {
+  const hosts = new Set<string>();
+  for (const base of [currentBase, ...LEGACY_PUBLIC_BASES]) {
+    try {
+      hosts.add(new URL(base).host);
+    } catch {
+      // a malformed base simply contributes no host
+    }
+  }
+  return hosts;
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -147,10 +171,22 @@ Deno.serve(async (req: Request) => {
     if (req.method === "DELETE") {
       const body = await req.json().catch(() => null);
       const url = body?.url;
-      if (typeof url !== "string" || !url.startsWith(r2PublicUrl)) {
+      // Parsed rather than prefix-matched: startsWith() on a base would also
+      // accept a host that merely begins with it, e.g.
+      // https://img.carnivalforyou.com.example.net/..., and the key derived
+      // from such a URL is not this bucket's.
+      let parsed: URL | null = null;
+      if (typeof url === "string") {
+        try {
+          parsed = new URL(url);
+        } catch {
+          parsed = null;
+        }
+      }
+      if (!parsed || !publicHostsFrom(r2PublicUrl).has(parsed.host)) {
         return json({ error: "Invalid url" }, 400);
       }
-      const key = url.slice(r2PublicUrl.length).replace(/^\//, "");
+      const key = decodeURIComponent(parsed.pathname).replace(/^\//, "");
       const folder = key.split("/")[0];
       if (!ALLOWED_FOLDERS.has(folder)) {
         return json({ error: "Invalid key" }, 400);

@@ -1,6 +1,10 @@
 import { useEffect, useRef } from 'react';
 
-const R2_PUBLIC_URL = 'https://pub-e3f62979b75f4bce8005a776ca5b4129.r2.dev';
+// The bucket's custom domain, not its pub-*.r2.dev development URL: that one
+// is rate-limited, uncacheable and explicitly not for production traffic, and
+// this is a 6MB video served on first visit. The r2.dev URL still resolves to
+// the same objects, so it stays available as a fallback to switch back to.
+const R2_PUBLIC_URL = 'https://img.carnivalforyou.com';
 const VIDEO_SRC = `${R2_PUBLIC_URL}/site-media/splash/transformation.mp4`;
 const POSTER_SRC = `${R2_PUBLIC_URL}/site-media/splash/transformation-poster.jpg`;
 
