@@ -79,6 +79,20 @@ function xmlEscape(s) {
   return String(s).replace(/&/g, '&amp;');
 }
 
+// Google rejects a relative <image:loc> outright — it reported "Invalid URL"
+// on six entries (three category tiles x two languages) whose
+// categories.image_url is stored as a site-relative path like
+// /images/categories/girls-carnival-costumes.png, while every product's
+// image_url is a full R2 URL. Normalised here rather than in the database so
+// any future relative value is covered too, and so the same row keeps working
+// unchanged for the React components that render it through the asset layer.
+function absoluteImageUrl(loc, origin) {
+  const raw = String(loc).trim();
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (raw.startsWith('//')) return `https:${raw}`;
+  return `${origin}${raw.startsWith('/') ? '' : '/'}${raw}`;
+}
+
 // Same three-way hreflang set (self + other language + x-default) on every
 // entry in a language pair, per Google's sitemap-annotation guidance —
 // x-default points at the Bulgarian version, the site's primary market.
@@ -144,7 +158,7 @@ export async function onRequestGet(context) {
     .filter((p) => p.is_popular)
     .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || b.id - a.id)
     .slice(0, POPULAR_PRODUCTS_LIMIT)
-    .map((p) => ({ loc: p.image_url, title: p.name_bg || undefined }));
+    .map((p) => ({ loc: absoluteImageUrl(p.image_url, origin), title: p.name_bg || undefined }));
 
   // Static pages: all fully bilingual (About/Services/News/Contacts/Terms
   // content and their SEO strings all verified live in Supabase/i18n.tsx) —
@@ -168,7 +182,7 @@ export async function onRequestGet(context) {
     const bgHref = `${origin}/products?category=${cat.id}`;
     const enHref = `${origin}/en/products?category=${cat.id}`;
     const alternates = buildAlternates(bgHref, enHref);
-    const images = cat.image_url ? [{ loc: cat.image_url, title: cat.name_bg || undefined }] : undefined;
+    const images = cat.image_url ? [{ loc: absoluteImageUrl(cat.image_url, origin), title: cat.name_bg || undefined }] : undefined;
     entries.push(urlEntry(bgHref, undefined, '0.7', alternates, images));
     entries.push(urlEntry(enHref, undefined, '0.7', alternates, images));
   }
@@ -179,7 +193,7 @@ export async function onRequestGet(context) {
   for (const p of products) {
     const bgHref = `${origin}/product-detail/${p.id}`;
     const lastmod = p.created_at ? p.created_at.slice(0, 10) : undefined;
-    const images = p.image_url ? [{ loc: p.image_url, title: p.name_bg || undefined }] : undefined;
+    const images = p.image_url ? [{ loc: absoluteImageUrl(p.image_url, origin), title: p.name_bg || undefined }] : undefined;
     if (hasMeaningfulEnglishDescription(p)) {
       const enHref = `${origin}/en/product-detail/${p.id}`;
       const alternates = buildAlternates(bgHref, enHref);
