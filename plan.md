@@ -19,7 +19,12 @@ Cloudflare/GitHub/Supabase/GSC), **Desktop app** (преглед/решения)
 
 - Admin парола ротирана; repo остава public (mirror archive го прави безопасно).
 - Домейн свързан към Cloudflare; DKIM/SPF/имейл маршрутизация мигрирани към Cloudflare Email Routing, потвърдено с реален тест мейл (получаване + изпращане през Gmail).
-- Bot Fight Mode + Rate Limiting (150 req/10s/IP) активирани.
+- Bot Fight Mode + Rate Limiting активирани. **Прагът вече не е 150 —
+  сверено на живо 2026-09-16: 50 req/10s, с израз, ограничен по host
+  (apex + www) и изключващ статичните разширения. Виж паметта
+  `project_carnivalforyou_cloudflare_security_rules` и я чети преди да
+  пипаш правилото — този файл е бил остарял веднъж и това предизвика
+  грешна промяна.**
 - Legacy URL redirect-и (`products.php`/`t_prod.php`/`holds.php`/`about.php` → нови пътища) — код в [functions/_lib/legacyRedirect.js](functions/_lib/legacyRedirect.js), не Dashboard правило.
 - Sitemap.xml + robots.txt + canonical tags + dynamic SEO metadata.
 - Дълбок pre-cutover одит: 5 реални бъга намерени и оправени (счупен product-detail redirect — щеше да е soft-404 за 1230 URL-а; sitemap над-обявяваше; относителни OG пътища; липсващ favicon; misroute защита).
@@ -34,6 +39,40 @@ Cloudflare/GitHub/Supabase/GSC), **Desktop app** (преглед/решения)
 - **SEO почистване** — единичен `<h1>` на всяка страница, `BreadcrumbList` schema на продуктите, коригиран sitemap `lastmod` (`4195060`).
 - **Английска версия (`/en`) — жива на carnivalforyou.com.** Routing (URL е source of truth за езика), hreflang навсякъде, двуезичен sitemap (2512 адреса), legacy redirect-и вече четат `&lang=en`, 27 продукта получиха нови EN описания (не от стария CSV — изрично решение). Един реален бъг хванат и оправен на самия живия сайт (дублирани hreflang tag-ове от статичните index.html тагове). Пълен анализ и решения: `[[project_carnivalforyou_english_seo_gap]]`.
 - **24-часов трафик преглед** — миграцията е чиста: нула реални 5xx извън cutover прозореца, нула блокирани търсачки/AI ботове, 855-те mitigated заявки са всички datacenter скенери. Почистени 7 мъртви DNS записа от старото jump.bg хостване (`mail`/`pop`/`pop3`/`smtp`/`imap` изтрити, `test`/`new` сменени на DNS-only).
+
+## ✅ 2026-09-16 — двуседмична проверка след go-live
+
+Всичко проверено на живо: сайтът е здрав, TLS до 6 дек, www и pages.dev
+правят 301 към apex, 9-те legacy redirect-а работят, DNS/MX/SPF/DMARC чисти,
+backup-ите 8/8 зелени, Supabase advisors без нови находки.
+
+- **hreflang на BG продуктовите страници** (`833b6d5`) — EN страната декларираше
+  двойката, българската — не, тоест Google я игнорираше. Поправено като
+  чисто добавяне в `functions/product-detail/[id].js`, без делегиране към
+  `_lib/productMeta.js` — този файл обслужва 1230+ URL-а и се е чупил тихо преди.
+- **Абсолютни `<image:loc>` в sitemap-а** (`3746799`) — затваря „6 грешки“ в GSC.
+- **R2 custom domain `img.carnivalforyou.com`** (`b196b49`) — виж
+  `[[project_carnivalforyou_r2_migration]]`. 1889 стойности в 6 таблици
+  мигрирани, `r2-media` v8 приема и двата хоста при изтриване.
+- **Грешка, която си струва да се помни:** на база остарели бележки беше
+  променен изразът на rate limiting правилото за несъществуващ проблем и
+  беше върнат обратно. Виж
+  `[[project_carnivalforyou_cloudflare_security_rules]]`.
+
+### Остават от тази проверка
+
+- [ ] **Soft-404**: непознат адрес връща 200 със съдържанието на началната
+  страница — причината е `/*  /index.html  200` в `public/_redirects`. Иска бял
+  списък на маршрутите; сгреши ли се, връща 404 на реални страници.
+- [ ] 3 продукта още сочат към `product-images-pre-ai-upscale-backup/`.
+- [ ] Категорийните PNG плочки са 1.8–2.4 MB всяка — за WebP конверсия.
+- [ ] Bot Fight Mode важи и за `img.carnivalforyou.com` — да се гледа за
+  challenge-нати заявки към снимки (блокира image краулъри).
+- Splash видеото е изключено от админ панела, но **кодът се пази
+  съзнателно** — функционалността може да се използва повторно с друго видео.
+  `SplashVideo.tsx` вече сочи към `img.carnivalforyou.com`, така че ново видео
+  ще се сервира кеширано от първия ден. Не е тествано на живо, защото
+  килл превключвателят е изключен — провери при първото включване.
 
 ## 📋 Остава — малки, не спешни, за след почивката
 
