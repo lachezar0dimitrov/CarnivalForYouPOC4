@@ -1,2 +1,24 @@
 /index.php       /            301
+
+# Known scanner/bot-probe paths that don't exist on this site — real 404
+# instead of falling through to the SPA catch-all below. Those unknown
+# paths used to return 200 with the homepage, which Google Search Console
+# flags as a "soft 404". Deliberately a narrow blocklist of well-known
+# junk patterns (WordPress admin probes, secret/config file probes), not
+# an exhaustive whitelist of every real route — a whitelist risks 404-ing
+# a real page if the list is wrong; this only ever removes paths that were
+# never real to begin with. See project/plan.md for the reasoning.
+/wp-admin/*         /index.html   404
+/wp-login.php       /index.html   404
+/wp-content/*       /index.html   404
+/wp-includes/*      /index.html   404
+/wp-json/*          /index.html   404
+/xmlrpc.php         /index.html   404
+/wp-config.php      /index.html   404
+/.env               /index.html   404
+/.git/*             /index.html   404
+/config.php         /index.html   404
+/administrator/*    /index.html   404
+/phpmyadmin/*       /index.html   404
+
 /*    /index.html   200
