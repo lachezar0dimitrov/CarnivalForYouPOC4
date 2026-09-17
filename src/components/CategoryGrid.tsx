@@ -14,13 +14,13 @@ type CategoryGridProps = {
 const FALLBACK_IMAGES: Record<number, string> = {
   2: '/images/categories/women-carnival-costumes.png',
   3: '/images/categories/men-carnival-costumes.png',
-  4: '/images/categories/girls-carnival-costumes.png',
+  4: '/images/categories/girls-carnival-costumes.webp',
   5: '/images/categories/venetian-masks.png',
   6: '/images/categories/carnival-hats.png',
   7: '/images/categories/carnival-wigs.png',
   8: '/images/categories/carnival-accessories.png',
-  10: '/images/categories/halloween-scary-costumes.png',
-  17: '/images/categories/boys-carnival-costumes.png',
+  10: '/images/categories/halloween-scary-costumes.webp',
+  17: '/images/categories/boys-carnival-costumes.webp',
   19: '/images/categories/baby-costumes-0-3-years.png',
   20: '/images/categories/christmas-carnival-costumes.png',
 };
