@@ -20,6 +20,7 @@ import ServicesPage from '@/pages/ServicesPage';
 import NewsPage from '@/pages/NewsPage';
 import ContactsPage from '@/pages/ContactsPage';
 import TermsPage from '@/pages/TermsPage';
+import PrivacyPage from '@/pages/PrivacyPage';
 import AdminPage from '@/pages/AdminPage';
 
 function CurrentPage() {
@@ -60,6 +61,8 @@ function CurrentPage() {
       return <ContactsPage />;
     case 'terms':
       return <TermsPage />;
+    case 'privacy':
+      return <PrivacyPage />;
     default:
       return <HomePage />;
   }

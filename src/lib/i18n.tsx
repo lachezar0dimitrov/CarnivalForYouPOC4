@@ -28,6 +28,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.news': 'Новини',
     'nav.contacts': 'Контакти',
     'nav.terms': 'Условия и въпроси',
+    'nav.privacy': 'Поверителност',
     'nav.search': 'Търсене и филтри',
 
     // common
@@ -263,6 +264,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.news': 'News',
     'nav.contacts': 'Contacts',
     'nav.terms': 'Terms & FAQ',
+    'nav.privacy': 'Privacy Policy',
     'nav.search': 'Search & filters',
 
     // common

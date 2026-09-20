@@ -16,6 +16,7 @@ export type Route =
   | 'news'
   | 'contacts'
   | 'terms'
+  | 'privacy'
   | 'admin';
 
 // The page a product-detail view was opened from — its route, the exact
@@ -68,7 +69,7 @@ type RouterContextType = {
 const RouterContext = createContext<RouterContextType | null>(null);
 
 const validRoutes: Route[] = [
-  'home', 'products', 'product-detail', 'about', 'services', 'news', 'contacts', 'terms', 'admin',
+  'home', 'products', 'product-detail', 'about', 'services', 'news', 'contacts', 'terms', 'privacy', 'admin',
 ];
 
 // Parse a real path like "/products?category=2" or "/product-detail/123",

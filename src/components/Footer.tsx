@@ -150,12 +150,19 @@ export default function Footer() {
           <p>
             © {new Date().getFullYear()} CarnivalForYou.{' '}
             {lang === 'bg' ? 'Всички права запазени.' : 'All rights reserved.'}
+            {' · '}
+            <button
+              onClick={() => navigate('privacy')}
+              className="underline-offset-2 transition hover:text-gray-300 hover:underline"
+            >
+              {t('nav.privacy')}
+            </button>
           </p>
 
           <div className="flex items-center gap-2">
             <span>{lang === 'bg' ? 'Програмирано от' : 'Built by'}</span>
             <a
-              href="https://www.core-logic.eu"
+              href="https://www.core-logic.eu/web-design/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 font-medium text-gray-300 transition hover:text-gray-100"

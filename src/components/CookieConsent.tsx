@@ -1,12 +1,14 @@
 import { Cookie, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { useRouter } from '@/lib/router';
 import { loadAnalytics } from '@/lib/analytics';
 
 const CONSENT_KEY = 'cfy-cookie-consent';
 
 export default function CookieConsent() {
   const { t } = useI18n();
+  const { navigate } = useRouter();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -47,7 +49,13 @@ export default function CookieConsent() {
             {t('cookie.title')}
           </h3>
           <p className="mt-1 text-sm leading-relaxed text-gray-400">
-            {t('cookie.body')}
+            {t('cookie.body')}{' '}
+            <button
+              onClick={() => navigate('privacy')}
+              className="underline underline-offset-2 transition hover:text-gray-200"
+            >
+              {t('nav.privacy')}
+            </button>
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2.5 sm:flex-col sm:items-stretch">
