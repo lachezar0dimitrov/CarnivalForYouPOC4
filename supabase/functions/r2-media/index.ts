@@ -140,7 +140,21 @@ Deno.serve(async (req: Request) => {
       const putRes = await r2.fetch(`${r2Endpoint}/${r2Bucket}/${key}`, {
         method: "PUT",
         body: bytes,
-        headers: { "Content-Type": file.type || "application/octet-stream" },
+        // Every key is unique (Date.now() + a random suffix) and nothing
+        // ever overwrites one in place — a re-uploaded photo just gets a new
+        // key and the DB row is repointed at it — so it's always safe for
+        // the CDN and browsers to cache a given URL forever. Without this,
+        // R2 objects have no Cache-Control at all and Cloudflare served them
+        // `cf-cache-status: DYNAMIC` (re-fetched from R2 on every request),
+        // which is what PageSpeed's "Use efficient cache lifetimes" finding
+        // was flagging. Only covers uploads from this point forward; the
+        // ~1,700 objects already in the bucket keep whatever (lack of)
+        // caching they have unless separately re-uploaded or fixed via a
+        // Cloudflare cache rule on the img.carnivalforyou.com zone.
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
       });
 
       if (!putRes.ok) {
@@ -157,7 +171,10 @@ Deno.serve(async (req: Request) => {
           const mobilePutRes = await r2.fetch(`${r2Endpoint}/${r2Bucket}/${mobileKey}`, {
             method: "PUT",
             body: mobileBytes,
-            headers: { "Content-Type": "image/jpeg" },
+            headers: {
+              "Content-Type": "image/jpeg",
+              "Cache-Control": "public, max-age=31536000, immutable",
+            },
           });
           if (mobilePutRes.ok) {
             mobileUrl = `${r2PublicUrl}/${mobileKey}`;

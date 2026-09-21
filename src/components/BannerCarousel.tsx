@@ -18,6 +18,18 @@ export default function BannerCarousel() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [current, setCurrent] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  // Which slide *photos* have actually been requested yet. All slides are
+  // stacked with position:absolute inset:0 for the crossfade (index.css
+  // .banner-slide) and only told apart by opacity, but the browser's native
+  // loading="lazy" only looks at geometric intersection with the viewport --
+  // every slide sits fully inside it regardless of opacity, so `lazy` was a
+  // no-op and all N full-size banner photos (2-3MB PNGs each) were
+  // downloading on every homepage load even though just one is ever visible
+  // at a time. Mounting a slide's <img> only once it's about to be needed
+  // (current, plus one slide ahead so the crossfade has something to fade
+  // into) cuts that down to one photo up front and the rest spread out
+  // across the 6s auto-advance interval instead of all at once.
+  const [mountedSlides, setMountedSlides] = useState<Set<number>>(new Set([0]));
 
   useEffect(() => {
     let cancelled = false;
@@ -34,6 +46,18 @@ export default function BannerCarousel() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (banners.length === 0) return;
+    const nextIndex = (current + 1) % banners.length;
+    setMountedSlides((prev) => {
+      if (prev.has(current) && prev.has(nextIndex)) return prev;
+      const next = new Set(prev);
+      next.add(current);
+      next.add(nextIndex);
+      return next;
+    });
+  }, [current, banners.length]);
 
   const next = () => {
     setCurrent((c) => (c + 1) % Math.max(banners.length, 1));
@@ -53,13 +77,22 @@ export default function BannerCarousel() {
     return () => clearInterval(timer);
   }, [banners.length, splashActive]);
 
-  // Fallback: if no banners loaded, show the static forest background
+  // Fallback: if no banners loaded (yet, or a real fetch failure), show the
+  // static forest background. Uses the same `.banner-box` (16:9 aspect-ratio)
+  // sizing as the loaded state below instead of its own min-h-[50vh]/[80vh] --
+  // that mismatch used to mean every single page load started in this shorter
+  // fallback box and then jumped to the taller loaded box the instant
+  // fetchActiveBanners() resolved, a guaranteed layout shift (the dominant
+  // source of a 0.547 mobile CLS score, worse on slow connections since more
+  // of the page has already painted by the time the async swap lands). Both
+  // states now share one box height, so the swap is a same-footprint content
+  // change, not a resize.
   if (!loaded || banners.length === 0) {
     return (
-      <section className="relative w-full overflow-hidden">
+      <section className="banner-box relative w-full overflow-hidden">
         <div className="absolute inset-0 bg-mystical-radial" />
         {!isChristmas && <HeroFireflies count={20} />}
-        <div className="relative z-20 flex min-h-[50vh] flex-col items-center justify-center px-4 text-center md:min-h-[80vh]">
+        <div className="relative z-20 flex h-full flex-col items-center justify-center px-4 text-center">
           <h2 className="font-display text-2xl font-bold leading-tight text-gray-100 sm:text-3xl md:text-4xl lg:text-5xl">
             {t('home.heroTitle1')}
             <br />
@@ -114,11 +147,14 @@ export default function BannerCarousel() {
             key={banner.id}
             className={`banner-slide ${i === current ? 'active' : ''}`}
           >
-            <img
-              src={banner.imageUrl}
-              alt={lang === 'bg' ? banner.titleBg : banner.titleEn}
-              loading={i === 0 ? 'eager' : 'lazy'}
-            />
+            {mountedSlides.has(i) && (
+              <img
+                src={banner.imageUrl}
+                alt={lang === 'bg' ? banner.titleBg : banner.titleEn}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchPriority={i === 0 ? 'high' : 'auto'}
+              />
+            )}
           </div>
         ))}
       </div>

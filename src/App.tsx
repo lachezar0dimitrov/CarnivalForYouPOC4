@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react';
 import { RouterProvider, useRouter } from '@/lib/router';
 import { I18nProvider } from '@/lib/i18n';
 import { AuthProvider } from '@/lib/auth';
@@ -13,15 +13,23 @@ import CookieConsent from '@/components/CookieConsent';
 import SplashVideo from '@/components/SplashVideo';
 import { SplashActiveProvider, useSplashState } from '@/lib/splash';
 import HomePage from '@/pages/HomePage';
-import ProductsPage from '@/pages/ProductsPage';
-import ProductDetailPage from '@/pages/ProductDetailPage';
-import AboutPage from '@/pages/AboutPage';
-import ServicesPage from '@/pages/ServicesPage';
-import NewsPage from '@/pages/NewsPage';
-import ContactsPage from '@/pages/ContactsPage';
-import TermsPage from '@/pages/TermsPage';
-import PrivacyPage from '@/pages/PrivacyPage';
-import AdminPage from '@/pages/AdminPage';
+
+// Everything below is lazy: HomePage is what PageSpeed/real visitors hit
+// first (and it's already got its own Supabase + image fetches to compete
+// with), so every byte of JS that only ever runs on some other route --
+// ProductsPage, product detail, the static content pages, and especially
+// AdminPage, which a public visitor never touches at all -- is dead weight
+// on that initial bundle. React.lazy defers the fetch to first navigation
+// instead, with no change to what actually renders once it arrives.
+const ProductsPage = lazy(() => import('@/pages/ProductsPage'));
+const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'));
+const AboutPage = lazy(() => import('@/pages/AboutPage'));
+const ServicesPage = lazy(() => import('@/pages/ServicesPage'));
+const NewsPage = lazy(() => import('@/pages/NewsPage'));
+const ContactsPage = lazy(() => import('@/pages/ContactsPage'));
+const TermsPage = lazy(() => import('@/pages/TermsPage'));
+const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
+const AdminPage = lazy(() => import('@/pages/AdminPage'));
 
 function CurrentPage() {
   const { route, productId, pendingScrollRestore } = useRouter();
@@ -44,28 +52,37 @@ function CurrentPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route, productId]);
 
-  switch (route) {
-    case 'home':
-      return <HomePage />;
-    case 'products':
-      return <ProductsPage />;
-    case 'product-detail':
-      return <ProductDetailPage />;
-    case 'about':
-      return <AboutPage />;
-    case 'services':
-      return <ServicesPage />;
-    case 'news':
-      return <NewsPage />;
-    case 'contacts':
-      return <ContactsPage />;
-    case 'terms':
-      return <TermsPage />;
-    case 'privacy':
-      return <PrivacyPage />;
-    default:
-      return <HomePage />;
-  }
+  const page = (() => {
+    switch (route) {
+      case 'home':
+        return <HomePage />;
+      case 'products':
+        return <ProductsPage />;
+      case 'product-detail':
+        return <ProductDetailPage />;
+      case 'about':
+        return <AboutPage />;
+      case 'services':
+        return <ServicesPage />;
+      case 'news':
+        return <NewsPage />;
+      case 'contacts':
+        return <ContactsPage />;
+      case 'terms':
+        return <TermsPage />;
+      case 'privacy':
+        return <PrivacyPage />;
+      default:
+        return <HomePage />;
+    }
+  })();
+
+  // Only HomePage is eager (see the lazy() calls above) -- every other
+  // branch needs a Suspense boundary for its chunk to load into. No visible
+  // fallback UI: these are same-tab client-side navigations onto a page that
+  // has its own async data fetches anyway, so a blank beat before content
+  // arrives matches the existing feel rather than flashing a spinner.
+  return <Suspense fallback={null}>{page}</Suspense>;
 }
 
 export default function App() {
@@ -105,7 +122,9 @@ function AppShell() {
   if (route === 'admin') {
     return (
       <div className="fixed inset-0 overflow-y-auto bg-[#0b0d0b] text-gray-100">
-        <AdminPage />
+        <Suspense fallback={null}>
+          <AdminPage />
+        </Suspense>
       </div>
     );
   }
