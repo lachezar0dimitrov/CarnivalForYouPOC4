@@ -106,6 +106,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'products.showResults': 'Покажи резултатите',
     'products.themeCategories': 'Теми и сезони',
     'products.filterNewOnly': 'Само нови',
+    'products.allKidsCostumes': 'Всички костюми за деца →',
 
     // contacts
     'contacts.eyebrow': 'Свържете се с нас',
@@ -340,6 +341,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'products.showResults': 'Show Results',
     'products.themeCategories': 'Themes & Seasons',
     'products.filterNewOnly': 'New only',
+    'products.allKidsCostumes': 'All kids\' costumes →',
     'products.next': 'Next',
     'products.of': 'of',
 

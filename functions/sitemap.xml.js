@@ -187,6 +187,20 @@ export async function onRequestGet(context) {
     entries.push(urlEntry(enHref, undefined, '0.7', alternates, images));
   }
 
+  // Synthetic "kids" combo view (Момичета + Момчета + Деца 0-3, category ids
+  // 4,17,19) — mirrors KIDS_COMBO_CATEGORY_PARAM in src/lib/products.ts.
+  // "карнавални костюми за деца" has no single matching category of its own,
+  // so this gives it a real, sitemap-advertised URL instead of the site
+  // having no page at all for that search intent.
+  {
+    const kidsParam = '4,17,19';
+    const bgHref = `${origin}/products?category=${kidsParam}`;
+    const enHref = `${origin}/en/products?category=${kidsParam}`;
+    const alternates = buildAlternates(bgHref, enHref);
+    entries.push(urlEntry(bgHref, undefined, '0.8', alternates));
+    entries.push(urlEntry(enHref, undefined, '0.8', alternates));
+  }
+
   // Products: the English variant only ships once the product actually has
   // real English content — this makes indexing self-completing as
   // description_en gets filled in (admin panel), no redeploy needed.
