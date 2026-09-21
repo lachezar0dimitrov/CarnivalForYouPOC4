@@ -95,6 +95,15 @@
       href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Henny+Penny&family=Inter:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
+    <!-- The banner photo (LCP element), splash video/poster and every
+         product/category image are all served from this R2 custom domain --
+         warming up the connection (DNS + TLS) before the first request for
+         one of them is issued shaves a full round trip off whichever one
+         ends up being the LCP resource. Supabase is where the banner/product
+         data itself comes from (the fetch that has to resolve before any of
+         those image URLs are even known), so it gets the same treatment. -->
+    <link rel="preconnect" href="https://img.carnivalforyou.com" crossorigin />
+    <link rel="preconnect" href="https://iwpjagaqpskavatjlmnu.supabase.co" crossorigin />
   </head>
   <body>
     <div id="root"></div>

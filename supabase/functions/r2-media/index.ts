@@ -47,6 +47,56 @@ function extFromName(name: string) {
   return ext && /^[a-z0-9]{1,5}$/.test(ext) ? ext : "bin";
 }
 
+// Folders that only ever hold opaque photos (verified against how each is
+// rendered: CategoryGrid/ProductCard/BannerCarousel all draw these into
+// object-cover/object-contain boxes on a solid card background — nothing
+// here depends on PNG transparency). content-images (About/Services/News)
+// isn't included since that one can plausibly hold a graphic that does need
+// an alpha channel, and none of it showed up as an oversized outlier the way
+// category/product/banner photos did.
+const PHOTO_FOLDERS = new Set(["product-images", "banner-images", "category-images"]);
+
+// The longest a photo's largest dimension needs to be at any of this site's
+// display sizes (banner-images' own box tops out at 1920px wide; every
+// other photo folder renders into a grid card far smaller than that), so
+// this is a ceiling well above anything the site can actually show, not a
+// visible-quality tradeoff. What it does fix: an admin's source photo
+// arriving at whatever resolution their camera/export happened to produce
+// (one live category tile was found at 1844x2304, 465KB, displayed at a
+// few hundred px wide) with no resizing step in between, ever, before this.
+// Re-encoding as JPEG on top of that catches the same waste PNG banners
+// had (lossless compression on a photograph) for these folders generally.
+// Best-effort: any decode/encode failure just uploads the original bytes
+// unchanged rather than blocking the upload.
+const MAX_PHOTO_DIMENSION = 2200;
+const PHOTO_JPEG_QUALITY = 85;
+
+async function optimizePhoto(
+  bytes: Uint8Array,
+  contentType: string
+): Promise<{ bytes: Uint8Array; contentType: string; ext: string } | null> {
+  try {
+    const img = await Image.decode(bytes);
+    if (img.width > MAX_PHOTO_DIMENSION || img.height > MAX_PHOTO_DIMENSION) {
+      if (img.width >= img.height) {
+        img.resize(MAX_PHOTO_DIMENSION, Image.RESIZE_AUTO);
+      } else {
+        img.resize(Image.RESIZE_AUTO, MAX_PHOTO_DIMENSION);
+      }
+    }
+    const encoded = await img.encodeJPEG(PHOTO_JPEG_QUALITY);
+    // Skip the swap if re-encoding didn't actually help (e.g. a source
+    // that was already an efficiently-compressed JPEG at a sane size) --
+    // only ever replaces the upload when it's a real win.
+    if (encoded.length >= bytes.length && contentType === "image/jpeg") {
+      return null;
+    }
+    return { bytes: encoded, contentType: "image/jpeg", ext: "jpg" };
+  } catch {
+    return null;
+  }
+}
+
 // Center-crops a wide banner photo down to a near-square portrait frame
 // (banners here are always a centered focal subject with symmetric
 // flanking elements, so a horizontal center crop keeps the subject in
@@ -135,12 +185,38 @@ Deno.serve(async (req: Request) => {
         return json({ error: "Unsupported file type" }, 400);
       }
 
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const key = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${extFromName(file.name)}`;
+      let bytes = new Uint8Array(await file.arrayBuffer());
+      let contentType = file.type || "application/octet-stream";
+      let ext = extFromName(file.name);
+
+      if (PHOTO_FOLDERS.has(folder) && file.type.startsWith("image/")) {
+        const optimized = await optimizePhoto(bytes, contentType);
+        if (optimized) {
+          bytes = optimized.bytes;
+          contentType = optimized.contentType;
+          ext = optimized.ext;
+        }
+      }
+
+      const key = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
       const putRes = await r2.fetch(`${r2Endpoint}/${r2Bucket}/${key}`, {
         method: "PUT",
         body: bytes,
-        headers: { "Content-Type": file.type || "application/octet-stream" },
+        // Every key is unique (Date.now() + a random suffix) and nothing
+        // ever overwrites one in place — a re-uploaded photo just gets a new
+        // key and the DB row is repointed at it — so it's always safe for
+        // the CDN and browsers to cache a given URL forever. Without this,
+        // R2 objects have no Cache-Control at all and Cloudflare served them
+        // `cf-cache-status: DYNAMIC` (re-fetched from R2 on every request),
+        // which is what PageSpeed's "Use efficient cache lifetimes" finding
+        // was flagging. Only covers uploads from this point forward; the
+        // ~1,700 objects already in the bucket keep whatever (lack of)
+        // caching they have unless separately re-uploaded or fixed via a
+        // Cloudflare cache rule on the img.carnivalforyou.com zone.
+        headers: {
+          "Content-Type": contentType,
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
       });
 
       if (!putRes.ok) {
@@ -157,7 +233,10 @@ Deno.serve(async (req: Request) => {
           const mobilePutRes = await r2.fetch(`${r2Endpoint}/${r2Bucket}/${mobileKey}`, {
             method: "PUT",
             body: mobileBytes,
-            headers: { "Content-Type": "image/jpeg" },
+            headers: {
+              "Content-Type": "image/jpeg",
+              "Cache-Control": "public, max-age=31536000, immutable",
+            },
           });
           if (mobilePutRes.ok) {
             mobileUrl = `${r2PublicUrl}/${mobileKey}`;

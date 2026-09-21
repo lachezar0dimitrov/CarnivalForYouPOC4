@@ -48,7 +48,7 @@ export default function HalloweenCountdown() {
       style={{ aspectRatio: IMAGE_RATIO }}
     >
       <img
-        src="/images/halloweenCounter.png"
+        src="/images/halloweenCounter.webp"
         alt=""
         aria-hidden
         className="absolute inset-0 h-full w-full object-cover"
