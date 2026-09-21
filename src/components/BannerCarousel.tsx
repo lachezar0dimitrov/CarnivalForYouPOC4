@@ -152,7 +152,14 @@ export default function BannerCarousel() {
                 src={banner.imageUrl}
                 alt={lang === 'bg' ? banner.titleBg : banner.titleEn}
                 loading={i === 0 ? 'eager' : 'lazy'}
-                fetchPriority={i === 0 ? 'high' : 'auto'}
+                // Lowercase, not the camelCase `fetchPriority` prop: React
+                // only special-cases that spelling from v19 -- on this
+                // project's React 18.3 it falls through to a raw DOM
+                // attribute set instead, which React then warns about
+                // case-mismatch on every render. Lowercase passes straight
+                // through as a plain attribute (same as e.g. `aria-label`),
+                // no warning, same effect on the browser's fetch priority.
+                {...(i === 0 ? { fetchpriority: 'high' } : {})}
               />
             )}
           </div>
