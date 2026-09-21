@@ -386,6 +386,182 @@ export function productFallbackDescription(p: Product, lang: Lang): string {
   return parts.join(' ');
 }
 
+// --- Category listing page SEO ----------------------------------------------
+// ProductsPage (/products?category=X) used to build its <title> by gluing the
+// raw category label onto "костюми под наем" (e.g. "Момичета костюми под
+// наем"), which is not how anyone phrases the search — real queries are
+// "карнавални костюми за момичета/момчета/деца". The H1 and meta description
+// were also identical on every category page ("Нашите костюми" / the generic
+// catalog blurb), giving Google no per-category relevance signal at all.
+// This table supplies the actual searched phrasing per category, plus a
+// short intro paragraph so each category page has some unique on-page text
+// instead of just a product grid.
+export type CategoryPageCopy = {
+  title: string;
+  h1: string;
+  description: string;
+  intro: string;
+};
+
+// A synthetic id (no real category has it) for the combined "деца" view —
+// Момичета + Момчета + Деца 0-3 г. together — since "карнавални костюми за
+// деца" is searched far more than any single demographic sub-category, but
+// the catalog has no single category matching it. See KIDS_COMBO_IDS below
+// for the real category ids this stands in for.
+export const KIDS_COMBO_ID = -1;
+export const KIDS_COMBO_IDS = [4, 17, 19];
+
+const CATEGORY_PAGE_COPY_BG: Record<number, CategoryPageCopy> = {
+  [KIDS_COMBO_ID]: {
+    title: 'Карнавални костюми за деца под наем в София | CarnivalForYou',
+    h1: 'Карнавални костюми за деца',
+    description:
+      'Наем на карнавални костюми за деца в София — за момичета, за момчета и за най-малките (0-3 г.). Принцеси, супергерои, приказни и анимационни герои. Резервирайте на място.',
+    intro:
+      'Голям избор от карнавални костюми за деца под наем — от рокли на принцеси и приказни феи за момичета, през супергерои и любими герои за момчета, до костюмчета за най-малките от 0 до 3 години. Всеки костюм е зареден за оглед в нашата карнавална къща в София, а наемът е на 48 часа.',
+  },
+  4: {
+    title: 'Карнавални костюми за момичета под наем | CarnivalForYou',
+    h1: 'Карнавални костюми за момичета',
+    description:
+      'Наем на карнавални костюми за момичета в София — принцеси, приказни феи, анимационни и филмови героини. Голям избор от размери. Резервирайте на място.',
+    intro:
+      'Разгледайте нашите карнавални костюми за момичета под наем — рокли на принцеси, феи и приказни героини, супергероини и любими анимационни персонажи. Костюмите за момичета са налични в различни размери за всяка възраст и се вземат от нашата карнавална къща в София.',
+  },
+  17: {
+    title: 'Карнавални костюми за момчета под наем | CarnivalForYou',
+    h1: 'Карнавални костюми за момчета',
+    description:
+      'Наем на карнавални костюми за момчета в София — супергерои, пирати, рицари и любими анимационни герои. Голям избор от размери. Резервирайте на място.',
+    intro:
+      'Разгледайте нашите карнавални костюми за момчета под наем — супергерои, пирати, рицари, войници и любими герои от филми и анимации. Костюмите за момчета са налични в различни размери и се вземат от нашата карнавална къща в София.',
+  },
+  19: {
+    title: 'Детски карнавални костюми за бебета 0-3 г. под наем | CarnivalForYou',
+    h1: 'Карнавални костюми за деца 0-3 г.',
+    description:
+      'Наем на детски карнавални костюми за най-малките (0-3 г.) в София — меки, удобни и безопасни костюмчета за бебета и малки деца. Резервирайте на място.',
+    intro:
+      'Специална селекция от карнавални костюми за най-малките деца (0-3 години) — меки, удобни и безопасни за бебешка кожа, подходящи за фотосесии и първи празници. Вземат се от нашата карнавална къща в София.',
+  },
+  2: {
+    title: 'Дамски карнавални костюми под наем | CarnivalForYou',
+    h1: 'Дамски карнавални костюми',
+    description:
+      'Наем на дамски карнавални костюми в София — приказни, фантастични и тематични образи за всеки повод. Резервирайте на място.',
+    intro:
+      'Голям избор от дамски карнавални костюми под наем — приказни, фантастични и тематични образи за парти, фотосесия или карнавал.',
+  },
+  3: {
+    title: 'Мъжки карнавални костюми под наем | CarnivalForYou',
+    h1: 'Мъжки карнавални костюми',
+    description:
+      'Наем на мъжки карнавални костюми в София — исторически, тематични и фантастични образи за всеки повод. Резервирайте на място.',
+    intro:
+      'Голям избор от мъжки карнавални костюми под наем — исторически, тематични и фантастични образи за парти, фотосесия или карнавал.',
+  },
+  10: {
+    title: 'Костюми за Хелоуин под наем | CarnivalForYou',
+    h1: 'Костюми за Хелоуин',
+    description:
+      'Наем на страшни и забавни костюми за Хелоуин в София — за деца и възрастни. Резервирайте на място.',
+    intro:
+      'Костюми за Хелоуин под наем — страшни, забавни и тематични образи за деца и възрастни.',
+  },
+  20: {
+    title: 'Коледни костюми под наем | CarnivalForYou',
+    h1: 'Коледни костюми',
+    description: 'Наем на коледни костюми в София — за деца и възрастни. Резервирайте на място.',
+    intro: 'Коледни костюми под наем — за деца и възрастни, за училищни тържества и семейни празници.',
+  },
+};
+
+const CATEGORY_PAGE_COPY_EN: Record<number, CategoryPageCopy> = {
+  [KIDS_COMBO_ID]: {
+    title: "Carnival Costumes for Kids — Rentals in Sofia | CarnivalForYou",
+    h1: 'Carnival Costumes for Kids',
+    description:
+      "Rent carnival costumes for kids in Sofia — for girls, for boys and for toddlers (0-3). Princesses, superheroes, fairy tale and cartoon characters.",
+    intro:
+      "A wide range of carnival costumes for kids — princess and fairy dresses for girls, superheroes and favorite characters for boys, and costumes for toddlers aged 0 to 3. Rentals run for 48 hours, collected from our carnival house in Sofia.",
+  },
+  4: {
+    title: "Carnival Costumes for Girls — Rentals | CarnivalForYou",
+    h1: 'Carnival Costumes for Girls',
+    description: "Rent carnival costumes for girls in Sofia — princesses, fairies, cartoon and movie heroines.",
+    intro: "Browse our carnival costumes for girls — princess and fairy dresses, superheroines and favorite cartoon characters, in sizes for every age.",
+  },
+  17: {
+    title: "Carnival Costumes for Boys — Rentals | CarnivalForYou",
+    h1: 'Carnival Costumes for Boys',
+    description: "Rent carnival costumes for boys in Sofia — superheroes, pirates, knights and favorite characters.",
+    intro: "Browse our carnival costumes for boys — superheroes, pirates, knights and favorite movie and cartoon characters, in sizes for every age.",
+  },
+  19: {
+    title: "Toddler Carnival Costumes (0-3y) — Rentals | CarnivalForYou",
+    h1: 'Carnival Costumes for Toddlers 0-3',
+    description: "Rent soft, comfortable carnival costumes for toddlers (0-3) in Sofia.",
+    intro: "A special selection of carnival costumes for the youngest — soft, comfortable and safe for baby skin.",
+  },
+  2: {
+    title: "Women's Carnival Costumes — Rentals | CarnivalForYou",
+    h1: "Women's Carnival Costumes",
+    description: "Rent women's carnival costumes in Sofia — fairy tale, fantasy and themed looks for any occasion.",
+    intro: "A wide range of women's carnival costumes for rent — fairy tale, fantasy and themed looks for a party, photoshoot or carnival.",
+  },
+  3: {
+    title: "Men's Carnival Costumes — Rentals | CarnivalForYou",
+    h1: "Men's Carnival Costumes",
+    description: "Rent men's carnival costumes in Sofia — historical, themed and fantasy looks for any occasion.",
+    intro: "A wide range of men's carnival costumes for rent — historical, themed and fantasy looks for a party, photoshoot or carnival.",
+  },
+  10: {
+    title: 'Halloween Costumes — Rentals | CarnivalForYou',
+    h1: 'Halloween Costumes',
+    description: 'Rent scary and fun Halloween costumes in Sofia — for kids and adults.',
+    intro: 'Halloween costumes for rent — scary, fun and themed looks for kids and adults.',
+  },
+  20: {
+    title: 'Christmas Costumes — Rentals | CarnivalForYou',
+    h1: 'Christmas Costumes',
+    description: 'Rent Christmas costumes in Sofia — for kids and adults.',
+    intro: 'Christmas costumes for rent — for kids and adults, for school parties and family celebrations.',
+  },
+};
+
+// True when `categoryIds` is exactly the KIDS_COMBO_IDS set, regardless of
+// selection order — shared by getCategoryPageCopy below and by ProductsPage
+// for canonical-URL/structured-data purposes, so the two never disagree on
+// what counts as "the kids combo view".
+export function isKidsComboSelection(categoryIds: number[]): boolean {
+  return (
+    categoryIds.length === KIDS_COMBO_IDS.length &&
+    KIDS_COMBO_IDS.every((id) => categoryIds.includes(id))
+  );
+}
+
+// Resolves the SEO copy for whatever the category listing page is currently
+// showing: a single real category, or the KIDS_COMBO_IDS combination (in any
+// selection order — a Set comparison, not array equality). Returns null for
+// every other filter state (multiple unrelated categories, or none), which
+// callers treat as "fall back to the generic catalog title/H1/description".
+export function getCategoryPageCopy(categoryIds: number[], lang: Lang): CategoryPageCopy | null {
+  const table = lang === 'bg' ? CATEGORY_PAGE_COPY_BG : CATEGORY_PAGE_COPY_EN;
+  if (categoryIds.length === 1) {
+    return table[categoryIds[0]] ?? null;
+  }
+  if (isKidsComboSelection(categoryIds)) {
+    return table[KIDS_COMBO_ID];
+  }
+  return null;
+}
+
+// Canonical query value for the kids-combo view — a fixed, sorted id list so
+// the same URL is produced regardless of which order the three categories
+// were selected/toggled in (chips, tiles, or the direct link), instead of
+// each order competing as a separate near-duplicate URL.
+export const KIDS_COMBO_CATEGORY_PARAM = [...KIDS_COMBO_IDS].sort((a, b) => a - b).join(',');
+
 const SIZE_NORMALIZE: Record<string, string> = {
   STD: 'STD',
   STANDARD: 'STD',

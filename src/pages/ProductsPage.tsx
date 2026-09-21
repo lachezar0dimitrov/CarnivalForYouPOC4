@@ -10,6 +10,10 @@ import {
   fetchProducts,
   getAvailableSizes,
   getHomepageCategories,
+  getCategoryPageCopy,
+  isKidsComboSelection,
+  KIDS_COMBO_CATEGORY_PARAM,
+  KIDS_COMBO_IDS,
   productName,
   type Product,
   type CategoryMeta,
@@ -402,32 +406,56 @@ export default function ProductsPage() {
     }
   }, [filterOpen]);
 
+  // The ids driving this view's single-topic SEO copy: either the one
+  // primary/demographic category selected, or the one theme/seasonal chip
+  // (Halloween/Christmas) selected on its own — never both at once, since
+  // that's a genuinely combined view with no single matching search intent.
+  const effectiveCopyIds =
+    secondaryCategories.length === 0
+      ? primaryCategories
+      : primaryCategories.length === 0 && secondaryCategories.length === 1
+        ? secondaryCategories
+        : [];
+  const categoryCopy = getCategoryPageCopy(effectiveCopyIds, lang);
+  const isKidsCombo = isKidsComboSelection(effectiveCopyIds);
+  // For structured data / display purposes only — the kids combo has no
+  // single dbCats row, so its "category" name comes from the copy table.
   const seoCat =
-    primaryCategories.length === 1 && secondaryCategories.length === 0
-      ? dbCats.find((c) => c.id === primaryCategories[0])
+    effectiveCopyIds.length === 1 ? dbCats.find((c) => c.id === effectiveCopyIds[0]) : null;
+  const seoCatDisplayName = isKidsCombo
+    ? categoryCopy?.h1
+    : seoCat
+      ? lang === 'bg'
+        ? seoCat.nameBg
+        : seoCat.nameEn
       : null;
-  const seoTitle = seoCat
-    ? lang === 'bg'
-      ? `${seoCat.nameBg} костюми под наем | CarnivalForYou`
-      : `${seoCat.nameEn} costume rentals | CarnivalForYou`
-    : t('seo.productsTitle');
+  const seoTitle = categoryCopy ? categoryCopy.title : t('seo.productsTitle');
+  const seoDescription = categoryCopy ? categoryCopy.description : t('seo.productsDesc');
+  const pageH1 = categoryCopy ? categoryCopy.h1 : t('products.title');
+  // Canonical query value for this view — a single category id, the fixed
+  // sorted kids-combo id list, or nothing for the bare catalog. Search/
+  // pagination/size-filter variations of the same category are near-
+  // duplicate content, canonicalized back to this URL rather than letting
+  // every combination compete as its own indexed page.
+  const canonicalCategoryParam = isKidsCombo
+    ? KIDS_COMBO_CATEGORY_PARAM
+    : seoCat
+      ? String(seoCat.id)
+      : null;
   // True only when the rendered grid is exactly what the canonical URL
-  // below points at (single category, first page, no search/size filters) —
-  // the one moment structured data describing "this page's products" is
-  // guaranteed to match what a crawler landing on that canonical URL sees.
+  // below points at (single category or kids combo, first page, no search/
+  // size filters) — the one moment structured data describing "this page's
+  // products" is guaranteed to match what a crawler landing on that
+  // canonical URL sees.
   const isCanonicalCategoryView =
-    Boolean(seoCat) && page === 0 && !debouncedSearch.trim() && sizeFilters.length === 0;
+    canonicalCategoryParam != null && page === 0 && !debouncedSearch.trim() && sizeFilters.length === 0;
   useSEO({
     title: seoTitle,
-    description: t('seo.productsDesc'),
-    // Search/pagination/size-filter variations of the same category are
-    // near-duplicate content — canonicalize them back to the single-category
-    // (or bare catalog) URL rather than letting every combination compete
-    // as its own indexed page.
-    canonical: `${window.location.origin}${routeLang === 'en' ? '/en' : ''}${seoCat ? `/products?category=${seoCat.id}` : '/products'}`,
+    description: seoDescription,
+    canonical: `${window.location.origin}${routeLang === 'en' ? '/en' : ''}${canonicalCategoryParam ? `/products?category=${canonicalCategoryParam}` : '/products'}`,
     structuredData:
-      isCanonicalCategoryView && seoCat && products.length > 0
-        ? buildCategoryItemListSchema(products, lang === 'bg' ? seoCat.nameBg : seoCat.nameEn, lang)
+      isCanonicalCategoryView && seoCatDisplayName && products.length > 0
+        ? buildCategoryItemListSchema(products, seoCatDisplayName, lang)
         : undefined,
   });
 
@@ -631,19 +659,40 @@ export default function ProductsPage() {
       <div className="text-center">
         <p className="eyebrow mb-3">{t('products.eyebrow')}</p>
         <h1 className="font-display text-3xl font-semibold text-gray-100 sm:text-4xl md:text-5xl">
-          {t('products.title')}
+          {pageH1}
         </h1>
         <div className="mx-auto mt-4 h-px w-20 bg-gold-grad shadow-glow-sm" />
         <p className="mx-auto mt-4 max-w-2xl text-sm text-gray-400 sm:text-base">
-          {t('products.subtitle')}
+          {categoryCopy ? categoryCopy.intro : t('products.subtitle')}
         </p>
       </div>
 
       <section className="relative mt-12 2xl:left-1/2 2xl:right-1/2 2xl:mx-[-50vw] 2xl:w-screen">
         <div className="2xl:mx-auto 2xl:max-w-[2184px] 2xl:px-6">
-          <h2 className="mb-5 font-display text-lg font-semibold text-gold-100">
-            {t('products.categories')}
-          </h2>
+          <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-lg font-semibold text-gold-100">
+              {t('products.categories')}
+            </h2>
+            {/* Real anchor (not just a JS-driven button, unlike the tiles
+                below) so the kids-combo view is a crawlable, keyword-
+                matching link in its own right — see KIDS_COMBO_IDS in
+                src/lib/products.ts. Hidden while that exact view is already
+                showing, same as it would be redundant for a user too. */}
+            {!isKidsCombo && (
+              <a
+                href={`${routeLang === 'en' ? '/en' : ''}/products?category=${KIDS_COMBO_CATEGORY_PARAM}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setPrimaryCategories(KIDS_COMBO_IDS);
+                  setSecondaryCategories([]);
+                  scrollToResults();
+                }}
+                className="text-sm text-gold-300 underline decoration-gold-400/40 underline-offset-4 transition hover:text-gold-200"
+              >
+                {t('products.allKidsCostumes')}
+              </a>
+            )}
+          </div>
           <CategoryGrid
             categories={getHomepageCategories(dbCats)}
             onSelect={handleCategoryCardClick}
