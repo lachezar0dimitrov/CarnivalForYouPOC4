@@ -212,10 +212,20 @@ export async function handleProductDetail(context, lang) {
 
   const pathname = lang === 'en' ? `/en/product-detail/${numericId}` : `/product-detail/${numericId}`;
   const meta = buildMeta(product, url.origin, pathname, lang);
+  const hasEnglish = hasMeaningfulEnglishDescription(product);
+  // A product with no real English copy renders the /en page as the same
+  // Bulgarian text under a different URL — near-duplicate content that a
+  // self-referencing canonical asks Google to index twice. GSC flagged
+  // exactly this (326 product-detail URLs, "Duplicate, Google chose
+  // different canonical than user-declared", first seen 2026-09-15/16):
+  // pointing this page's canonical at the bg URL instead agrees with the
+  // choice Google was already making, rather than re-asserting the one it
+  // was overriding. Self-corrects once description_en is filled in.
+  const canonicalUrl = lang === 'en' && !hasEnglish ? `${url.origin}/product-detail/${numericId}` : meta.url;
 
   const rewriter = new HTMLRewriter()
     .on('link[rel="alternate"]', new ElementRemover())
-    .on('head', new CanonicalAppender(meta.url))
+    .on('head', new CanonicalAppender(canonicalUrl))
     .on('title', new TitleSetter(meta.title))
     .on('meta[name="description"]', new MetaContentSetter(meta.description))
     .on('meta[property="og:title"]', new MetaContentSetter(meta.title))
@@ -227,7 +237,7 @@ export async function handleProductDetail(context, lang) {
     .on('meta[name="twitter:description"]', new MetaContentSetter(meta.description))
     .on('meta[name="twitter:image"]', new MetaContentSetter(meta.image));
 
-  if (hasMeaningfulEnglishDescription(product)) {
+  if (hasEnglish) {
     const bgHref = `${url.origin}/product-detail/${numericId}`;
     const enHref = `${url.origin}/en/product-detail/${numericId}`;
     rewriter.on('head', new AlternateAppender(bgHref, enHref));

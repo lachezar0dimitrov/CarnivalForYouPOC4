@@ -213,11 +213,27 @@ export default function ProductDetailPage() {
   // and price so every product URL gets a unique, length-appropriate tag pair
   // even when the catalogue description is missing (see productSeoTitle).
   const name = product ? productName(product, lang) : t('seo.homeTitle');
+  // A product with no real English description renders the /en page with
+  // the same Bulgarian text as the bg URL — near-duplicate content under two
+  // URLs, each self-declaring its own canonical. Google's index flagged
+  // exactly this (GSC "Duplicate, Google chose different canonical than
+  // user-declared", 326 product-detail URLs, first seen 2026-09-15/16):
+  // rather than trusting the /en page's self-canonical, it picks the bg URL
+  // for us. Pointing the /en canonical at the bg URL ourselves for these
+  // products agrees with that choice instead of fighting it, and matches
+  // the server-side Function's identical fix (functions/_lib/productMeta.js)
+  // — self-corrects once description_en is filled in for a product.
+  const isThinEnglishPage =
+    lang === 'en' && product != null && !hasMeaningfulEnglishDescription(product);
   useSEO({
     title: product ? productSeoTitle(product, lang) : t('seo.homeTitle'),
     description: product ? productSeoDescription(product, lang) : t('seo.homeDesc'),
     image: product?.imageUrl ?? undefined,
     type: 'product',
+    canonical:
+      isThinEnglishPage && typeof window !== 'undefined'
+        ? `${window.location.origin}/product-detail/${numericId}`
+        : undefined,
     // Don't advertise an /en alternate for a product that doesn't really
     // have English content yet — it would just be the Bulgarian text under
     // an English URL. Self-corrects once description_en is filled in.
