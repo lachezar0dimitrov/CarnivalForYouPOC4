@@ -1,11 +1,19 @@
 import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { fetchActiveBanners, type Banner } from '@/lib/banners';
 import { getCurrentSeason } from '@/lib/season';
 import { useSplashActive } from '@/lib/splash';
 import HeroFireflies from '@/components/HeroFireflies';
+import BannerCountdown from '@/components/BannerCountdown';
 import { isAndroid } from '@/lib/platform';
+
+// The Halloween "baner_valia1" banner (added via the admin panel) has a
+// countdown baked into its own artwork's empty gold plate -- update this to
+// that banner's real `id` once it exists in the banners table (it's shown
+// wherever this constant is referenced below).
+const HALLOWEEN_VALIA_BANNER_ID = 4;
 
 export default function BannerCarousel() {
   const { t, lang } = useI18n();
@@ -162,6 +170,9 @@ export default function BannerCarousel() {
                 {...(i === 0 ? { fetchpriority: 'high' } : {})}
               />
             )}
+            {mountedSlides.has(i) && banner.id === HALLOWEEN_VALIA_BANNER_ID && (
+              <BannerCountdown />
+            )}
           </div>
         ))}
       </div>
@@ -256,6 +267,32 @@ export default function BannerCarousel() {
           </div>
         ))}
       </div>
+
+      {/* Prev/next arrows — subtle by design (low-opacity gold on a dark
+          disc) so they read as a secondary control, not competing with the
+          full-bleed click-through button underneath. Sit above it (z-30,
+          same layer as the dots) as separate elements, not children, so a
+          click on an arrow never also reaches that button. */}
+      {banners.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={prev}
+            aria-label={lang === 'bg' ? 'Предишен слайд' : 'Previous slide'}
+            className="absolute left-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-ink-900/30 p-1.5 text-gold-300/70 transition hover:bg-ink-900/55 hover:text-gold-200 sm:left-4 sm:p-2"
+          >
+            <ChevronLeft size={18} className="sm:h-5 sm:w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={next}
+            aria-label={lang === 'bg' ? 'Следващ слайд' : 'Next slide'}
+            className="absolute right-2 top-1/2 z-30 -translate-y-1/2 rounded-full bg-ink-900/30 p-1.5 text-gold-300/70 transition hover:bg-ink-900/55 hover:text-gold-200 sm:right-4 sm:p-2"
+          >
+            <ChevronRight size={18} className="sm:h-5 sm:w-5" />
+          </button>
+        </>
+      )}
 
       {/* Navigation dots — bottom-left so they never overlap the centered CTA */}
       {banners.length > 1 && (
