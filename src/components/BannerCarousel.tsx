@@ -5,7 +5,14 @@ import { fetchActiveBanners, type Banner } from '@/lib/banners';
 import { getCurrentSeason } from '@/lib/season';
 import { useSplashActive } from '@/lib/splash';
 import HeroFireflies from '@/components/HeroFireflies';
+import BannerCountdown from '@/components/BannerCountdown';
 import { isAndroid } from '@/lib/platform';
+
+// The Halloween "baner_valia1" banner (added via the admin panel) has a
+// countdown baked into its own artwork's empty gold plate -- update this to
+// that banner's real `id` once it exists in the banners table (it's shown
+// wherever this constant is referenced below).
+const HALLOWEEN_VALIA_BANNER_ID = 4;
 
 export default function BannerCarousel() {
   const { t, lang } = useI18n();
@@ -161,6 +168,9 @@ export default function BannerCarousel() {
                 // no warning, same effect on the browser's fetch priority.
                 {...(i === 0 ? { fetchpriority: 'high' } : {})}
               />
+            )}
+            {mountedSlides.has(i) && banner.id === HALLOWEEN_VALIA_BANNER_ID && (
+              <BannerCountdown />
             )}
           </div>
         ))}
