@@ -172,7 +172,7 @@ export default function ImportInvoicePanel() {
       const catalogNumber = str(row.catalog_number);
       try {
         const file = imageFiles.get(str(row.image_file))!;
-        const { url: imageUrl } = await uploadImage('product-images', file);
+        const { url: imageUrl, printUrl } = await uploadImage('product-images', file);
 
         const catIds = [...categoryIdByName.entries()]
           .filter(([name]) => Boolean(row[name]))
@@ -187,6 +187,7 @@ export default function ImportInvoicePanel() {
           category_ids: catIds,
           price: eurToBgn(Number(row.rental_price_eur)),
           image_url: imageUrl,
+          print_image_url: printUrl ?? null,
           sizes: str(row.sizes) || null,
           is_active: true,
           is_new: true,

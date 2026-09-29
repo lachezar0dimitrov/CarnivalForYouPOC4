@@ -416,9 +416,9 @@ const CATEGORY_PAGE_COPY_BG: Record<number, CategoryPageCopy> = {
     title: 'Карнавални костюми за деца под наем в София | CarnivalForYou',
     h1: 'Карнавални костюми за деца',
     description:
-      'Наем на карнавални костюми за деца в София — за момичета, за момчета и за най-малките (0-3 г.). Принцеси, супергерои, приказни и анимационни герои. Резервирайте на място.',
+      'Carnival kids костюми под наем в София — карнавални костюми за деца: момичета, момчета и най-малките (0-3 г.). Принцеси, супергерои, Хелоуин. Резервирайте на място.',
     intro:
-      'Голям избор от карнавални костюми за деца под наем — от рокли на принцеси и приказни феи за момичета, през супергерои и любими герои за момчета, до костюмчета за най-малките от 0 до 3 години. Всеки костюм е зареден за оглед в нашата карнавална къща в София, а наемът е на 48 часа.',
+      'Голям избор от карнавални костюми за деца под наем — от рокли на принцеси и приказни феи за момичета, през супергерои и любими герои за момчета, до костюмчета за най-малките от 0 до 3 години. Всеки костюм е зареден за оглед в нашата карнавална къща в София, а наемът е на 48 часа. Търсите carnival kids костюм за детска градина, училище, рожден ден или Хелоуин? Елате да пробвате на място в ж.к. Младост 4.',
   },
   4: {
     title: 'Карнавални костюми за момичета под наем | CarnivalForYou',
@@ -461,12 +461,12 @@ const CATEGORY_PAGE_COPY_BG: Record<number, CategoryPageCopy> = {
       'Голям избор от мъжки карнавални костюми под наем — исторически, тематични и фантастични образи за парти, фотосесия или карнавал.',
   },
   10: {
-    title: 'Костюми за Хелоуин под наем | CarnivalForYou',
-    h1: 'Костюми за Хелоуин',
+    title: 'Костюми за Хелоуин под наем в София | CarnivalForYou',
+    h1: 'Костюми за Хелоуин под наем',
     description:
-      'Наем на страшни и забавни костюми за Хелоуин в София — за деца и възрастни. Резервирайте на място.',
+      'Хелоуин костюми под наем в София — страшни и забавни костюми за деца и възрастни. Наем за 48 ч., пробване и резервация на място в ж.к. Младост 4.',
     intro:
-      'Костюми за Хелоуин под наем — страшни, забавни и тематични образи за деца и възрастни.',
+      'Търсите костюм за Хелоуин? При нас ще намерите хелоуин костюми под наем за деца и възрастни — страшни, забавни и тематични образи за парти, училищно тържество или фотосесия. Всеки костюм може да се пробва на място в нашата карнавална къща в ж.к. Младост 4, София, а наемът е за 48 часа. Съвет: резервирайте по-рано — в последната седмица на октомври най-търсените модели и размери се наемат първи.',
   },
   20: {
     title: 'Коледни костюми под наем | CarnivalForYou',
@@ -516,10 +516,10 @@ const CATEGORY_PAGE_COPY_EN: Record<number, CategoryPageCopy> = {
     intro: "A wide range of men's carnival costumes for rent — historical, themed and fantasy looks for a party, photoshoot or carnival.",
   },
   10: {
-    title: 'Halloween Costumes — Rentals | CarnivalForYou',
-    h1: 'Halloween Costumes',
-    description: 'Rent scary and fun Halloween costumes in Sofia — for kids and adults.',
-    intro: 'Halloween costumes for rent — scary, fun and themed looks for kids and adults.',
+    title: 'Halloween Costume Rental in Sofia | CarnivalForYou',
+    h1: 'Halloween Costume Rental',
+    description: 'Rent scary and fun Halloween costumes in Sofia — for kids and adults. 48-hour rental, try on and reserve in person in Mladost 4.',
+    intro: 'Looking for a Halloween costume in Sofia? Rent scary, fun and themed Halloween costumes for kids and adults — for a party, a school event or a photoshoot. Every costume can be tried on at our carnival house in Mladost 4, Sofia, and the rental is for 48 hours. Tip: reserve early — in the last week of October the most popular models and sizes go first.',
   },
   20: {
     title: 'Christmas Costumes — Rentals | CarnivalForYou',

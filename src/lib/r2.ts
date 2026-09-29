@@ -15,12 +15,15 @@ async function readError(res: Response): Promise<string> {
   return body?.error || res.statusText;
 }
 
-export type UploadResult = { url: string; mobileUrl?: string };
+export type UploadResult = { url: string; mobileUrl?: string; printUrl?: string };
 
 // mobileUrl is only ever populated for the 'banner-images' bucket — the
 // r2-media function auto-generates a portrait crop for banners specifically
 // (see supabase/functions/r2-media/index.ts), so callers uploading products
 // or categories just get url and can ignore the second field.
+// printUrl is only populated for 'product-images': url is then a small web
+// derivative for the site and printUrl the untouched original, which must be
+// saved to products.print_image_url (the print catalog reads that column).
 export async function uploadImage(bucket: ImageBucket, file: File): Promise<UploadResult> {
   const form = new FormData();
   form.append('file', file);
