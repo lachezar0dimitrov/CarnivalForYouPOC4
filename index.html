@@ -12,7 +12,9 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0a0f0d" />
-    <meta name="description" content="CarnivalForYou — магически костюми под наем. Венециански маски, фантастични образи, Хелоуин и детски костюми." />
+    <meta name="description" content="Карнавални костюми и костюми за Хелоуин под наем в София — за деца и възрастни. Венециански маски, приказни герои, наем за 48 ч. Резервирайте на място." />
+    <!-- Explicitly allow large image previews/thumbnails in search results. -->
+    <meta name="robots" content="max-image-preview:large" />
 
     <!-- OpenGraph defaults (updated dynamically per route by useSEO) -->
     <meta property="og:type" content="website" />
@@ -106,7 +108,30 @@
     <link rel="preconnect" href="https://iwpjagaqpskavatjlmnu.supabase.co" crossorigin />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Static, crawlable snapshot of the homepage's key content. Without it
+         the raw HTML Google fetches is an empty #root and every image only
+         exists after JS rendering, which Google defers and doesn't always
+         complete, so the search-result thumbnail came and went. React's
+         createRoot().render() replaces #root's children on first commit, so
+         this never coexists with the real UI; until then it's visually
+         hidden (no flash, no layout shift). Image URLs mirror the homepage
+         category tiles (live categories.image_url) so the browser reuses
+         the same cached files instead of downloading anything extra; if an
+         admin swaps a tile photo, update the matching URL here (and in the
+         English copy in functions/_middleware.js, served for /en paths). -->
+    <div id="root"><div id="seo-static" style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
+      <h1>Карнавални костюми под наем в София</h1>
+      <p>Карнавални костюми и костюми за Хелоуин под наем в София — над 1500 костюма за деца и възрастни. Венециански маски, приказни герои, перуки и аксесоари, наем за 48 ч.</p>
+      <ul>
+        <li><a href="/products?category=2"><img src="https://img.carnivalforyou.com/category-images/1789671859706-4f502551.webp" alt="Дамски карнавални костюми под наем" width="890" height="1316" loading="lazy" decoding="async" fetchpriority="low" />Дамски костюми</a></li>
+        <li><a href="/products?category=3"><img src="https://img.carnivalforyou.com/category-images/1789671861804-1f26332a.webp" alt="Мъжки карнавални костюми под наем" width="922" height="1420" loading="lazy" decoding="async" fetchpriority="low" />Мъжки костюми</a></li>
+        <li><a href="/products?category=17"><img src="/images/categories/boys-carnival-costumes.webp" alt="Карнавални костюми за момчета" width="640" height="962" loading="lazy" decoding="async" fetchpriority="low" />Костюми за момчета</a></li>
+        <li><a href="/products?category=4"><img src="/images/categories/girls-carnival-costumes.webp" alt="Карнавални костюми за момичета" width="640" height="1127" loading="lazy" decoding="async" fetchpriority="low" />Костюми за момичета</a></li>
+        <li><a href="/products?category=19"><img src="https://img.carnivalforyou.com/category-images/web/1789671863991-c3466ac6.webp" alt="Бебешки и детски костюми 0-3 години" width="800" height="1000" loading="lazy" decoding="async" fetchpriority="low" />Деца 0-3 г.</a></li>
+        <li><a href="/products?category=10"><img src="/images/categories/halloween-scary-costumes.webp" alt="Костюми за Хелоуин под наем" width="640" height="919" loading="lazy" decoding="async" fetchpriority="low" />Хелоуин</a></li>
+      </ul>
+      <p>ж.к. Младост 4, бл. 426А, София · <a href="tel:+359888716941">+359 888 716 941</a> · <a href="/contacts">Контакти</a></p>
+    </div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
