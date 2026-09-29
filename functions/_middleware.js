@@ -50,5 +50,18 @@ export async function onRequest(context) {
     // never let this cost a real response
   }
 
+  // Hashed build assets that don't exist (e.g. requested in the seconds
+  // while a new deploy propagates) would otherwise hit the SPA catch-all and
+  // come back as index.html with 200 + the /assets/* `immutable` header --
+  // a browser then caches HTML as that JS file for a year and the site stays
+  // blank for that visitor. A non-cacheable 404 lets the next load recover.
+  if (new URL(context.request.url).pathname.startsWith('/assets/')) {
+    const res = await context.next();
+    if ((res.headers.get('content-type') || '').includes('text/html')) {
+      return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } });
+    }
+    return res;
+  }
+
   return context.next();
 }

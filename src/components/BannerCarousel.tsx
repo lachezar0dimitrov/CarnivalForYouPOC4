@@ -15,6 +15,15 @@ import { isAndroid } from '@/lib/platform';
 // wherever this constant is referenced below).
 const HALLOWEEN_VALIA_BANNER_ID = 4;
 
+// Start the banner query as soon as this module is evaluated on the
+// homepage instead of after React's first render + effect -- the first
+// banner photo is the mobile LCP element and can't be requested until this
+// resolves. Consumed (and cleared) by the first mount below.
+let earlyBanners: Promise<Banner[]> | null =
+  typeof window !== 'undefined' && /^\/(en\/?)?$/.test(window.location.pathname)
+    ? fetchActiveBanners()
+    : null;
+
 export default function BannerCarousel() {
   const { t, lang } = useI18n();
   const { navigate } = useRouter();
@@ -45,7 +54,9 @@ export default function BannerCarousel() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchActiveBanners()
+    const request = earlyBanners ?? fetchActiveBanners();
+    earlyBanners = null;
+    request
       .then((data) => {
         if (cancelled) return;
         setBanners(data);
