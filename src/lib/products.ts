@@ -638,10 +638,10 @@ const selectColumns =
 // (categories.is_active = false), not shown as tiles or filter chips.
 const HIDDEN_CATEGORY_IDS = [5, 6, 7, 8];
 
-function baseQuery() {
+function baseQuery(columns: string = selectColumns) {
   return supabase
     .from('products')
-    .select(selectColumns)
+    .select(columns)
     .eq('is_active', true)
     .gt('price', 0)
     .not('image_url', 'is', null)
@@ -955,16 +955,34 @@ export async function searchProductsBasic(
 // that's computed here at query time (no cron/scheduled job). Cutoff window
 // (NEW_BADGE_MONTHS) is defined once near getFilteredAndSortedIds above,
 // shared with isProductNew (the grid badge) and the "Само нови" filter.
+//
+// The ribbon shows a random sample rather than a fixed top-N: with 200+ new
+// products a fixed list meant the same 20 every visit and the rest never
+// shown. PostgREST can't ORDER BY random(), so: fetch just the ids of every
+// eligible product (cheap), shuffle client-side, then load full rows for the
+// picked ids only and return them in the shuffled order.
 export async function fetchNewProducts(limit = 20): Promise<Product[]> {
-  const { data, error } = await baseQuery()
+  const { data: idRows, error: idError } = await baseQuery('id')
     .eq('is_new', true)
-    .or(`new_since.is.null,new_since.gt.${newBadgeCutoffIso()}`)
-    .order('priority', { ascending: false })
-    .order('id', { ascending: false })
-    .limit(limit);
+    .or(`new_since.is.null,new_since.gt.${newBadgeCutoffIso()}`);
+
+  if (idError) throw idError;
+  const ids = ((idRows as unknown as { id: number }[] | null) ?? []).map((r) => r.id);
+  // Fisher–Yates
+  for (let i = ids.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+  }
+  const picked = ids.slice(0, limit);
+  if (picked.length === 0) return [];
+
+  const { data, error } = await baseQuery().in('id', picked);
 
   if (error) throw error;
-  return (data as unknown as ProductRow[] | null ?? []).map(mapRow);
+  const rank = new Map(picked.map((id, i) => [id, i]));
+  return (data as unknown as ProductRow[] | null ?? [])
+    .map(mapRow)
+    .sort((a, b) => rank.get(a.id)! - rank.get(b.id)!);
 }
 
 // Products flagged "popular" in the admin form, for the homepage's
