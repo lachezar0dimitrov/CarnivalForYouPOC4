@@ -486,9 +486,9 @@ const translations: Record<Lang, Record<string, string>> = {
     'cookie.decline': 'Decline',
 
     // seo
-    'seo.homeTitle': 'CarnivalForYou — Magical Costume Rentals',
+    'seo.homeTitle': 'Carnival Costume Rental in Sofia | CarnivalForYou',
     'seo.homeDesc':
-      'Magical costume rentals in Sofia. Venetian masks, fantasy looks, Halloween and kids costumes. Reserve at the carnival house.',
+      'Carnival and Halloween costume rental in Sofia — for kids and adults. Venetian masks, fairy-tale characters, 48-hour rental. Reserve in store.',
     'seo.productsTitle': 'Costume Rental Catalog | CarnivalForYou',
     'seo.productsDesc':
       'Browse available costumes for rent — Venetian, fantasy, Halloween and kids. Prices per 48 hours, reserve at our carnival house in Sofia.',

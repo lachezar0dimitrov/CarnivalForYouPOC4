@@ -66,9 +66,25 @@ export async function onRequest(context) {
   const res = await context.next();
   if (isEnglishPath(new URL(context.request.url).pathname)
       && (res.headers.get('content-type') || '').includes('text/html')) {
-    return new HTMLRewriter()
-      .on('#seo-static', { element(el) { el.setInnerContent(EN_SEO_STATIC, { html: true }); } })
-      .transform(res);
+    const pathname = new URL(context.request.url).pathname;
+    let rewriter = new HTMLRewriter()
+      .on('#seo-static', { element(el) { el.setInnerContent(EN_SEO_STATIC, { html: true }); } });
+    // The /en homepage has no Pages Function of its own (unlike product
+    // pages), so its raw <head> would otherwise carry index.html's Bulgarian
+    // title/description. Mirrors seo.homeTitle/seo.homeDesc (en) in
+    // src/lib/i18n.tsx -- keep in sync.
+    if (pathname === '/en' || pathname === '/en/') {
+      const set = (value) => ({ element(el) { el.setAttribute('content', value); } });
+      rewriter = rewriter
+        .on('title', { element(el) { el.setInnerContent(EN_HOME_TITLE); } })
+        .on('meta[name="description"]', set(EN_HOME_DESC))
+        .on('meta[property="og:title"]', set(EN_HOME_TITLE))
+        .on('meta[property="og:description"]', set(EN_HOME_DESC))
+        .on('meta[name="twitter:title"]', set(EN_HOME_TITLE))
+        .on('meta[name="twitter:description"]', set(EN_HOME_DESC))
+        .on('meta[property="og:url"]', set('https://carnivalforyou.com/en'));
+    }
+    return rewriter.transform(res);
   }
   return res;
 }
@@ -82,6 +98,10 @@ export async function onRequest(context) {
 function isEnglishPath(pathname) {
   return pathname === '/en' || pathname.startsWith('/en/');
 }
+
+const EN_HOME_TITLE = 'Carnival Costume Rental in Sofia | CarnivalForYou';
+const EN_HOME_DESC =
+  'Carnival and Halloween costume rental in Sofia — for kids and adults. Venetian masks, fairy-tale characters, 48-hour rental. Reserve in store.';
 
 const EN_SEO_STATIC = `
       <h1>Carnival Costume Rental in Sofia</h1>
