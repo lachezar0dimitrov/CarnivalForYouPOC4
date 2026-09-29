@@ -11,6 +11,7 @@ import {
   getAvailableSizes,
   getHomepageCategories,
   getCategoryPageCopy,
+  getNewArrivalsPageCopy,
   isKidsComboSelection,
   KIDS_COMBO_CATEGORY_PARAM,
   KIDS_COMBO_IDS,
@@ -416,13 +417,20 @@ export default function ProductsPage() {
       : primaryCategories.length === 0 && secondaryCategories.length === 1
         ? secondaryCategories
         : [];
-  const categoryCopy = getCategoryPageCopy(effectiveCopyIds, lang);
+  // "New only" with no category at all is its own landing page (linked from
+  // the home page ribbon) with its own copy and self-canonical URL. Combined
+  // with a category it stays that category's view, as before.
+  const isNewArrivalsView =
+    onlyNew && primaryCategories.length === 0 && secondaryCategories.length === 0;
+  const categoryCopy = isNewArrivalsView
+    ? getNewArrivalsPageCopy(lang)
+    : getCategoryPageCopy(effectiveCopyIds, lang);
   const isKidsCombo = isKidsComboSelection(effectiveCopyIds);
   // For structured data / display purposes only — the kids combo has no
   // single dbCats row, so its "category" name comes from the copy table.
   const seoCat =
     effectiveCopyIds.length === 1 ? dbCats.find((c) => c.id === effectiveCopyIds[0]) : null;
-  const seoCatDisplayName = isKidsCombo
+  const seoCatDisplayName = isKidsCombo || isNewArrivalsView
     ? categoryCopy?.h1
     : seoCat
       ? lang === 'bg'
@@ -442,17 +450,23 @@ export default function ProductsPage() {
     : seoCat
       ? String(seoCat.id)
       : null;
+  // The new-arrivals landing page overrides the category param entirely.
+  const canonicalQuery = isNewArrivalsView
+    ? '?new=1'
+    : canonicalCategoryParam
+      ? `?category=${canonicalCategoryParam}`
+      : '';
   // True only when the rendered grid is exactly what the canonical URL
-  // below points at (single category or kids combo, first page, no search/
-  // size filters) — the one moment structured data describing "this page's
+  // below points at (single category, kids combo or new arrivals, first
+  // page, no search/size filters) — the one moment structured data describing "this page's
   // products" is guaranteed to match what a crawler landing on that
   // canonical URL sees.
   const isCanonicalCategoryView =
-    canonicalCategoryParam != null && page === 0 && !debouncedSearch.trim() && sizeFilters.length === 0;
+    canonicalQuery !== '' && page === 0 && !debouncedSearch.trim() && sizeFilters.length === 0;
   useSEO({
     title: seoTitle,
     description: seoDescription,
-    canonical: `${window.location.origin}${routeLang === 'en' ? '/en' : ''}${canonicalCategoryParam ? `/products?category=${canonicalCategoryParam}` : '/products'}`,
+    canonical: `${window.location.origin}${routeLang === 'en' ? '/en' : ''}/products${canonicalQuery}`,
     structuredData:
       isCanonicalCategoryView && seoCatDisplayName && products.length > 0
         ? buildCategoryItemListSchema(products, seoCatDisplayName, lang)
