@@ -38,6 +38,10 @@ export default function BannerCarousel() {
   // into) cuts that down to one photo up front and the rest spread out
   // across the 6s auto-advance interval instead of all at once.
   const [mountedSlides, setMountedSlides] = useState<Set<number>>(new Set([0]));
+  // The "one slide ahead" preload waits for slide 1's photo to finish: on a
+  // slow mobile connection the two downloads otherwise split the bandwidth
+  // and the first (LCP) banner lands seconds later than it has to.
+  const [firstSlideReady, setFirstSlideReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,7 +60,7 @@ export default function BannerCarousel() {
   }, []);
 
   useEffect(() => {
-    if (banners.length === 0) return;
+    if (banners.length === 0 || !firstSlideReady) return;
     const nextIndex = (current + 1) % banners.length;
     setMountedSlides((prev) => {
       if (prev.has(current) && prev.has(nextIndex)) return prev;
@@ -65,7 +69,7 @@ export default function BannerCarousel() {
       next.add(nextIndex);
       return next;
     });
-  }, [current, banners.length]);
+  }, [current, banners.length, firstSlideReady]);
 
   const next = () => {
     setCurrent((c) => (c + 1) % Math.max(banners.length, 1));
@@ -168,6 +172,8 @@ export default function BannerCarousel() {
                 // through as a plain attribute (same as e.g. `aria-label`),
                 // no warning, same effect on the browser's fetch priority.
                 {...(i === 0 ? { fetchpriority: 'high' } : {})}
+                onLoad={i === 0 ? () => setFirstSlideReady(true) : undefined}
+                onError={i === 0 ? () => setFirstSlideReady(true) : undefined}
               />
             )}
             {mountedSlides.has(i) && banner.id === HALLOWEEN_VALIA_BANNER_ID && (

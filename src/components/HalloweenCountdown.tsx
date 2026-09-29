@@ -49,6 +49,8 @@ export default function HalloweenCountdown() {
     >
       <img
         src="/images/halloweenCounter.webp"
+        loading="lazy"
+        decoding="async"
         alt=""
         aria-hidden
         className="absolute inset-0 h-full w-full object-cover"
