@@ -47,7 +47,7 @@ async function fetchActiveProducts(env) {
   const all = [];
   for (;;) {
     const res = await fetch(
-      `${env.VITE_SUPABASE_URL}/rest/v1/products?${VISIBLE_FILTER}&select=id,created_at,description_en,name_bg,image_url,is_popular,priority` +
+      `${env.VITE_SUPABASE_URL}/rest/v1/products?${VISIBLE_FILTER}&select=id,created_at,description_en,name_bg,image_url,is_popular,priority,is_new,new_since` +
         `&order=id.asc&offset=${offset}&limit=${pageSize}`,
       {
         headers: {
@@ -199,6 +199,29 @@ export async function onRequestGet(context) {
     const alternates = buildAlternates(bgHref, enHref);
     entries.push(urlEntry(bgHref, undefined, '0.8', alternates));
     entries.push(urlEntry(enHref, undefined, '0.8', alternates));
+  }
+
+  // "New arrivals" landing page (/products?new=1) — linked from the home
+  // page ribbon's "see all" button. Same eligibility as fetchNewProducts in
+  // src/lib/products.ts (is_new, and new_since null or within
+  // NEW_BADGE_MONTHS = 12 — duplicated here since Functions can't import
+  // src/). lastmod is the newest eligible product's date, so Google sees the
+  // page change whenever a new batch lands. Skipped entirely if nothing is
+  // currently new, rather than advertising an empty page.
+  {
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - 12);
+    const cutoffIso = cutoff.toISOString();
+    const newProducts = products.filter((p) => p.is_new && (!p.new_since || p.new_since > cutoffIso));
+    const newDates = newProducts.map((p) => p.new_since || p.created_at).filter(Boolean).sort();
+    if (newProducts.length > 0) {
+      const lastmod = newDates.length > 0 ? newDates[newDates.length - 1].slice(0, 10) : undefined;
+      const bgHref = `${origin}/products?new=1`;
+      const enHref = `${origin}/en/products?new=1`;
+      const alternates = buildAlternates(bgHref, enHref);
+      entries.push(urlEntry(bgHref, lastmod, '0.8', alternates));
+      entries.push(urlEntry(enHref, lastmod, '0.8', alternates));
+    }
   }
 
   // Products: the English variant only ships once the product actually has

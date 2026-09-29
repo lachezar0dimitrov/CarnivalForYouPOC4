@@ -556,6 +556,34 @@ export function getCategoryPageCopy(categoryIds: number[], lang: Lang): Category
   return null;
 }
 
+// SEO copy for the "new arrivals" view (/products?new=1 with no category
+// selected) — the landing page behind the home page ribbon's "see all" link.
+// Like the kids combo, it targets a search intent ("нови карнавални костюми")
+// no single category covers, and its content refreshes itself as imported
+// batches age out (NEW_BADGE_MONTHS) and new invoices come in.
+const NEW_ARRIVALS_PAGE_COPY: Record<Lang, CategoryPageCopy> = {
+  bg: {
+    title: 'Нови карнавални костюми под наем в София | CarnivalForYou',
+    h1: 'Нови карнавални костюми',
+    description:
+      'Най-новите карнавални костюми под наем в София — за деца и възрастни, Хелоуин, приказни и филмови герои. Пробвайте и резервирайте на място в ж.к. Младост 4.',
+    intro:
+      'Тук са събрани най-новите костюми, пристигнали в нашата карнавална къща — за деца и възрастни, за Хелоуин, карнавал, рожден ден или тематично парти. Колекцията се обновява с всяка нова доставка. Наемът е на 48 часа, а всеки костюм може да бъде пробван на място в ж.к. Младост 4, София.',
+  },
+  en: {
+    title: 'New Carnival Costumes — Rentals in Sofia | CarnivalForYou',
+    h1: 'New Carnival Costumes',
+    description:
+      'The newest carnival costumes for rent in Sofia — for kids and adults, Halloween, fairy tale and movie characters. Try on and reserve in person in Mladost 4.',
+    intro:
+      'Our newest arrivals — costumes for kids and adults, for Halloween, carnival, birthdays and themed parties. The collection is refreshed with every new delivery. Rentals run for 48 hours, and every costume can be tried on at our carnival house in Mladost 4, Sofia.',
+  },
+};
+
+export function getNewArrivalsPageCopy(lang: Lang): CategoryPageCopy {
+  return NEW_ARRIVALS_PAGE_COPY[lang];
+}
+
 // Canonical query value for the kids-combo view — a fixed, sorted id list so
 // the same URL is produced regardless of which order the three categories
 // were selected/toggled in (chips, tiles, or the direct link), instead of

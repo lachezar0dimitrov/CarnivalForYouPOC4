@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useRouter } from '@/lib/router';
 import { fetchNewProducts, productName, type Product } from '@/lib/products';
@@ -41,6 +41,7 @@ function RibbonCard({ product, name }: { product: Product; name: string }) {
 // an empty ribbon with a heading and no content would look broken.
 export default function NewArrivalsRibbon() {
   const { t, lang } = useI18n();
+  const { navigate } = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -86,6 +87,24 @@ export default function NewArrivalsRibbon() {
             />
           ))}
         </div>
+      </div>
+
+      {/* A real <a href> (not just a click handler) so crawlers follow it
+          from the home page to the /products?new=1 landing page, which has
+          its own SEO copy and canonical — see isNewArrivalsView in
+          ProductsPage.tsx. */}
+      <div className="mt-8 flex justify-center px-4">
+        <a
+          href={`${lang === 'en' ? '/en' : ''}/products?new=1`}
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('products', { new: '1' });
+          }}
+          className="inline-flex items-center gap-2 rounded-full border border-gold-400/40 bg-ink-800/60 px-6 py-2.5 text-sm font-semibold text-gold-200 transition hover:border-gold-400/70 hover:bg-gold-400/10 hover:text-gold-100"
+        >
+          {t('home.newArrivalsSeeAll')}
+          <ArrowRight size={16} />
+        </a>
       </div>
     </section>
   );
