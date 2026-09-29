@@ -39,7 +39,10 @@ function RibbonCard({ product, name }: { product: Product; name: string }) {
 // Right-to-left scrolling strip of admin-flagged "new" products, sitting
 // above the closing CTA. Renders nothing if there are no new products —
 // an empty ribbon with a heading and no content would look broken.
-export default function NewArrivalsRibbon() {
+// onSettled fires once the fetch has finished (with or without products), so
+// the home page can hold its Back scroll-restore until this section's height
+// is final.
+export default function NewArrivalsRibbon({ onSettled }: { onSettled?: () => void } = {}) {
   const { t, lang } = useI18n();
   const { navigate } = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -53,11 +56,15 @@ export default function NewArrivalsRibbon() {
       })
       .catch(() => {})
       .finally(() => {
-        if (!cancelled) setLoaded(true);
+        if (!cancelled) {
+          setLoaded(true);
+          onSettled?.();
+        }
       });
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!loaded || products.length === 0) return null;

@@ -44,7 +44,11 @@ function CurrentPage() {
   // once its content has loaded, instead of snapping to the top first.
   useLayoutEffect(() => {
     if (pendingScrollRestore == null) {
-      window.scrollTo(0, 0);
+      // behavior 'instant': html has scroll-behavior:smooth (index.css), which
+      // would turn this reset into an animation — on real phones the growing
+      // detail page / touch momentum interrupts it and leaves the view parked
+      // mid-page (sizes/category) instead of on the photo.
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
     }
     // pendingScrollRestore intentionally omitted — only route/productId
     // changing should re-run this; re-checking it if it later clears would

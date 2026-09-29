@@ -2077,7 +2077,13 @@ function ProductForm({
       category_ids: categoryIds,
       price: eurToBgn(Number(form.price)),
       image_url: form.image_url || null,
-      ...(form.print_image_url !== undefined ? { print_image_url: form.print_image_url } : {}),
+      // A new photo without a matching original must never leave the old
+      // print_image_url behind — the catalog would print the previous photo.
+      ...(form.print_image_url !== undefined
+        ? { print_image_url: form.print_image_url }
+        : (form.image_url || null) !== (product?.imageUrl ?? null)
+          ? { print_image_url: null }
+          : {}),
       sizes: form.sizes || null,
       is_active: form.is_active,
       is_new: form.is_new,
@@ -2199,7 +2205,7 @@ function ProductForm({
           <div className="flex flex-col gap-2">
             <ImageUploadButton
               bucket="product-images"
-              onUploaded={(url, _mobile, printUrl) => setForm({ ...form, image_url: url, print_image_url: printUrl ?? null })}
+              onUploaded={(url, _mobile, printUrl) => setForm((prev) => ({ ...prev, image_url: url, print_image_url: printUrl ?? null }))}
               label={lang === 'bg' ? 'Качи снимка от файла' : 'Upload from file'}
             />
             <input
