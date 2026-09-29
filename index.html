@@ -117,8 +117,9 @@
          hidden (no flash, no layout shift). Image URLs mirror the homepage
          category tiles (live categories.image_url) so the browser reuses
          the same cached files instead of downloading anything extra; if an
-         admin swaps a tile photo, update the matching URL here. -->
-    <div id="root"><div style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
+         admin swaps a tile photo, update the matching URL here (and in the
+         English copy in functions/_middleware.js, served for /en paths). -->
+    <div id="root"><div id="seo-static" style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
       <h1>Карнавални костюми под наем в София</h1>
       <p>Карнавални костюми и костюми за Хелоуин под наем в София — над 1500 костюма за деца и възрастни. Венециански маски, приказни герои, перуки и аксесоари, наем за 48 ч.</p>
       <ul>

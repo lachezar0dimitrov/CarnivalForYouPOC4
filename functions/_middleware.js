@@ -63,5 +63,36 @@ export async function onRequest(context) {
     return res;
   }
 
-  return context.next();
+  const res = await context.next();
+  if (isEnglishPath(new URL(context.request.url).pathname)
+      && (res.headers.get('content-type') || '').includes('text/html')) {
+    return new HTMLRewriter()
+      .on('#seo-static', { element(el) { el.setInnerContent(EN_SEO_STATIC, { html: true }); } })
+      .transform(res);
+  }
+  return res;
 }
+
+// index.html ships a visually-hidden, crawlable Bulgarian snapshot of the
+// homepage (#seo-static — see the comment there) so the raw HTML Google
+// fetches isn't an empty #root. Every /en path is served that same file, so
+// swap in the English copy here — otherwise English pages' first-pass HTML
+// would carry Bulgarian text and Bulgarian-URL links. Image URLs must stay
+// identical to index.html's (they mirror the homepage category tiles).
+function isEnglishPath(pathname) {
+  return pathname === '/en' || pathname.startsWith('/en/');
+}
+
+const EN_SEO_STATIC = `
+      <h1>Carnival Costume Rental in Sofia</h1>
+      <p>Carnival and Halloween costume rental in Sofia — over 1500 costumes for kids and adults. Venetian masks, fairy-tale characters, wigs and accessories, 48-hour rental.</p>
+      <ul>
+        <li><a href="/en/products?category=2"><img src="https://img.carnivalforyou.com/category-images/1789671859706-4f502551.webp" alt="Women's carnival costumes for rent" width="890" height="1316" loading="lazy" decoding="async" fetchpriority="low" />Women's costumes</a></li>
+        <li><a href="/en/products?category=3"><img src="https://img.carnivalforyou.com/category-images/1789671861804-1f26332a.webp" alt="Men's carnival costumes for rent" width="922" height="1420" loading="lazy" decoding="async" fetchpriority="low" />Men's costumes</a></li>
+        <li><a href="/en/products?category=17"><img src="/images/categories/boys-carnival-costumes.webp" alt="Boys' carnival costumes" width="640" height="962" loading="lazy" decoding="async" fetchpriority="low" />Boys' costumes</a></li>
+        <li><a href="/en/products?category=4"><img src="/images/categories/girls-carnival-costumes.webp" alt="Girls' carnival costumes" width="640" height="1127" loading="lazy" decoding="async" fetchpriority="low" />Girls' costumes</a></li>
+        <li><a href="/en/products?category=19"><img src="https://img.carnivalforyou.com/category-images/web/1789671863991-c3466ac6.webp" alt="Baby and toddler costumes 0-3 years" width="800" height="1000" loading="lazy" decoding="async" fetchpriority="low" />Toddlers 0-3</a></li>
+        <li><a href="/en/products?category=10"><img src="/images/categories/halloween-scary-costumes.webp" alt="Halloween costumes for rent" width="640" height="919" loading="lazy" decoding="async" fetchpriority="low" />Halloween</a></li>
+      </ul>
+      <p>Mladost 4, bl. 426A, Sofia · <a href="tel:+359888716941">+359 888 716 941</a> · <a href="/en/contacts">Contacts</a></p>
+    `;
