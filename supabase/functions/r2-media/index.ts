@@ -71,6 +71,32 @@ const PHOTO_FOLDERS = new Set(["product-images", "banner-images", "category-imag
 const MAX_PHOTO_DIMENSION = 2200;
 const PHOTO_JPEG_QUALITY = 85;
 
+// Site/print split (2026-09-29): product photos feed BOTH the website and
+// the print catalog. The catalog needs every source pixel, the site never
+// renders a product photo above ~600px (x2 for retina). So a product upload
+// now stores the untouched original (-> products.print_image_url, used only
+// by print-catalog/generate_print_catalog.py) plus a small web derivative
+// under product-images/web/ (-> products.image_url). Category tiles have no
+// print use, so they just get the smaller web ceiling directly.
+const WEB_MAX_DIMENSION: Record<string, number> = {
+  "product-images": 1200,
+  "category-images": 1000,
+};
+const WEB_JPEG_QUALITY = 80;
+
+async function webDerivative(bytes: Uint8Array, maxDim: number): Promise<Uint8Array | null> {
+  try {
+    const img = await Image.decode(bytes);
+    if (img.width > maxDim || img.height > maxDim) {
+      if (img.width >= img.height) img.resize(maxDim, Image.RESIZE_AUTO);
+      else img.resize(Image.RESIZE_AUTO, maxDim);
+    }
+    return await img.encodeJPEG(WEB_JPEG_QUALITY);
+  } catch {
+    return null;
+  }
+}
+
 async function optimizePhoto(
   bytes: Uint8Array,
   contentType: string
@@ -189,7 +215,41 @@ Deno.serve(async (req: Request) => {
       let contentType = file.type || "application/octet-stream";
       let ext = extFromName(file.name);
 
-      if (PHOTO_FOLDERS.has(folder) && file.type.startsWith("image/")) {
+      if (folder === "product-images" && file.type.startsWith("image/")) {
+        // Original goes up byte-for-byte for print; the site gets the web copy.
+        const stamp = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+        const printKey = `${folder}/${stamp}.${ext}`;
+        const put = (key: string, body: Uint8Array, type: string) =>
+          r2.fetch(`${r2Endpoint}/${r2Bucket}/${key}`, {
+            method: "PUT",
+            body,
+            headers: { "Content-Type": type, "Cache-Control": "public, max-age=31536000, immutable" },
+          });
+        const printRes = await put(printKey, bytes, contentType);
+        if (!printRes.ok) {
+          return json({ error: `R2 upload failed: ${await printRes.text()}` }, 502);
+        }
+        const printUrl = `${r2PublicUrl}/${printKey}`;
+        const web = await webDerivative(bytes, WEB_MAX_DIMENSION[folder]);
+        if (web && web.length < bytes.length) {
+          const webKey = `${folder}/web/${stamp}.jpg`;
+          const webRes = await put(webKey, web, "image/jpeg");
+          if (webRes.ok) {
+            return json({ url: `${r2PublicUrl}/${webKey}`, printUrl });
+          }
+        }
+        // Derivative failed or wasn't smaller: the original serves both.
+        return json({ url: printUrl });
+      }
+
+      if (folder === "category-images" && file.type.startsWith("image/")) {
+        const web = await webDerivative(bytes, WEB_MAX_DIMENSION[folder]);
+        if (web && web.length < bytes.length) {
+          bytes = web;
+          contentType = "image/jpeg";
+          ext = "jpg";
+        }
+      } else if (PHOTO_FOLDERS.has(folder) && file.type.startsWith("image/")) {
         const optimized = await optimizePhoto(bytes, contentType);
         if (optimized) {
           bytes = optimized.bytes;

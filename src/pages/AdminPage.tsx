@@ -301,7 +301,7 @@ function ImageUploadButton({
   label,
 }: {
   bucket: ImageBucket;
-  onUploaded: (url: string, mobileUrl?: string) => void;
+  onUploaded: (url: string, mobileUrl?: string, printUrl?: string) => void;
   label: string;
 }) {
   const { lang } = useI18n();
@@ -315,8 +315,8 @@ function ImageUploadButton({
     setUploading(true);
     setError(null);
     try {
-      const { url, mobileUrl } = await uploadImage(bucket, file);
-      onUploaded(url, mobileUrl);
+      const { url, mobileUrl, printUrl } = await uploadImage(bucket, file);
+      onUploaded(url, mobileUrl, printUrl);
       notify('success', lang === 'bg' ? 'Снимката е качена.' : 'Image uploaded.');
     } catch {
       setError('Грешка при качване / Upload failed');
@@ -2017,6 +2017,8 @@ function ProductForm({
     theme_category_ids: initialCategoryIds.filter((id) => themeIdSet.has(id)),
     price: product ? bgnToEur(product.rawPrice) : 0,
     image_url: product?.imageUrl ?? '',
+    // undefined = leave the DB value alone; set on upload / manual URL edit.
+    print_image_url: undefined as string | null | undefined,
     sizes: product?.sizes ?? '',
     is_active: product?.isActive ?? true,
     is_new: product?.isNew ?? false,
@@ -2075,6 +2077,7 @@ function ProductForm({
       category_ids: categoryIds,
       price: eurToBgn(Number(form.price)),
       image_url: form.image_url || null,
+      ...(form.print_image_url !== undefined ? { print_image_url: form.print_image_url } : {}),
       sizes: form.sizes || null,
       is_active: form.is_active,
       is_new: form.is_new,
@@ -2196,13 +2199,13 @@ function ProductForm({
           <div className="flex flex-col gap-2">
             <ImageUploadButton
               bucket="product-images"
-              onUploaded={(url) => setForm({ ...form, image_url: url })}
+              onUploaded={(url, _mobile, printUrl) => setForm({ ...form, image_url: url, print_image_url: printUrl ?? null })}
               label={lang === 'bg' ? 'Качи снимка от файла' : 'Upload from file'}
             />
             <input
               type="text"
               value={form.image_url}
-              onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+              onChange={(e) => setForm({ ...form, image_url: e.target.value, print_image_url: null })}
               className="form-input"
               placeholder="https://..."
             />
