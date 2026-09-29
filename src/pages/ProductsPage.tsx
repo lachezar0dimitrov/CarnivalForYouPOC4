@@ -310,7 +310,11 @@ export default function ProductsPage() {
   // initialisers above have already parsed the same value out of the URL, so
   // it sees no change and never fires — leaving the user at the top of the
   // page looking at the category grid instead of their filtered products.
-  const needsScrollRef = useRef(queryParams.category != null || queryParams.search != null);
+  // Same for ?new=1 (the home ribbon's "see all new costumes" link) — it's
+  // a filtered view like a category tile, so it lands on the first product.
+  const needsScrollRef = useRef(
+    queryParams.category != null || queryParams.search != null || queryParams.new != null
+  );
 
   useEffect(() => {
     if (!loading && needsScrollRef.current) {
@@ -331,7 +335,7 @@ export default function ProductsPage() {
   // rather than the default reset-to-top a normal navigation gets.
   useEffect(() => {
     if (!loading && pendingScrollRestore != null) {
-      window.scrollTo(0, pendingScrollRestore);
+      window.scrollTo({ top: pendingScrollRestore, left: 0, behavior: 'instant' as ScrollBehavior });
       clearScrollRestore();
     }
     // clearScrollRestore intentionally omitted — see the identical note on

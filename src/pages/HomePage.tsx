@@ -49,6 +49,8 @@ export default function HomePage() {
   const [values, setValues] = useState<AboutValue[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [popularLoaded, setPopularLoaded] = useState(false);
+  const [valuesLoaded, setValuesLoaded] = useState(false);
+  const [newArrivalsLoaded, setNewArrivalsLoaded] = useState(false);
   const isChristmas = getCurrentSeason() === 'christmas';
 
   useEffect(() => {
@@ -64,7 +66,8 @@ export default function HomePage() {
   useEffect(() => {
     fetchAboutContent()
       .then((content) => setValues(content?.valuesList ?? []))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setValuesLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -77,19 +80,22 @@ export default function HomePage() {
   // Restores the exact scroll position (e.g. deep in the Popular Costumes or
   // New Arrivals section) when the user hit Back from a product opened here
   // — same router.pendingScrollRestore mechanism ProductsPage already uses.
-  // Gated on both above-the-fold async sections having settled, since either
-  // one loading in after an early restore would shift the saved position out
-  // of view again.
+  // Gated on every async section at or above the New Arrivals ribbon having
+  // settled (categories, value props, popular, the ribbon itself) — any one
+  // of them rendering after an early restore shifts the page, and Back from
+  // a ribbon product would land above the ribbon instead of on it.
+  const sectionsLoaded = categoriesLoaded && popularLoaded && valuesLoaded && newArrivalsLoaded;
   useEffect(() => {
-    if (categoriesLoaded && popularLoaded && pendingScrollRestore != null) {
-      window.scrollTo(0, pendingScrollRestore);
+    if (sectionsLoaded && pendingScrollRestore != null) {
+      // instant, not the html-level smooth scroll — see App.tsx.
+      window.scrollTo({ top: pendingScrollRestore, left: 0, behavior: 'instant' as ScrollBehavior });
       clearScrollRestore();
     }
     // clearScrollRestore intentionally omitted, same as ProductsPage's
     // identical effect — it's stable and re-running this on its identity
     // isn't the intent.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoriesLoaded, popularLoaded, pendingScrollRestore]);
+  }, [sectionsLoaded, pendingScrollRestore]);
 
   useSEO({
     title: t('seo.homeTitle'),
@@ -168,7 +174,7 @@ export default function HomePage() {
 
       <PopularCostumes products={popularProducts} />
 
-      <NewArrivalsRibbon />
+      <NewArrivalsRibbon onSettled={() => setNewArrivalsLoaded(true)} />
 
       {/* CTA — same mx-auto w-full max-w-[1920px] wrapper (no horizontal
           padding) as the banner/categories above, for the same
