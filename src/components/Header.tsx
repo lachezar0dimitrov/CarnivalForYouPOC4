@@ -1,5 +1,5 @@
 import { Menu, X, Globe, Search } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter, type Route } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { fetchSiteSettings } from '@/lib/siteSettings';
@@ -32,7 +32,11 @@ export default function Header() {
     { id: 'terms', label: t('nav.terms') },
   ];
 
-  useEffect(() => {
+  // Layout effect, not a plain effect: measured before the first paint, so
+  // the page never draws one frame at the 4rem fallback in index.css and
+  // then jumps down by the difference (a full-page layout shift on mobile,
+  // where the real header is ~74px).
+  useLayoutEffect(() => {
     const header = headerRef.current;
     if (!header) return;
 

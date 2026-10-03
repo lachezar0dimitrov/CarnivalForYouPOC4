@@ -41,6 +41,24 @@ function mapRow(r: BannerRow): Banner {
   };
 }
 
+// Active banner rows the homepage HTML already carries, injected at the edge
+// by functions/_middleware.js (same query as fetchActiveBanners below) so
+// the first slide can render on React's very first pass instead of after a
+// Supabase round trip. null when absent or unreadable -- callers then just
+// wait for the live query as before.
+export function readInlineBanners(): Banner[] | null {
+  if (typeof document === 'undefined') return null;
+  const el = document.getElementById('cfy-banners');
+  if (!el?.textContent) return null;
+  try {
+    const rows = JSON.parse(el.textContent) as unknown;
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    return rows.map((r) => mapRow(r as BannerRow));
+  } catch {
+    return null;
+  }
+}
+
 // Fetch active banners for the public homepage (sorted by sort_order)
 export async function fetchActiveBanners(): Promise<Banner[]> {
   const { data, error } = await supabase

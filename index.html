@@ -93,10 +93,24 @@
     <title>Карнавални костюми под наем в София | CarnivalForYou</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Loaded without blocking first paint: as a plain stylesheet this
+         third-party CSS held up the whole page for a full extra connection
+         + download on mobile (~0.9s in Lighthouse). The fonts already use
+         display=swap, so text was always first drawn in the fallback font
+         and swapped in later -- this only stops the page waiting on the CSS
+         file itself before drawing anything. -->
     <link
+      rel="preload"
+      as="style"
       href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Henny+Penny&family=Inter:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Henny+Penny&family=Inter:wght@300;400;500;600&display=swap"
+      />
+    </noscript>
     <!-- The banner photo (LCP element), splash video/poster and every
          product/category image are all served from this R2 custom domain --
          warming up the connection (DNS + TLS) before the first request for

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
-import { fetchActiveBanners, type Banner } from '@/lib/banners';
+import { fetchActiveBanners, readInlineBanners, type Banner } from '@/lib/banners';
 import { getCurrentSeason } from '@/lib/season';
 import { useSplashActive } from '@/lib/splash';
 import HeroFireflies from '@/components/HeroFireflies';
@@ -32,9 +32,14 @@ export default function BannerCarousel() {
   // overlay (Snowflakes.tsx, rendered above everything in App.tsx) covers the
   // hero too, so a second hero-local particle layer would be redundant.
   const isChristmas = getCurrentSeason() === 'christmas';
-  const [banners, setBanners] = useState<Banner[]>([]);
+  // Seeded from the rows the edge middleware inlines into the homepage HTML
+  // (see readInlineBanners), so the first photo -- the mobile LCP element --
+  // is in the very first render instead of one Supabase round trip later.
+  // The live query below still runs and replaces this if anything differs.
+  const [inlineBanners] = useState(readInlineBanners);
+  const [banners, setBanners] = useState<Banner[]>(() => inlineBanners ?? []);
   const [current, setCurrent] = useState(0);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => inlineBanners != null);
   // Which slide *photos* have actually been requested yet. All slides are
   // stacked with position:absolute inset:0 for the crossfade (index.css
   // .banner-slide) and only told apart by opacity, but the browser's native
@@ -59,7 +64,10 @@ export default function BannerCarousel() {
     request
       .then((data) => {
         if (cancelled) return;
-        setBanners(data);
+        // Usually identical to the inlined seed -- keep the same array then,
+        // so nothing re-renders.
+        setBanners((prev) => (JSON.stringify(prev) === JSON.stringify(data) ? prev : data));
+        setCurrent((c) => (c < data.length ? c : 0));
         setLoaded(true);
       })
       .catch(() => {

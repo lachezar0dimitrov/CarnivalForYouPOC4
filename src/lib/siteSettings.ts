@@ -46,7 +46,15 @@ function mapRow(r: SettingsRow): SiteSettings {
   };
 }
 
-export async function fetchSiteSettings(): Promise<SiteSettings | null> {
+// One in-flight/settled request shared by every caller. A single page load
+// asks for these settings from Header, Footer, season.ts and the splash
+// state at once — each its own round trip (plus a CORS preflight) competing
+// with the banner photo on a slow mobile connection. Cleared on failure so a
+// later call can retry, and by saveSiteSettings() so the admin panel never
+// reads back its own stale copy.
+let settingsRequest: Promise<SiteSettings | null> | null = null;
+
+async function requestSiteSettings(): Promise<SiteSettings | null> {
   const { data, error } = await supabase
     .from('site_settings')
     .select('*')
@@ -56,6 +64,16 @@ export async function fetchSiteSettings(): Promise<SiteSettings | null> {
   if (error) throw error;
   if (!data) return null;
   return mapRow(data as unknown as SettingsRow);
+}
+
+export function fetchSiteSettings(): Promise<SiteSettings | null> {
+  if (!settingsRequest) {
+    settingsRequest = requestSiteSettings().catch((err) => {
+      settingsRequest = null;
+      throw err;
+    });
+  }
+  return settingsRequest;
 }
 
 export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
@@ -77,5 +95,6 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
     })
     .eq('id', 1);
 
+  settingsRequest = null;
   if (error) throw error;
 }

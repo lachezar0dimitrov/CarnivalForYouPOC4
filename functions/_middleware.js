@@ -63,30 +63,127 @@ export async function onRequest(context) {
     return res;
   }
 
+  const pathname = new URL(context.request.url).pathname;
+  const isHome = pathname === '/' || pathname === '/en' || pathname === '/en/';
+  // Started before context.next() so the lookup overlaps fetching the page.
+  const banners = isHome ? activeBanners(context).catch(() => null) : null;
+
   const res = await context.next();
-  if (isEnglishPath(new URL(context.request.url).pathname)
-      && (res.headers.get('content-type') || '').includes('text/html')) {
-    const pathname = new URL(context.request.url).pathname;
-    let rewriter = new HTMLRewriter()
-      .on('#seo-static', { element(el) { el.setInnerContent(EN_SEO_STATIC, { html: true }); } });
-    // The /en homepage has no Pages Function of its own (unlike product
-    // pages), so its raw <head> would otherwise carry index.html's Bulgarian
-    // title/description. Mirrors seo.homeTitle/seo.homeDesc (en) in
-    // src/lib/i18n.tsx -- keep in sync.
-    if (pathname === '/en' || pathname === '/en/') {
-      const set = (value) => ({ element(el) { el.setAttribute('content', value); } });
-      rewriter = rewriter
-        .on('title', { element(el) { el.setInnerContent(EN_HOME_TITLE); } })
-        .on('meta[name="description"]', set(EN_HOME_DESC))
-        .on('meta[property="og:title"]', set(EN_HOME_TITLE))
-        .on('meta[property="og:description"]', set(EN_HOME_DESC))
-        .on('meta[name="twitter:title"]', set(EN_HOME_TITLE))
-        .on('meta[name="twitter:description"]', set(EN_HOME_DESC))
-        .on('meta[property="og:url"]', set('https://carnivalforyou.com/en'));
-    }
-    return rewriter.transform(res);
+  const isHtml = (res.headers.get('content-type') || '').includes('text/html');
+
+  if (isHome && isHtml) {
+    let rewriter = new HTMLRewriter().on('meta[charset]', {
+      async element(el) {
+        const rows = await banners;
+        if (!rows || rows.length === 0) return;
+        const src = validImageUrl(rows[0].image_url);
+        const preload = src
+          ? `\n    <link rel="preload" as="image" href="${escapeAttr(src)}" fetchpriority="high" />`
+          : '';
+        // '<' escaped so no row text can close the script element early.
+        const json = JSON.stringify(rows).replace(/</g, '\\u003c');
+        el.after(`${preload}\n    <script id="cfy-banners" type="application/json">${json}</script>`, { html: true });
+      },
+    });
+    if (isEnglishPath(pathname)) rewriter = withEnglishCopy(rewriter, pathname);
+    const out = rewriter.transform(res);
+    // The injected tags depend on the banners table, not on the static
+    // index.html this was built from -- without this, a browser revalidating
+    // with that file's ETag would get a 304 and keep reusing a stale copy
+    // that preloads whichever banner used to be first.
+    const headers = new Headers(out.headers);
+    headers.delete('ETag');
+    headers.delete('Last-Modified');
+    return new Response(out.body, { status: out.status, statusText: out.statusText, headers });
+  }
+
+  if (isEnglishPath(pathname) && isHtml) {
+    return withEnglishCopy(new HTMLRewriter(), pathname).transform(res);
   }
   return res;
+}
+
+// The homepage's LCP element on mobile is the first banner photo, but which
+// photo that is only exists in the banners table: the browser used to learn
+// it after downloading and running the JS bundle and then querying Supabase
+// (with a CORS preflight) -- seconds of pure waiting in Lighthouse's mobile
+// run, first before the photo could download and then again before React
+// could draw it. So the homepage HTML now carries both a <link rel=preload>
+// for the first photo (download starts alongside the bundle) and the active
+// rows themselves as inline JSON, which BannerCarousel renders from on its
+// very first pass (see readInlineBanners() in src/lib/banners.ts). Same
+// query/order as fetchActiveBanners() there -- keep them in sync.
+// Cached at the edge for a few minutes; the carousel still runs its own live
+// query right after and swaps in the result if anything changed, so an admin
+// edit is never hidden for longer than that one request. Any failure here
+// means no injected tags (the page falls back to the live query alone),
+// never a broken page.
+const BANNERS_CACHE_KEY = 'https://carnivalforyou.com/__edge-cache/active-banners-v1';
+const BANNERS_TTL_SECONDS = 300;
+
+async function activeBanners(context) {
+  const { env } = context;
+  if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_ANON_KEY) return null;
+
+  const cache = caches.default;
+  const cacheKey = new Request(BANNERS_CACHE_KEY);
+  const hit = await cache.match(cacheKey);
+  if (hit) return hit.json();
+
+  const res = await fetch(
+    `${env.VITE_SUPABASE_URL}/rest/v1/banners?select=*&is_active=eq.true` +
+      '&order=sort_order.asc,id.asc',
+    {
+      headers: {
+        apikey: env.VITE_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      signal: AbortSignal.timeout(1500),
+    }
+  );
+  if (!res.ok) return null;
+  const rows = await res.json();
+  if (!Array.isArray(rows)) return null;
+  context.waitUntil(
+    cache.put(
+      cacheKey,
+      new Response(JSON.stringify(rows), {
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${BANNERS_TTL_SECONDS}` },
+      })
+    )
+  );
+  return rows;
+}
+
+function validImageUrl(value) {
+  return typeof value === 'string' && /^https:\/\/[^\s"'<>]+$/.test(value) ? value : null;
+}
+
+function escapeAttr(value) {
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
+// English copy for every /en page (see EN_SEO_STATIC below), plus the /en
+// homepage head tags.
+function withEnglishCopy(rewriter, pathname) {
+  rewriter = rewriter
+    .on('#seo-static', { element(el) { el.setInnerContent(EN_SEO_STATIC, { html: true }); } });
+  // The /en homepage has no Pages Function of its own (unlike product
+  // pages), so its raw <head> would otherwise carry index.html's Bulgarian
+  // title/description. Mirrors seo.homeTitle/seo.homeDesc (en) in
+  // src/lib/i18n.tsx -- keep in sync.
+  if (pathname === '/en' || pathname === '/en/') {
+    const set = (value) => ({ element(el) { el.setAttribute('content', value); } });
+    rewriter = rewriter
+      .on('title', { element(el) { el.setInnerContent(EN_HOME_TITLE); } })
+      .on('meta[name="description"]', set(EN_HOME_DESC))
+      .on('meta[property="og:title"]', set(EN_HOME_TITLE))
+      .on('meta[property="og:description"]', set(EN_HOME_DESC))
+      .on('meta[name="twitter:title"]', set(EN_HOME_TITLE))
+      .on('meta[name="twitter:description"]', set(EN_HOME_DESC))
+      .on('meta[property="og:url"]', set('https://carnivalforyou.com/en'));
+  }
+  return rewriter;
 }
 
 // index.html ships a visually-hidden, crawlable Bulgarian snapshot of the

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParticlesEnabled } from '@/lib/particles';
 
 type Firefly = {
   id: number;
@@ -12,7 +13,12 @@ type Firefly = {
 
 // Floating glowing "firefly" sparks for the magical atmosphere.
 // Purely decorative — pointer-events disabled in CSS.
+// Not mounted at all where index.css hides it anyway — see lib/particles.ts.
 export default function Fireflies({ count = 28 }: { count?: number }) {
+  return useParticlesEnabled() ? <FirefliesLayer count={count} /> : null;
+}
+
+function FirefliesLayer({ count }: { count: number }) {
   const [flies, setFlies] = useState<Firefly[]>([]);
 
   useEffect(() => {
