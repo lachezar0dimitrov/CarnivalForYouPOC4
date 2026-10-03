@@ -72,13 +72,25 @@ export async function onRequest(context) {
   const isHtml = (res.headers.get('content-type') || '').includes('text/html');
 
   if (isHome && isHtml) {
-    let rewriter = new HTMLRewriter().on('meta[charset]', {
+    // Injected right after the viewport meta, not earlier: Chrome's preload
+    // scanner resolves imagesizes' 100vw against whatever viewport it knows
+    // of at that point -- before the viewport meta that's the 980px desktop
+    // default, so a phone fetched the full photo AND (once the real width
+    // was known) the 828px copy.
+    let rewriter = new HTMLRewriter().on('meta[name="viewport"]', {
       async element(el) {
         const rows = await banners;
         if (!rows || rows.length === 0) return;
         const src = validImageUrl(rows[0].image_url);
+        const small = smallBannerUrl(rows[0].mobile_image_url);
+        // Must match the <img>'s srcset/sizes exactly (bannerSrcSet /
+        // BANNER_SIZES in src/lib/banners.ts), or the browser treats the
+        // preload and the image as two different requests.
+        const srcset = small
+          ? ` imagesrcset="${escapeAttr(`${small} 828w, ${src} 1920w`)}" imagesizes="${BANNER_SIZES}"`
+          : '';
         const preload = src
-          ? `\n    <link rel="preload" as="image" href="${escapeAttr(src)}" fetchpriority="high" />`
+          ? `\n    <link rel="preload" as="image" href="${escapeAttr(src)}"${srcset} fetchpriority="high" />`
           : '';
         // '<' escaped so no row text can close the script element early.
         const json = JSON.stringify(rows).replace(/</g, '\\u003c');
@@ -153,6 +165,15 @@ async function activeBanners(context) {
     )
   );
   return rows;
+}
+
+const BANNER_SIZES = '(min-width: 1920px) 1920px, 100vw';
+
+// Mirrors smallBannerUrl() in src/lib/banners.ts: only full-frame phone
+// copies under banner-images/small/ count, never an old portrait crop.
+function smallBannerUrl(value) {
+  const url = validImageUrl(value);
+  return url && url.includes('/banner-images/small/') ? url : null;
 }
 
 function validImageUrl(value) {

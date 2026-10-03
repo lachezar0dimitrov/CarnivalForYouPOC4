@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
-import { fetchActiveBanners, readInlineBanners, type Banner } from '@/lib/banners';
+import {
+  BANNER_SIZES,
+  bannerSrcSet,
+  fetchActiveBanners,
+  readInlineBanners,
+  type Banner,
+} from '@/lib/banners';
 import { getCurrentSeason } from '@/lib/season';
 import { useSplashActive } from '@/lib/splash';
 import HeroFireflies from '@/components/HeroFireflies';
@@ -180,6 +186,14 @@ export default function BannerCarousel() {
           >
             {mountedSlides.has(i) && (
               <img
+                // Phones get the 828px copy of the same frame (when the
+                // banner has one); wider/denser screens the full photo.
+                // sizes/srcSet deliberately come BEFORE src: React 18 sets
+                // attributes in prop order, and Chrome starts fetching as
+                // soon as src lands -- with src first, phones downloaded
+                // the full photo AND the small one.
+                sizes={bannerSrcSet(banner) ? BANNER_SIZES : undefined}
+                srcSet={bannerSrcSet(banner)}
                 src={banner.imageUrl}
                 alt={lang === 'bg' ? banner.titleBg : banner.titleEn}
                 loading={i === 0 ? 'eager' : 'lazy'}
