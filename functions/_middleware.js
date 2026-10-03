@@ -233,4 +233,5 @@ const EN_SEO_STATIC = `
         <li><a href="/en/products?category=10"><img src="/images/categories/halloween-scary-costumes.webp" alt="Halloween costumes for rent" width="640" height="919" loading="lazy" decoding="async" fetchpriority="low" />Halloween</a></li>
       </ul>
       <p>Mladost 4, bl. 426A, Sofia · <a href="tel:+359888716941">+359 888 716 941</a> · <a href="/en/contacts">Contacts</a></p>
+      <p>Built by <a href="https://www.core-logic.eu/web-design/">Core-Logic</a></p>
     `;
