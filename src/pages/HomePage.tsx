@@ -141,7 +141,18 @@ export default function HomePage() {
           wrapper as the banner (no horizontal padding) so this section's
           left/right edges land on the exact same x as the banner's,
           instead of the narrower max-w-7xl column it used to sit in. */}
-      <section className="relative z-10 mx-auto w-full max-w-[1920px] py-16 sm:py-24">
+      {/* min-h-screen only until the categories query settles: the grid
+          is a screen or more tall once filled (~1000px on a phone), but it,
+          the value props and the popular/new-arrivals rows all arrive after
+          first paint -- without a reserved height the CTA section below was
+          painted right under the banner and then shoved off-screen once
+          they filled in (~0.4 CLS on mobile). With the reservation, all of
+          that later growth happens below the fold. */}
+      <section
+        className={`relative z-10 mx-auto w-full max-w-[1920px] py-16 sm:py-24 ${
+          categoriesLoaded ? '' : 'min-h-screen'
+        }`}
+      >
         <div className="flex items-center justify-center gap-2.5 sm:gap-3">
           <Sparkles
             size={18}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParticlesEnabled } from '@/lib/particles';
 
 type Snowflake = {
   id: number;
@@ -18,7 +19,12 @@ type Snowflake = {
 // Purely decorative — pointer-events disabled in CSS, hidden on mobile
 // via the .snowflake rule in index.css (matches Fireflies' own mobile
 // performance behavior).
+// Not mounted at all where index.css hides it anyway — see lib/particles.ts.
 export default function Snowflakes({ count = 40 }: { count?: number }) {
+  return useParticlesEnabled() ? <SnowflakesLayer count={count} /> : null;
+}
+
+function SnowflakesLayer({ count }: { count: number }) {
   const [flakes, setFlakes] = useState<Snowflake[]>([]);
 
   useEffect(() => {

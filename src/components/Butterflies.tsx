@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParticlesEnabled } from '@/lib/particles';
 
 type ButterflyData = {
   id: number;
@@ -14,7 +15,12 @@ type ButterflyData = {
 
 const colors = ['#d4af37', '#5b8c6e', '#f0d985', '#e7c44d', '#c0392b'];
 
+// Not mounted at all where index.css hides it anyway — see lib/particles.ts.
 export default function Butterflies({ count = 5 }: { count?: number }) {
+  return useParticlesEnabled() ? <ButterfliesLayer count={count} /> : null;
+}
+
+function ButterfliesLayer({ count }: { count: number }) {
   const [butterflies, setButterflies] = useState<ButterflyData[]>([]);
 
   useEffect(() => {

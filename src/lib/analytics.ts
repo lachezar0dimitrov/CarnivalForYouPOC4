@@ -34,10 +34,27 @@ export function initConsentDefaults() {
   window.gtag('consent', 'default', { analytics_storage: 'denied' });
   window.gtag('js', new Date());
 
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`;
-  document.head.appendChild(script);
+  // The library itself is still loaded on every page (see above), just not
+  // during the critical first render: gtag.js is ~180KB and ~400ms of main-
+  // thread time on a mid-range phone, which landed right while the banner
+  // photo (mobile LCP) was waiting to paint. The stub and the consent
+  // default above are set synchronously, so everything queued before the
+  // script arrives is still processed by it, exactly as with an early load.
+  const inject = () => {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`;
+    document.head.appendChild(script);
+  };
+  const whenIdle = () => {
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(inject, { timeout: 3000 });
+    } else {
+      setTimeout(inject, 1000);
+    }
+  };
+  if (document.readyState === 'complete') whenIdle();
+  else window.addEventListener('load', whenIdle, { once: true });
 }
 
 export function loadAnalytics() {

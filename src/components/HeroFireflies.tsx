@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParticlesEnabled } from '@/lib/particles';
 
 type Firefly = {
   id: number;
@@ -14,7 +15,12 @@ type Firefly = {
 // Scoped to the hero section (absolute within it) — pointer-events disabled.
 // Christmas theme doesn't use this: BannerCarousel/HomePage skip rendering it
 // there in favor of the page-wide falling-snow overlay (see Snowflakes.tsx).
+// Not mounted at all where index.css hides it anyway — see lib/particles.ts.
 export default function HeroFireflies({ count = 30 }: { count?: number }) {
+  return useParticlesEnabled() ? <HeroFirefliesLayer count={count} /> : null;
+}
+
+function HeroFirefliesLayer({ count }: { count: number }) {
   const [flies, setFlies] = useState<Firefly[]>([]);
 
   useEffect(() => {
