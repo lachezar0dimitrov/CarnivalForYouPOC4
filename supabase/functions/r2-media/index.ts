@@ -123,28 +123,18 @@ async function optimizePhoto(
   }
 }
 
-// Center-crops a wide banner photo down to a near-square portrait frame
-// (banners here are always a centered focal subject with symmetric
-// flanking elements, so a horizontal center crop keeps the subject in
-// frame without needing real subject detection) and re-encodes as JPEG
-// for a much smaller mobile payload than the source PNG. Returns null on
-// any failure so a bad/unsupported source image never blocks the main
-// upload. Ratio is 0.9 (not a tighter 4:5) to match the ~0.9–1.1 aspect
-// of a real phone's `min-h-50vh` hero box across common devices — the
-// closer this is to the container's own shape, the less object-fit:cover
-// has to crop again on top of this crop to fill it.
-async function generateMobileCrop(bytes: Uint8Array): Promise<Uint8Array | null> {
-  try {
-    const img = await Image.decode(bytes);
-    const targetRatio = 0.9;
-    const cropWidth = Math.min(img.width, Math.round(img.height * targetRatio));
-    const cropX = Math.round((img.width - cropWidth) / 2);
-    const cropped = img.crop(cropX, 0, cropWidth, img.height);
-    return await cropped.encodeJPEG(85);
-  } catch {
-    return null;
-  }
-}
+// Banners get a second, smaller copy of the SAME full frame for phones
+// (BannerCarousel picks it via srcset). It's generated in the admin's
+// browser (src/lib/r2.ts), not here: imagescript can neither decode WebP
+// (what most banners already are) nor encode it, and its JPEG at phone size
+// came out ~2x a WebP's weight. The browser posts it back with
+// variant=small and it's stored as-is under banner-images/small/ -- the
+// prefix the site checks before using a banner's mobile_image_url, so the
+// portrait center-crops this function used to generate for that column
+// (never shown publicly, since cropping cut people out of the frame) can
+// never be mistaken for one.
+const SMALL_BANNER_MAX_BYTES = 1024 * 1024;
+const SMALL_BANNER_TYPES: Record<string, string> = { "image/webp": "webp", "image/jpeg": "jpg" };
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -215,6 +205,26 @@ Deno.serve(async (req: Request) => {
       let contentType = file.type || "application/octet-stream";
       let ext = extFromName(file.name);
 
+      if (form.get("variant") === "small") {
+        const smallExt = SMALL_BANNER_TYPES[file.type];
+        if (folder !== "banner-images" || !smallExt) {
+          return json({ error: "Invalid small variant" }, 400);
+        }
+        if (file.size > SMALL_BANNER_MAX_BYTES) {
+          return json({ error: "Small variant exceeds 1MB" }, 400);
+        }
+        const smallKey = `${folder}/small/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${smallExt}`;
+        const smallRes = await r2.fetch(`${r2Endpoint}/${r2Bucket}/${smallKey}`, {
+          method: "PUT",
+          body: bytes,
+          headers: { "Content-Type": file.type, "Cache-Control": "public, max-age=31536000, immutable" },
+        });
+        if (!smallRes.ok) {
+          return json({ error: `R2 upload failed: ${await smallRes.text()}` }, 502);
+        }
+        return json({ url: `${r2PublicUrl}/${smallKey}` });
+      }
+
       if (folder === "product-images" && file.type.startsWith("image/")) {
         // Original goes up byte-for-byte for print; the site gets the web copy.
         const stamp = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
@@ -283,28 +293,7 @@ Deno.serve(async (req: Request) => {
         return json({ error: `R2 upload failed: ${await putRes.text()}` }, 502);
       }
 
-      // Banners additionally get an auto-generated portrait crop for mobile
-      // — best-effort: a failed/slow crop never blocks the main upload.
-      let mobileUrl: string | undefined;
-      if (folder === "banner-images" && file.type.startsWith("image/")) {
-        const mobileBytes = await generateMobileCrop(bytes);
-        if (mobileBytes) {
-          const mobileKey = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-mobile.jpg`;
-          const mobilePutRes = await r2.fetch(`${r2Endpoint}/${r2Bucket}/${mobileKey}`, {
-            method: "PUT",
-            body: mobileBytes,
-            headers: {
-              "Content-Type": "image/jpeg",
-              "Cache-Control": "public, max-age=31536000, immutable",
-            },
-          });
-          if (mobilePutRes.ok) {
-            mobileUrl = `${r2PublicUrl}/${mobileKey}`;
-          }
-        }
-      }
-
-      return json({ url: `${r2PublicUrl}/${key}`, mobileUrl });
+      return json({ url: `${r2PublicUrl}/${key}` });
     }
 
     if (req.method === "DELETE") {

@@ -41,6 +41,28 @@ function mapRow(r: BannerRow): Banner {
   };
 }
 
+// The phone-sized copy of a banner's photo, if it has one. Only URLs under
+// banner-images/small/ qualify: that's where the full-frame downscales live
+// (src/lib/r2.ts, scripts/backfill-banner-small.mjs). The column used to
+// hold portrait center-crops, which must never be swapped in for the real
+// photo -- any such leftover value is simply ignored here.
+// Keep in sync with smallBannerUrl() in functions/_middleware.js.
+export function smallBannerUrl(banner: Pick<Banner, 'mobileImageUrl'>): string | null {
+  const url = banner.mobileImageUrl;
+  return url && url.includes('/banner-images/small/') ? url : null;
+}
+
+// srcset/sizes for a banner <img> (and the matching preload in the edge
+// middleware -- the two must produce identical values or the browser
+// downloads the photo twice). The full photo is described as 1920w, the
+// banner box's max width; its real width varies per upload but only
+// matters relative to the 828w copy here.
+export const BANNER_SIZES = '(min-width: 1920px) 1920px, 100vw';
+export function bannerSrcSet(banner: Pick<Banner, 'imageUrl' | 'mobileImageUrl'>): string | undefined {
+  const small = smallBannerUrl(banner);
+  return small ? `${small} 828w, ${banner.imageUrl} 1920w` : undefined;
+}
+
 // Active banner rows the homepage HTML already carries, injected at the edge
 // by functions/_middleware.js (same query as fetchActiveBanners below) so
 // the first slide can render on React's very first pass instead of after a

@@ -35,6 +35,7 @@ import {
   fetchAllBanners,
   saveBanner,
   deleteBanner,
+  smallBannerUrl,
   type Banner,
 } from '@/lib/banners';
 import { bgnToEur, eurToBgn, fetchProductById, searchProductsBasic, type Product } from '@/lib/products';
@@ -349,7 +350,7 @@ function ImageUploadButton({
 // public/images/carousel/ (see vite.config.ts's carouselImagesPlugin)
 // instead of only uploading a new file. The picked file still goes through
 // the normal upload pipeline (fetched client-side, then re-posted to
-// r2-media) so it ends up on R2 with an auto-generated mobile crop, exactly
+// r2-media) so it ends up on R2 with an auto-generated phone copy, exactly
 // like a manual upload — no separate, degraded code path.
 function CarouselPicker({
   onUploaded,
@@ -585,15 +586,17 @@ function BannerForm({
             <input
               type="text"
               value={form.imageUrl}
-              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+              // A hand-edited URL is a different photo: drop the phone copy
+              // made from the previous one, or phones would keep showing it.
+              onChange={(e) => setForm({ ...form, imageUrl: e.target.value, mobileImageUrl: '' })}
               className="form-input"
               placeholder="https://... или качете файл"
             />
             <p className="text-xs text-gray-500">
               {lang === 'bg'
-                ? 'Версията за телефони се изрязва автоматично при качване.'
-                : 'The mobile version is auto-cropped from this on upload.'}
-              {form.mobileImageUrl && (
+                ? 'По-малка версия за телефони (цялата снимка, без изрязване) се прави автоматично при качване.'
+                : 'A smaller phone version (whole photo, no crop) is made automatically on upload.'}
+              {smallBannerUrl(form) && (
                 <span className="ml-1 text-moss-400">
                   {lang === 'bg' ? '✓ готова' : '✓ ready'}
                 </span>
