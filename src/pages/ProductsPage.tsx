@@ -297,7 +297,8 @@ export default function ProductsPage() {
       // value again — since the dependency below is the primitive string,
       // an unchanged '1' -> '1' wouldn't re-trigger this effect the second
       // time, and the filter panel would never reopen.
-      const { openFilter: _openFilter, ...rest } = queryParams;
+      const rest = { ...queryParams };
+      delete rest.openFilter;
       updateQuery(rest);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
