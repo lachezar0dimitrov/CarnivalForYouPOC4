@@ -38,7 +38,7 @@ import {
   smallBannerUrl,
   type Banner,
 } from '@/lib/banners';
-import { bgnToEur, eurToBgn, fetchProductById, searchProductsBasic, type Product } from '@/lib/products';
+import { bgnToEur, eurToBgn, fetchProductById, searchProductsBasic, type Product, type ProductRow } from '@/lib/products';
 import { uploadImage, type ImageBucket } from '@/lib/r2';
 import {
   fetchSiteSettings,
@@ -1244,8 +1244,8 @@ function NewsForm({
 // ============================================================
 type AdminProduct = Product & { isActive: boolean; categoryIds: number[] };
 
-function mapAdminRow(r: any): AdminProduct {
-  let rawCatIds = r.category_ids;
+function mapAdminRow(r: ProductRow & { is_active: boolean | null }): AdminProduct {
+  const rawCatIds = r.category_ids;
   let categoryIds: number[] = [];
 
   if (Array.isArray(rawCatIds)) {
