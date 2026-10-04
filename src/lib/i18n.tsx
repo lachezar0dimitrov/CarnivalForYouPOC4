@@ -37,7 +37,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'common.reserveInStore': 'Запази на място',
     'common.contactUs': 'Свържете се с нас',
     'common.all': 'Всички',
-    'common.perDay': '/ 48 часа',
+    'common.perDay': '/ 24 часа',
     'common.loading': 'Зареждане…',
     'common.error': 'Възникна грешка. Моля, опитайте отново.',
     'common.backToCategory': 'Обратно',
@@ -87,7 +87,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'products.eyebrow': 'Каталог',
     'products.title': 'Нашите костюми',
     'products.subtitle':
-      'Разгледайте наличните костюми под наем. Цените са на 48 часа. За резервация посетете нашата карнавална къща или се свържете с нас.',
+      'Разгледайте наличните костюми под наем. Цените са на 24 часа. За резервация посетете нашата карнавална къща или се свържете с нас.',
     'products.categories': 'Основни раздели',
     'products.allCategories': 'Всички категории',
     'products.filterCategory': 'Категория',
@@ -252,10 +252,10 @@ const translations: Record<Lang, Record<string, string>> = {
     // seo
     'seo.homeTitle': 'Карнавални костюми под наем в София | CarnivalForYou',
     'seo.homeDesc':
-      'Карнавални костюми и костюми за Хелоуин под наем в София — за деца и възрастни. Венециански маски, приказни герои, наем за 48 ч. Резервирайте на място.',
+      'Карнавални костюми и костюми за Хелоуин под наем в София — за деца и възрастни. Венециански маски, приказни герои, наем за 24 ч. Резервирайте на място.',
     'seo.productsTitle': 'Каталог костюми под наем | CarnivalForYou',
     'seo.productsDesc':
-      'Разгледайте наличните костюми под наем — венециански, фантастични, Хелоуин и детски. Цени на 48 часа, резервация на място в София.',
+      'Разгледайте наличните костюми под наем — венециански, фантастични, Хелоуин и детски. Цени на 24 часа, резервация на място в София.',
   },
   en: {
     // nav
@@ -275,7 +275,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'common.reserveInStore': 'Reserve at the carnival house',
     'common.contactUs': 'Contact us',
     'common.all': 'All',
-    'common.perDay': '/ 48 hours',
+    'common.perDay': '/ 24 hours',
     'common.loading': 'Loading…',
     'common.error': 'An error occurred. Please try again.',
     'common.backToCategory': 'Back',
@@ -325,7 +325,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'products.eyebrow': 'Catalog',
     'products.title': 'Our costumes',
     'products.subtitle':
-      'Browse available costumes for rent. Prices are per 48 hours. To reserve, visit our carnival house or contact us.',
+      'Browse available costumes for rent. Prices are per 24 hours. To reserve, visit our carnival house or contact us.',
     'products.categories': 'Main categories',
     'products.allCategories': 'All categories',
     'products.filterCategory': 'Category',
@@ -488,10 +488,10 @@ const translations: Record<Lang, Record<string, string>> = {
     // seo
     'seo.homeTitle': 'Carnival Costume Rental in Sofia | CarnivalForYou',
     'seo.homeDesc':
-      'Carnival and Halloween costume rental in Sofia — for kids and adults. Venetian masks, fairy-tale characters, 48-hour rental. Reserve in store.',
+      'Carnival and Halloween costume rental in Sofia — for kids and adults. Venetian masks, fairy-tale characters, 24-hour rental. Reserve in store.',
     'seo.productsTitle': 'Costume Rental Catalog | CarnivalForYou',
     'seo.productsDesc':
-      'Browse available costumes for rent — Venetian, fantasy, Halloween and kids. Prices per 48 hours, reserve at our carnival house in Sofia.',
+      'Browse available costumes for rent — Venetian, fantasy, Halloween and kids. Prices per 24 hours, reserve at our carnival house in Sofia.',
   },
 };
 

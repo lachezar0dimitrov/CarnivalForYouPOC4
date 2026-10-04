@@ -219,11 +219,11 @@ function isEnglishPath(pathname) {
 
 const EN_HOME_TITLE = 'Carnival Costume Rental in Sofia | CarnivalForYou';
 const EN_HOME_DESC =
-  'Carnival and Halloween costume rental in Sofia — for kids and adults. Venetian masks, fairy-tale characters, 48-hour rental. Reserve in store.';
+  'Carnival and Halloween costume rental in Sofia — for kids and adults. Venetian masks, fairy-tale characters, 24-hour rental. Reserve in store.';
 
 const EN_SEO_STATIC = `
       <h1>Carnival Costume Rental in Sofia</h1>
-      <p>Carnival and Halloween costume rental in Sofia — over 1500 costumes for kids and adults. Venetian masks, fairy-tale characters, wigs and accessories, 48-hour rental.</p>
+      <p>Carnival and Halloween costume rental in Sofia — over 1500 costumes for kids and adults. Venetian masks, fairy-tale characters, wigs and accessories, 24-hour rental.</p>
       <ul>
         <li><a href="/en/products?category=2"><img src="https://img.carnivalforyou.com/category-images/1789671859706-4f502551.webp" alt="Women's carnival costumes for rent" width="890" height="1316" loading="lazy" decoding="async" fetchpriority="low" />Women's costumes</a></li>
         <li><a href="/en/products?category=3"><img src="https://img.carnivalforyou.com/category-images/1789671861804-1f26332a.webp" alt="Men's carnival costumes for rent" width="922" height="1420" loading="lazy" decoding="async" fetchpriority="low" />Men's costumes</a></li>
