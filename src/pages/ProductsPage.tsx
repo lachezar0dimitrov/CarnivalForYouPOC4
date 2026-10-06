@@ -445,6 +445,15 @@ export default function ProductsPage() {
   const seoTitle = categoryCopy ? categoryCopy.title : t('seo.productsTitle');
   const seoDescription = categoryCopy ? categoryCopy.description : t('seo.productsDesc');
   const pageH1 = categoryCopy ? categoryCopy.h1 : t('products.title');
+  // Single-category views get their own tile image as the share/search
+  // thumbnail instead of silently falling back to the site-wide default —
+  // category.image is already either an absolute R2 URL or a local
+  // "/images/categories/..." path, so only the latter needs an origin.
+  const seoImage = seoCat?.image
+    ? seoCat.image.startsWith('http')
+      ? seoCat.image
+      : `${window.location.origin}${seoCat.image}`
+    : undefined;
   // Canonical query value for this view — a single category id, the fixed
   // sorted kids-combo id list, or nothing for the bare catalog. Search/
   // pagination/size-filter variations of the same category are near-
@@ -471,6 +480,7 @@ export default function ProductsPage() {
   useSEO({
     title: seoTitle,
     description: seoDescription,
+    image: seoImage,
     canonical: `${window.location.origin}${routeLang === 'en' ? '/en' : ''}/products${canonicalQuery}`,
     structuredData:
       isCanonicalCategoryView && seoCatDisplayName && products.length > 0
