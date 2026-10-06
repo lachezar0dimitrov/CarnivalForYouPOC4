@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 
-// 00:00, 05.10.2026, Europe/Sofia (UTC+3 in early October, still EEST) --
+// 00:00, 16.10.2026, Europe/Sofia (UTC+3 in mid-October, still EEST) --
 // baked in as an explicit offset so the target instant doesn't shift with
 // the visitor's or server's own timezone.
-const TARGET_MS = new Date('2026-10-05T00:00:00+03:00').getTime();
+const TARGET_MS = new Date('2026-10-16T00:00:00+03:00').getTime();
 
 function getRemaining() {
   const diffMs = TARGET_MS - Date.now();
