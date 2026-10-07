@@ -17,7 +17,6 @@ const PARTY_PHOTOS = [
   '980_q10.jpg',
   '983_q14.jpg',
   '987_q18.jpg',
-  '996_q28.jpg',
   '999_q31.jpg',
   '1006_q41.jpg',
   '1011_q47.jpg',
