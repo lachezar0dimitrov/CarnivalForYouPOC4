@@ -5,6 +5,7 @@ import { useRouter } from '@/lib/router';
 import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
 import SectionHeading from '@/components/SectionHeading';
+import ImageLightbox from '@/components/ImageLightbox';
 
 // Fixed set of party photos shown at the bottom of the About page.
 // Hardcoded on purpose: this gallery and its caption are not part of
@@ -37,6 +38,7 @@ export default function AboutPage() {
   const { navigate } = useRouter();
   const { t, lang } = useI18n();
   const [content, setContent] = useState<AboutContent | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   useSEO({
     title: `${t('about.title')} | CarnivalForYou`,
@@ -228,8 +230,10 @@ export default function AboutPage() {
         </p>
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {PARTY_PHOTOS.map((src) => (
-            <div
+            <button
               key={src}
+              type="button"
+              onClick={() => setLightboxSrc(src)}
               className="aspect-square overflow-hidden rounded-2xl border border-gold-400/15 shadow-card"
             >
               <img
@@ -238,10 +242,18 @@ export default function AboutPage() {
                 className="h-full w-full object-cover"
                 loading="lazy"
               />
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      {lightboxSrc && (
+        <ImageLightbox
+          src={lightboxSrc}
+          alt={bg ? 'Снимка от наше парти' : 'Photo from one of our parties'}
+          onClosed={() => setLightboxSrc(null)}
+        />
+      )}
     </div>
   );
 }
