@@ -6,6 +6,33 @@ import { useI18n } from '@/lib/i18n';
 import { useSEO } from '@/lib/useSEO';
 import SectionHeading from '@/components/SectionHeading';
 
+// Fixed set of party photos shown at the bottom of the About page.
+// Hardcoded on purpose: this gallery and its caption are not part of
+// about_content / AdminPage, so they can't be edited from the admin panel.
+const PARTY_PHOTOS = [
+  '949_q9.jpg',
+  '972_q1.jpg',
+  '973_q2.jpg',
+  '980_q10.jpg',
+  '983_q14.jpg',
+  '987_q18.jpg',
+  '996_q28.jpg',
+  '999_q31.jpg',
+  '1006_q41.jpg',
+  '1011_q47.jpg',
+  '1017_q53.jpg',
+  '1021_q58.jpg',
+  '1035_w14.jpg',
+  '1045_w34.jpg',
+  '1046_w51.jpg',
+  'viber_image_2026-10-07_23-18-48-041.jpg',
+  'viber_image_2026-10-07_23-18-48-206.jpg',
+  'viber_image_2026-10-07_23-18-48-276.jpg',
+  'viber_image_2026-10-07_23-18-48-296.jpg',
+  'viber_image_2026-10-07_23-18-48-366.jpg',
+  'viber_image_2026-10-07_23-18-48-409.jpg',
+].map((file) => `/images/about-party/${file}`);
+
 export default function AboutPage() {
   const { navigate } = useRouter();
   const { t, lang } = useI18n();
@@ -191,6 +218,29 @@ export default function AboutPage() {
           <Sparkles size={18} />
           {t('about.browseBtn')}
         </button>
+      </div>
+
+      <div className="mt-16">
+        <p className="mx-auto max-w-2xl text-center font-display text-xl font-semibold text-gold-100 sm:text-2xl">
+          {bg
+            ? 'При нас не получавате просто дреха, ние предлагаме изживяване!'
+            : "With us you don't just get a costume — we offer an experience!"}
+        </p>
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {PARTY_PHOTOS.map((src) => (
+            <div
+              key={src}
+              className="aspect-square overflow-hidden rounded-2xl border border-gold-400/15 shadow-card"
+            >
+              <img
+                src={src}
+                alt={bg ? 'Снимка от наше парти' : 'Photo from one of our parties'}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
