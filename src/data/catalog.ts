@@ -217,14 +217,14 @@ export const storeInfo = {
   phone: '+359 88 8716 941',
   email: 'office@carnivalforyou.com',
   hours: [
-    { day: 'Понед., Сряда, Петък', time: '12:00 – 18:00' },
-    { day: 'Събота', time: '12:00 – 14:00' },
-    { day: 'Неделя и Вторник, Четвъртък', time: 'Затворено' },
+    { day: 'Понеделник – Петък', time: '11:30 – 18:00' },
+    { day: 'Събота', time: '12:00 – 17:00' },
+    { day: 'Неделя', time: 'Затворено' },
   ],
   hoursEn: [
-    { day: 'Monday, Wednesday, Friday', time: '12:00 – 18:00' },
-    { day: 'Saturday', time: '12:00 – 14:00' },
-    { day: 'Sunday, Tuesday, Thursday', time: 'Closed' },
+    { day: 'Monday – Friday', time: '11:30 – 18:00' },
+    { day: 'Saturday', time: '12:00 – 17:00' },
+    { day: 'Sunday', time: 'Closed' },
   ],
 };
 
