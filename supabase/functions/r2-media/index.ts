@@ -84,14 +84,65 @@ const WEB_MAX_DIMENSION: Record<string, number> = {
 };
 const WEB_JPEG_QUALITY = 80;
 
-async function webDerivative(bytes: Uint8Array, maxDim: number): Promise<Uint8Array | null> {
-  try {
-    const img = await Image.decode(bytes);
-    if (img.width > maxDim || img.height > maxDim) {
-      if (img.width >= img.height) img.resize(maxDim, Image.RESIZE_AUTO);
-      else img.resize(Image.RESIZE_AUTO, maxDim);
+// Site product photos are 3:4 (ProductCard draws them object-contain in a
+// fixed frame). Supplier photos often arrive cropped tight to the costume
+// (w/h as low as 0.35) and then look zoomed-in next to their neighbours, which
+// twice needed a batch fix (image-pipeline/normalize_aspect_2026_09_29.py,
+// same rules as here). So the web copy is padded -- never cropped -- to 3:4
+// with the photo's own corner colour. 0.707 (A4 scans) is close enough and is
+// left alone. The print original is untouched; the catalog does its own fit.
+const WEB_ASPECT = 3 / 4;
+const WEB_ASPECT_MIN = 0.7;
+const WEB_ASPECT_MAX = 0.8;
+
+function isSiteAspect(w: number, h: number) {
+  return w / h >= WEB_ASPECT_MIN && w / h <= WEB_ASPECT_MAX;
+}
+
+function siteAspectCanvas(w: number, h: number): [number, number] {
+  return w / h < WEB_ASPECT ? [Math.round(h * WEB_ASPECT), h] : [w, Math.round(w / WEB_ASPECT)];
+}
+
+// Median of small corner patches, flattened onto white the same way the
+// photo itself is; near-white snaps to pure white.
+function cornerBackground(img: Image): number {
+  const { width: w, height: h, bitmap } = img;
+  const k = Math.min(w, h, Math.max(4, Math.floor(Math.min(w, h) / 50)));
+  const channels: number[][] = [[], [], []];
+  for (const [x0, y0] of [[0, 0], [w - k, 0], [0, h - k], [w - k, h - k]]) {
+    for (let y = y0; y < y0 + k; y++) {
+      for (let x = x0; x < x0 + k; x++) {
+        const i = (y * w + x) * 4;
+        const a = bitmap[i + 3] / 255;
+        for (let c = 0; c < 3; c++) channels[c].push(bitmap[i + c] * a + 255 * (1 - a));
+      }
     }
-    return await img.encodeJPEG(WEB_JPEG_QUALITY);
+  }
+  const [r, g, b] = channels.map((v) => Math.round(v.sort((p, q) => p - q)[v.length >> 1]));
+  return Math.min(r, g, b) >= 235 ? Image.rgbaToColor(255, 255, 255, 255) : Image.rgbaToColor(r, g, b, 255);
+}
+
+async function webDerivative(
+  bytes: Uint8Array,
+  maxDim: number,
+  padToSiteAspect = false
+): Promise<{ bytes: Uint8Array; padded: boolean } | null> {
+  try {
+    let img = await Image.decode(bytes);
+    const pad = padToSiteAspect && !isSiteAspect(img.width, img.height);
+    // Scale so the final (padded) canvas fits maxDim, then pad at that size.
+    const [cw, ch] = pad ? siteAspectCanvas(img.width, img.height) : [img.width, img.height];
+    const scale = maxDim / Math.max(cw, ch);
+    if (scale < 1) {
+      img.resize(Math.max(1, Math.round(img.width * scale)), Math.max(1, Math.round(img.height * scale)));
+    }
+    if (pad) {
+      const [w, h] = siteAspectCanvas(img.width, img.height);
+      const canvas = new Image(w, h).fill(cornerBackground(img));
+      canvas.composite(img, (w - img.width) >> 1, (h - img.height) >> 1);
+      img = canvas;
+    }
+    return { bytes: await img.encodeJPEG(WEB_JPEG_QUALITY), padded: pad };
   } catch {
     return null;
   }
@@ -240,10 +291,11 @@ Deno.serve(async (req: Request) => {
           return json({ error: `R2 upload failed: ${await printRes.text()}` }, 502);
         }
         const printUrl = `${r2PublicUrl}/${printKey}`;
-        const web = await webDerivative(bytes, WEB_MAX_DIMENSION[folder]);
-        if (web && web.length < bytes.length) {
+        const web = await webDerivative(bytes, WEB_MAX_DIMENSION[folder], true);
+        // A padded copy is needed even when it isn't smaller than the original.
+        if (web && (web.padded || web.bytes.length < bytes.length)) {
           const webKey = `${folder}/web/${stamp}.jpg`;
-          const webRes = await put(webKey, web, "image/jpeg");
+          const webRes = await put(webKey, web.bytes, "image/jpeg");
           if (webRes.ok) {
             return json({ url: `${r2PublicUrl}/${webKey}`, printUrl });
           }
@@ -254,8 +306,8 @@ Deno.serve(async (req: Request) => {
 
       if (folder === "category-images" && file.type.startsWith("image/")) {
         const web = await webDerivative(bytes, WEB_MAX_DIMENSION[folder]);
-        if (web && web.length < bytes.length) {
-          bytes = web;
+        if (web && web.bytes.length < bytes.length) {
+          bytes = web.bytes;
           contentType = "image/jpeg";
           ext = "jpg";
         }
