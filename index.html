@@ -26,6 +26,12 @@
          page, so a path here yields no preview image at all on every route
          except product pages, which the Cloudflare Function rewrites. -->
     <meta property="og:image" content="https://carnivalforyou.com/og-banner.jpg" />
+    <!-- Dimensions let Facebook/Messenger render the image on the very first
+         share instead of fetching it asynchronously. Product pages strip
+         these three tags (functions/*product-detail*) since their image differs. -->
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Карнавални костюми под наем — принцеса, рицар, вещица, пират и полицай" />
     <meta property="og:url" content="https://carnivalforyou.com/" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Карнавални костюми под наем в София | CarnivalForYou" />

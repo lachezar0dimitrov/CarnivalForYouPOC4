@@ -231,6 +231,7 @@ export async function handleProductDetail(context, lang) {
     .on('meta[property="og:title"]', new MetaContentSetter(meta.title))
     .on('meta[property="og:description"]', new MetaContentSetter(meta.description))
     .on('meta[property="og:image"]', new MetaContentSetter(meta.image))
+    .on('meta[property^="og:image:"]', new ElementRemover())
     .on('meta[property="og:url"]', new MetaContentSetter(meta.url))
     .on('meta[property="og:type"]', new MetaContentSetter('product'))
     .on('meta[name="twitter:title"]', new MetaContentSetter(meta.title))
