@@ -26,7 +26,7 @@ type SEOParams = {
 };
 
 const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
-const defaultImage = `${siteUrl}/og-default.jpg`;
+const defaultImage = `${siteUrl}/og-banner.jpg`;
 const JSON_LD_ID = 'seo-json-ld';
 
 function setMeta(attr: 'name' | 'property', key: string, content: string) {
