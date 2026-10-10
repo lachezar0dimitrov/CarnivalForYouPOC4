@@ -1,3 +1,5 @@
+import { homeTilesItemList } from './_lib/homeTiles.js';
+
 // The project's *.pages.dev hostname stays publicly reachable after the real
 // domain is attached, serving a byte-identical copy of the site — and its
 // sitemap advertises pages.dev URLs, since sitemap.xml.js builds <loc> values
@@ -95,6 +97,15 @@ export async function onRequest(context) {
         // '<' escaped so no row text can close the script element early.
         const json = JSON.stringify(rows).replace(/</g, '\\u003c');
         el.after(`${preload}\n    <script id="cfy-banners" type="application/json">${json}</script>`, { html: true });
+      },
+    });
+    // ItemList of the six category tiles, in the raw HTML (not just
+    // client-side) so Google sees the same image set on every crawl -- see
+    // functions/_lib/homeTiles.js. '<' escaped as for cfy-banners above.
+    const itemList = JSON.stringify(homeTilesItemList(isEnglishPath(pathname) ? 'en' : 'bg')).replace(/</g, '\\u003c');
+    rewriter = rewriter.on('head', {
+      element(el) {
+        el.append(`  <script id="cfy-home-categories" type="application/ld+json">${itemList}</script>\n`, { html: true });
       },
     });
     if (isEnglishPath(pathname)) rewriter = withEnglishCopy(rewriter, pathname);
