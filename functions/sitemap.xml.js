@@ -1,3 +1,5 @@
+import { HOME_TILES } from './_lib/homeTiles.js';
+
 // Generated dynamically (not a build-time static file) so it always
 // reflects the live catalog — a static sitemap baked in at build time would
 // silently drift out of date every time a product is added/removed without
@@ -154,7 +156,11 @@ export async function onRequestGet(context) {
   // "Популярни костюми" section (src/components/PopularCostumes.tsx) — same
   // is_popular flag and same priority/id ordering as fetchPopularProducts in
   // src/lib/products.ts, so the section and its sitemap signal never drift.
-  const homepageImages = products
+  // The six category tiles go first: they're what the homepage shows above
+  // everything else and what Google's multi-image strip for it is built from
+  // (see functions/_lib/homeTiles.js). Popular costumes follow.
+  const tileImages = (lang) => HOME_TILES.map((t) => ({ loc: t.image, title: lang === 'en' ? t.en : t.bg }));
+  const popularImages = products
     .filter((p) => p.is_popular)
     .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || b.id - a.id)
     .slice(0, POPULAR_PRODUCTS_LIMIT)
@@ -168,9 +174,9 @@ export async function onRequestGet(context) {
     const enHref = p === '/' ? `${origin}/en` : `${origin}/en${p}`;
     const priority = p === '/' ? '1.0' : '0.8';
     const alternates = buildAlternates(bgHref, enHref);
-    const images = p === '/' ? homepageImages : undefined;
-    entries.push(urlEntry(bgHref, undefined, priority, alternates, images));
-    entries.push(urlEntry(enHref, undefined, priority, alternates, images));
+    const isHome = p === '/';
+    entries.push(urlEntry(bgHref, undefined, priority, alternates, isHome ? [...tileImages('bg'), ...popularImages] : undefined));
+    entries.push(urlEntry(enHref, undefined, priority, alternates, isHome ? [...tileImages('en'), ...popularImages] : undefined));
   }
 
   // Categories: all 19 active categories already have name_en populated —
